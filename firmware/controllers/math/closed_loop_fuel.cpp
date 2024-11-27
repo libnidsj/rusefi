@@ -19,7 +19,7 @@ static Deadband<2> loadDeadband;
 
 void LongTermFuelTrim::resetLtftTimer() {
 	lastLtftUpdateTime = uint32_t(getTimeNowMs);
-	updatedLtft = 0;
+	// updatedLtft = 0;
 }
 
 void LongTermFuelTrim::updateLtft(float load, float rpm) {
@@ -36,30 +36,38 @@ void LongTermFuelTrim::updateLtft(float load, float rpm) {
 			auto lowRpm = binRpm.Idx;
 			float fracRpm = binRpm.Frac;
 
-			float stftCorrection = engine->engineState.stftCorrection[0] - 1.00f;
-			float correctionRate = interpolate3d(
-									config->ltftCorrectionRate,
-									config->veLoadBins, load,
-									config->veRpmBins, rpm
-								) * 0.01f;
-			
-			float correction = correctionRate * 0.005f * (stftCorrection / (abs(stftCorrection))) * (1 - pow(10, - 20 * (100 / config->ltftPermissivity) * abs(stftCorrection)));	// fast callback occours at 200Hz frequency
-			if(abs(correction) > abs(stftCorrection)) {
-				correction = stftCorrection * stftCorrection / (abs(stftCorrection));
-			}
+			if(lowLoad <= 14 && lowRpm <= 14 && fracLoad > 0.00f && fracLoad < 1.00f && fracRpm > 0.00f && fracRpm < 1.00f) {
 
-			ltftTableHelper[lowLoad][lowRpm]     = float(ltftTableHelper[lowLoad][lowRpm]) *     (1 + correction * (1-fracLoad) * (1-fracRpm)); 
-			ltftTableHelper[lowLoad+1][lowRpm]   = float(ltftTableHelper[lowLoad+1][lowRpm]) *   (1 + correction * (fracLoad) * (1-fracRpm)); 
-			ltftTableHelper[lowLoad][lowRpm+1]   = float(ltftTableHelper[lowLoad][lowRpm+1]) *   (1 + correction * (1-fracLoad) * (fracRpm)); 
-			ltftTableHelper[lowLoad+1][lowRpm+1] = float(ltftTableHelper[lowLoad+1][lowRpm+1]) * (1 + correction * (fracLoad) * (fracRpm)); 
+				float stftCorrection = engine->engineState.stftCorrection[0] - 1.00f;
+				float correctionRate = interpolate3d(
+										config->ltftCorrectionRate,
+										config->veLoadBins, load,
+										config->veRpmBins, rpm
+									) * 0.01f;
 
-			for(int i = 0; i < 2; i++){
-				for (int j = 0; j < 2; j++) {
-					if(ltftTableHelper[lowLoad+i][lowRpm+j] > float(100.0f + float(config->ltftMaxCorrection))) {
-						ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f + float(config->ltftMaxCorrection));
-					} else if (ltftTableHelper[lowLoad+i][lowRpm+j] < float(100.0f - float(config->ltftMinCorrection))) {
-						ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f - float(config->ltftMinCorrection));
+				float correction = correctionRate * 0.005f * (stftCorrection / (abs(stftCorrection))) * (1 - pow(10, - 20 * (100 / config->ltftPermissivity) * abs(stftCorrection)));	// fast callback occours at 200Hz frequency
+				
+				if(abs(correction) > abs(stftCorrection)) {
+					correction = stftCorrection * stftCorrection / (abs(stftCorrection));
+				}
+
+				if(abs(correction) <= 0.2) {
+					ltftTableHelper[lowLoad][lowRpm]     = float(ltftTableHelper[lowLoad][lowRpm]) *     (1 + correction * (1-fracLoad) * (1-fracRpm)); 
+					ltftTableHelper[lowLoad+1][lowRpm]   = float(ltftTableHelper[lowLoad+1][lowRpm]) *   (1 + correction * (fracLoad) * (1-fracRpm)); 
+					ltftTableHelper[lowLoad][lowRpm+1]   = float(ltftTableHelper[lowLoad][lowRpm+1]) *   (1 + correction * (1-fracLoad) * (fracRpm)); 
+					ltftTableHelper[lowLoad+1][lowRpm+1] = float(ltftTableHelper[lowLoad+1][lowRpm+1]) * (1 + correction * (fracLoad) * (fracRpm)); 
+
+					for(int i = 0; i < 2; i++){
+						for (int j = 0; j < 2; j++) {
+							if(ltftTableHelper[lowLoad+i][lowRpm+j] > float(100.0f + float(config->ltftMaxCorrection))) {
+								ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f + float(config->ltftMaxCorrection));
+							} else if (ltftTableHelper[lowLoad+i][lowRpm+j] < float(100.0f - float(config->ltftMinCorrection))) {
+								ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f - float(config->ltftMinCorrection));
+							}
+						}
 					}
+
+					updatedLtft = 1;
 				}
 			}
 
@@ -67,13 +75,6 @@ void LongTermFuelTrim::updateLtft(float load, float rpm) {
 
 	}
 
-}
-
-void LongTermFuelTrim::onIgnitionStateChanged(bool ignitionOn) {
-	if(!ignitionOn) {
-		copyTable(config->ltftTable, ltftTableHelper);
-		setNeedToWriteConfiguration();
-	}
 }
 
 static SensorType getSensorForBankIndex(size_t index) {
@@ -212,11 +213,16 @@ float LongTermFuelTrim::getLtft(float load, float rpm) {
 		ltftTableHelperInit = 1;
 	}
 
-	SensorType sensor = getSensorForBankIndex(0);
-	if(shouldUpdateCorrection(sensor) && shouldCorrect()) {
+	if(shouldUpdateCorrection(getSensorForBankIndex(0)) && shouldCorrect()) {
 		updateLtft(load, rpm);
 	} else {
 		resetLtftTimer();
+	}
+
+	if(rpm == 0 && updatedLtft) {
+		copyTable(config->ltftTable, ltftTableHelper);
+		setNeedToWriteConfiguration();
+		updatedLtft = 0;
 	}
 
 	if(config->ltftEnabled && config->ltftCRC == 132 && (Sensor::get(SensorType::Clt)).value_or(0) > float(config->ltftMinTemp)) {
@@ -224,6 +230,13 @@ float LongTermFuelTrim::getLtft(float load, float rpm) {
 			  config->veLoadBins, load,
 			  config->veRpmBins, rpm
 		) * 0.01f;
+
+    /*
+		if(100.0f * ltft > config->ltftMaxCorrection || 100.0f * ltft < config->ltftMinCorrection) {
+			config->ltftEnabled = 0;
+			return 1.00f;
+		}
+    */
 
 		return ltft;
 	} else {
