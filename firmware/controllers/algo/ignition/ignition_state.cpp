@@ -331,6 +331,10 @@ void IgnitionState::updateDwell(float rpm, bool isCranking) {
 	dwellDurationAngle = std::isnan(rpm) ? NAN : getDwell() / getOneDegreeTimeMs(rpm);
 }
 
+floatms_t IgnitionState::getDwell() const {
+	return sparkDwell;
+}
+
 angle_t IgnitionState::getTrailingSparkAngle(const float rpm, const float engineLoad){
 	if (std::isnan(engineLoad)) {
 		// default value from: https://github.com/rusefi/rusefi/commit/86683afca22ed1a8af8fd5ac9231442e2124646e#diff-6e80cdd8c55add68105618ad9e8954170a47f59814201dadd2b888509d6b2e39R176
