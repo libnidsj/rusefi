@@ -179,9 +179,6 @@ float getConfigValueByName(const char *name) {
 // Fan2AcThresholdOff
 		case -1213730600:
 			return engineConfiguration->Fan2AcThresholdOff;
-// useIdleAdvanceWhileCoasting
-		case 586887955:
-			return engineConfiguration->useIdleAdvanceWhileCoasting;
 // tpsMin
 		case 513872736:
 			return engineConfiguration->tpsMin;
@@ -503,9 +500,6 @@ float getConfigValueByName(const char *name) {
 // coastingFuelCutEnabled
 		case 1570088896:
 			return engineConfiguration->coastingFuelCutEnabled;
-// useIacTableForCoasting
-		case -2101952506:
-			return engineConfiguration->useIacTableForCoasting;
 // useNoiselessTriggerDecoder
 		case 957244017:
 			return engineConfiguration->useNoiselessTriggerDecoder;
@@ -2326,11 +2320,6 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->Fan2AcThresholdOff = (int)value;
 		return 1;
 	}
-		case 586887955:
-	{
-		engineConfiguration->useIdleAdvanceWhileCoasting = (int)value;
-		return 1;
-	}
 		case 513872736:
 	{
 		engineConfiguration->tpsMin = (int)value;
@@ -2864,11 +2853,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case 1570088896:
 	{
 		engineConfiguration->coastingFuelCutEnabled = (int)value;
-		return 1;
-	}
-		case -2101952506:
-	{
-		engineConfiguration->useIacTableForCoasting = (int)value;
 		return 1;
 	}
 		case 957244017:

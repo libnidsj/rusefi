@@ -172,9 +172,6 @@ Theshold to enable fan 2 after ac turned on
 ### Fan2AcThresholdOff
 Theshold to disable fan 2 after ac tuned off
 
-### useIdleAdvanceWhileCoasting
-Use idle ignition table while coasting;
-
 ### tpsMin
 Closed throttle, 1 volt = 200 units.\nSee also tps1_1AdcChannel\nset tps_min X
 
@@ -495,9 +492,6 @@ If enabled, try to fire the engine before a full engine cycle has been completed
 
 ### coastingFuelCutEnabled
 This setting disables fuel injection while the engine is in overrun, this is useful as a fuel saving measure and to prevent back firing.
-
-### useIacTableForCoasting
-Override the IAC position during overrun conditions to help reduce engine breaking, this can be helpful for large engines in light weight cars or engines that have trouble returning to idle.
 
 ### useNoiselessTriggerDecoder
 
