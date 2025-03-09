@@ -179,6 +179,9 @@ float getConfigValueByName(const char *name) {
 // Fan2AcThresholdOff
 		case -1213730600:
 			return engineConfiguration->Fan2AcThresholdOff;
+// useIdleAdvanceWhileCoasting
+		case 586887955:
+			return engineConfiguration->useIdleAdvanceWhileCoasting;
 // tpsMin
 		case 513872736:
 			return engineConfiguration->tpsMin;
@@ -2318,6 +2321,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1213730600:
 	{
 		engineConfiguration->Fan2AcThresholdOff = (int)value;
+		return 1;
+	}
+		case 586887955:
+	{
+		engineConfiguration->useIdleAdvanceWhileCoasting = (int)value;
 		return 1;
 	}
 		case 513872736:

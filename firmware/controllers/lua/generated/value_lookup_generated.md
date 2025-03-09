@@ -172,6 +172,9 @@ Theshold to enable fan 2 after ac turned on
 ### Fan2AcThresholdOff
 Theshold to disable fan 2 after ac tuned off
 
+### useIdleAdvanceWhileCoasting
+Use idle ignition table while coasting;
+
 ### tpsMin
 Closed throttle, 1 volt = 200 units.\nSee also tps1_1AdcChannel\nset tps_min X
 
