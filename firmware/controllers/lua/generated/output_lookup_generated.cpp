@@ -1334,10 +1334,15 @@ float getOutputValueByName(const char *name) {
 		case -1478067590:
 			return engine->module<FanControl1>()->radiatorFanStatus;
 #endif
-// fan1m_enabledForAc
+// fan1m_enabledByAc
 #if FULL_SD_LOGS
-		case -958588115:
-			return engine->module<FanControl1>()->m_enabledForAc;
+		case 1792925793:
+			return engine->module<FanControl1>()->m_enabledByAc;
+#endif
+// fan1m_enabledAc
+#if FULL_SD_LOGS
+		case 1835585542:
+			return engine->module<FanControl1>()->m_enabledAc;
 #endif
 // fan2cranking
 #if FULL_SD_LOGS
@@ -1389,10 +1394,15 @@ float getOutputValueByName(const char *name) {
 		case -1778606949:
 			return engine->module<FanControl2>()->radiatorFanStatus;
 #endif
-// fan2m_enabledForAc
+// fan2m_enabledByAc
 #if FULL_SD_LOGS
-		case 1780779246:
-			return engine->module<FanControl2>()->m_enabledForAc;
+		case -1507976702:
+			return engine->module<FanControl2>()->m_enabledByAc;
+#endif
+// fan2m_enabledAc
+#if FULL_SD_LOGS
+		case -1638126233:
+			return engine->module<FanControl2>()->m_enabledAc;
 #endif
 // fan1isPrime
 		case -2088993020:

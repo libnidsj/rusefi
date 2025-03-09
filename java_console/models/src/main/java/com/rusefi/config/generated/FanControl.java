@@ -17,7 +17,8 @@ public class FanControl {
 	public static final Field M_STATE = Field.create("M_STATE", 0, FieldType.BIT, 8).setBaseOffset(1208);
 	public static final Field RADIATORFANSTATUS = Field.create("RADIATORFANSTATUS", 4, FieldType.INT8).setScale(1.0).setBaseOffset(1208);
 	public static final Field ALIGNMENTFILL_AT_5 = Field.create("ALIGNMENTFILL_AT_5", 5, FieldType.INT8).setScale(1.0).setBaseOffset(1208);
-	public static final Field M_ENABLEDFORAC = Field.create("M_ENABLEDFORAC", 8, FieldType.BIT, 0).setBaseOffset(1208);
+	public static final Field M_ENABLEDBYAC = Field.create("M_ENABLEDBYAC", 8, FieldType.BIT, 0).setBaseOffset(1208);
+	public static final Field M_ENABLEDAC = Field.create("M_ENABLEDAC", 8, FieldType.BIT, 1).setBaseOffset(1208);
 	public static final Field[] VALUES = {
 	CRANKING,
 	NOTRUNNING,
@@ -30,6 +31,7 @@ public class FanControl {
 	M_STATE,
 	RADIATORFANSTATUS,
 	ALIGNMENTFILL_AT_5,
-	M_ENABLEDFORAC,
+	M_ENABLEDBYAC,
+	M_ENABLEDAC,
 	};
 }

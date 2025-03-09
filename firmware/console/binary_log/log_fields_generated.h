@@ -665,6 +665,9 @@ static const LogField fields[] = {
 	{*engine->module<FanControl1>(), 8, 0, "fan1Enable for AC Memory", ""},
 #endif
 #if FULL_SD_LOGS
+	{*engine->module<FanControl1>(), 8, 1, "fan1Enabled AC Memory", ""},
+#endif
+#if FULL_SD_LOGS
 	{*engine->module<FanControl2>(), 0, 0, "fan2cranking", ""},
 #endif
 #if FULL_SD_LOGS
@@ -696,6 +699,9 @@ static const LogField fields[] = {
 #endif
 #if FULL_SD_LOGS
 	{*engine->module<FanControl2>(), 8, 0, "fan2Enable for AC Memory", ""},
+#endif
+#if FULL_SD_LOGS
+	{*engine->module<FanControl2>(), 8, 1, "fan2Enabled AC Memory", ""},
 #endif
 	{engine->engineState.lua.fuelAdd, "Lua: Fuel add", "g", 3},
 	{engine->engineState.lua.fuelMult, "Lua: Fuel mult", "", 0},
