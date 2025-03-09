@@ -320,6 +320,9 @@ float getConfigValueByName(const char *name) {
 // minOilPressureAfterStart
 		case -855687130:
 			return engineConfiguration->minOilPressureAfterStart;
+// enableSanderoPump
+		case 928942746:
+			return engineConfiguration->enableSanderoPump;
 // fixedModeTiming
 		case -1965056926:
 			return engineConfiguration->fixedModeTiming;
@@ -2550,6 +2553,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case -855687130:
 	{
 		engineConfiguration->minOilPressureAfterStart = (int)value;
+		return 1;
+	}
+		case 928942746:
+	{
+		engineConfiguration->enableSanderoPump = (int)value;
 		return 1;
 	}
 		case -1965056926:

@@ -313,6 +313,9 @@ null
 ### minOilPressureAfterStart
 Expected oil pressure after starting the engine. If oil pressure does not reach this level within 5 seconds of engine start, fuel will be cut. Set to 0 to disable and always allow starting.
 
+### enableSanderoPump
+This option enables sandelo eletrohydraulic steering pump to be CAN controller by the ECU;
+
 ### fixedModeTiming
 This value is the ignition timing used when in 'fixed timing' mode, i.e. constant timing\nThis mode is useful when adjusting distributor location.
 
