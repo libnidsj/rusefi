@@ -1931,8 +1931,8 @@ float[IAT_CURVE_SIZE] iatFuelCorr;;"ratio", 1, 0, 0, 5, 2
 	float[CRANKING_CYCLE_CLT_SIZE x CRANKING_CURVE_SIZE] crankingCycleFuelCoef;;"mult", 1, 0, 0, 5, 2
 
 uint8_t[CLT_CURVE_SIZE] autoscale rpmIdleCorrBins;RPM-based idle position;"RPM", 50, 0, 0, 9000, 0
-int16_t[CLT_CURVE_SIZE] cltIdleCorrBins;CLT-based idle position for simple manual idle controller;"C", 1, 0, -100, @@CLT_UPPER_LIMIT@@, 2
-uint8_t[CLT_CURVE_SIZE x CLT_CURVE_SIZE] cltIdleCorrTable;    CLT-based idle position for simple manual idle controller;"%", 0.5, 0, 0, 100, 1
+uint16_t[CLT_CURVE_SIZE] cltIdleCorrBins;CLT-based idle position for simple manual idle controller;"C", 1, 0, -100, @@CLT_UPPER_LIMIT@@, 2
+uint16_t[CLT_CURVE_SIZE x CLT_CURVE_SIZE] autoscale cltIdleCorrTable;    CLT-based idle position for simple manual idle controller;"%", 0.1, 0, 0, 100, 1
 
 float[MAF_DECODING_COUNT] mafDecoding;Also known as MAF transfer function.\nkg/hour value.\nBy the way 2.081989116 kg/h = 1 ft3/m;"kg/hour", 1, 0, -500, 4000, 2
 float[MAF_DECODING_COUNT] mafDecodingBins;;"V", 1, 0, -5, 150, 2
