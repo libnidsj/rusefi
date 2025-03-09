@@ -49,9 +49,6 @@ Time after which the throttle is considered jammed.
 ### acIdleExtraOffset
 Additional idle % while A/C is active
 
-### manIdlePosition
-Value between 0 and 100 used in Manual mode
-
 ### multisparkMaxSparkingAngle
 This parameter sets the latest that the last multispark can occur after the main ignition event. For example, if the ignition timing is 30 degrees BTDC, and this parameter is set to 45, no multispark will ever be fired after 15 degrees ATDC.
 
@@ -256,8 +253,11 @@ Pull-up resistor value on your board
 ### launchTimingRetard
 
 
-### hip9011PrescalerAndSDO
+### hip9011Prescaler
 value '6' for 8MHz hw osc\nread hip9011 datasheet for details\ntodo split into two bit fields
+
+### tuningDetector
+Zero value means do not detect tuning
 
 ### alternator_iTermMin
 iTerm min value
@@ -342,9 +342,6 @@ CANbus thread period in ms
 
 ### idle_derivativeFilterLoss
 0.1 is a good default value
-
-### trailingSparkAngle
-just a temporary solution
 
 ### trigger.customTotalToothCount
 
@@ -526,6 +523,9 @@ Disable the electronic throttle motor and DC idle motor for testing.\nThis mode 
 ### enableAemXSeries
 AEM X-Series or rusEFI Wideband
 
+### modeledFlowIdle
+
+
 ### verboseCanBaseAddress
 
 
@@ -539,9 +539,6 @@ Minimum MAP before closed loop boost is enabled. Use to prevent misbehavior upon
 
 
 ### finalIgnitionCutPercentBeforeLaunch
-
-
-### vehicleWeight
 
 
 ### idlePidRpmUpperLimit
@@ -594,12 +591,6 @@ Maximum time to crank starter when start/stop button is pressed
 
 ### lambdaProtectionTimeout
 Only respond once lambda is out of range for this period of time. Use to avoid transients triggering lambda protection when not needed
-
-### clutchUpPinInverted
-
-
-### clutchDownPinInverted
-
 
 ### useHbridgesToDriveIdleStepper
 If enabled we use two H-bridges to drive stepper idle air valve
@@ -752,10 +743,10 @@ null
 Below this RPM, the idle region is active, idle+300 would be a good value
 
 ### stft.maxOverrunLoad
-Below this engine load, the overrun region is active
+Below this engine load, the overrun region is active\nWhen tuning by MAP the units are kPa, e.g. 30 would mean 30kPa. When tuning TPS, 30 would be 30%
 
 ### stft.minPowerLoad
-Above this engine load, the power region is active
+Above this engine load, the power region is active\nWhen tuning by MAP the units are kPa
 
 ### stft.deadband
 When close to correct AFR, pause correction. This can improve stability by not changing the adjustment if the error is extremely small, but is not required.
@@ -838,9 +829,6 @@ This is the Cut Mode normally used
 ### torqueReductionEnabled
 
 
-### torqueReductionTriggerPinInverted
-
-
 ### limitTorqueReductionTime
 
 
@@ -848,9 +836,6 @@ This is the Cut Mode normally used
 Are you a developer troubleshooting TS over CAN ISO/TP?
 
 ### engineSnifferFocusOnInputs
-
-
-### launchActivateInverted
 
 
 ### twoStroke
@@ -880,9 +865,6 @@ RPM is measured based on last 720 degrees while instant RPM is measured based on
 ### isMapAveragingEnabled
 
 
-### overrideCrankingIacSetting
-If enabled, use separate temperature multiplier table for cranking idle position.\nIf disabled, use normal running multiplier table applied to the cranking base position.
-
 ### useSeparateAdvanceForIdle
 This activates a separate ignition timing table for idle conditions, this can help idle stability by using ignition retard and advance either side of the desired idle speed. Extra advance at low idle speeds will prevent stalling and extra retard at high idle speeds can help reduce engine power and slow the idle speed.
 
@@ -894,9 +876,6 @@ This activates a separate fuel table for Idle, this allows fine tuning of the id
 
 ### verboseTriggerSynchDetails
 Verbose info in console below engineSnifferRpmThreshold\nenable trigger_details
-
-### cutFuelInAcr
-
 
 ### hondaK
 
@@ -946,9 +925,6 @@ If increased VVT duty cycle increases the indicated VVT angle, set this to 'adva
 ### sdTriggerLog
 'Trigger' mode will write a high speed log of trigger events (warning: uses lots of space!). 'Normal' mode will write a standard MLG of sensors, engine function, etc. similar to the one captured in TunerStudio.
 
-### ALSActivateInverted
-
-
 ### stepper_dc_use_two_wires
 
 
@@ -968,9 +944,6 @@ Idle target speed when A/C is enabled. Some cars need the extra speed to keep th
 set warningPeriod X
 
 ### knockDetectionWindowStart
-
-
-### knockDetectionWindowEnd
 
 
 ### idleStepperReactionTime
@@ -1090,6 +1063,9 @@ on IGN voltage detection turn fuel pump on to build fuel pressure
 ### idlePidRpmDeadZone
 If the RPM closer to target than this value, disable closed loop idle correction to prevent oscillation
 
+### idleMaximumAirmass
+Maximum commanded airmass for the idle controller.
+
 ### torqueReductionTime
 For how long after the pin has been triggered will the cut/reduction stay active. After that, even if the pin is still triggered, torque is re-introduced
 
@@ -1141,7 +1117,7 @@ AEM X-Series EGT gauge kit or rusEFI EGT sensor from Wideband controller
 ### tcu_rangeSensorPulldown
 
 
-### brakePedalPinInverted
+### devBit01
 
 
 ### devBit0
@@ -1178,10 +1154,10 @@ AEM X-Series EGT gauge kit or rusEFI EGT sensor from Wideband controller
 
 
 ### afterCrankingIACtaperDuration
-This is the duration in cycles that the IAC will take to reach its normal idle position, it can be used to hold the idle higher for a few seconds after cranking to improve startup.\Should be 100 once tune is better
+This is the duration in cycles that the IAC will take to reach its normal idle position, it can be used to hold the idle higher for a few seconds after cranking to improve startup.\nShould be 100 once tune is better
 
 ### iacByTpsTaper
-IAC Value added when coasting and transitioning into idle.
+This value is an added for base idle value. Idle Value added when coasting and transitioning into idle.
 
 ### coastingFuelCutVssLow
 Below this speed, disable DFCO. Use this to prevent jerkiness from fuel enable/disable in low gears.
@@ -1721,7 +1697,7 @@ Hysterisis: if hard cut is 240kpa, and boostCutPressureHyst is 20, when the ECU 
 How many test bench pulses do you want
 
 ### iacByTpsHoldTime
-How long initial IAC adder is held before starting to decay.
+How long initial idle adder is held before starting to decay.
 
 ### iacByTpsDecayTime
 How long it takes to remove initial IAC adder to return to normal idle.
@@ -1915,9 +1891,6 @@ This is the pressure at which your injector flow is known.\nFor example if your 
 ### nitrousControlEnabled
 
 
-### nitrousControlTriggerPinInverted
-
-
 ### nitrousLuaGaugeArmingValue
 
 
@@ -1969,6 +1942,12 @@ Error below specified value
 ### fuelLevelHighThresholdVoltage
 Error above specified value
 
+### mapExpAverageAfr
+
+
+### sparkHardwareLatencyCorrection
+Compensates for trigger delay due to belt stretch, or other electromechanical issues. beware that raising this value advances ignition timing!
+
 ### ltftEnabled
 
 
@@ -1992,4 +1971,46 @@ How much long term fuel trim should act to reduce short term fuel trim, 100 shou
 
 ### tcu_shiftTime
 
+
+### dynoRpmStep
+@@DYNO_RPM_STEP_TOOLTIP@@
+
+### dynoSaeTemperatureC
+@@DYNO_SAE_TEMPERATURE_C_TOOLTIP@@
+
+### dynoSaeRelativeHumidity
+@@DYNO_SAE_RELATIVE_HUMIDITY_TOOLTIP@@
+
+### dynoSaeBaro
+@@DYNO_SAE_BARO_TOOLTIP@@
+
+### dynoCarWheelDiaInch
+@@DYNO_CAR_WHEEL_DIA_INCH_TOOLTIP@@
+
+### dynoCarWheelAspectRatio
+@@DYNO_CAR_WHEEL_ASPECT_RATIO_TOOLTIP@@
+
+### dynoCarWheelTireWidthMm
+@@DYNO_CAR_WHEEL_TIRE_WIDTH_TOOLTIP@@
+
+### dynoCarGearPrimaryReduction
+@@DYNO_CAR_GEAR_PRIMARY_REDUCTION_TOOLTIP@@
+
+### dynoCarGearRatio
+@@DYNO_CAR_GEAR_RATIO_TOOLTIP@@
+
+### dynoCarGearFinalDrive
+@@DYNO_CAR_GEAR_FINAL_DRIVE_TOOLTIP@@
+
+### dynoCarCarMassKg
+@@DYNO_CAR_CAR_MASS_TOOLTIP@@
+
+### dynoCarCargoMassKg
+@@DYNO_CAR_CARGO_MASS_TOOLTIP@@
+
+### dynoCarCoeffOfDrag
+@@DYNO_CAR_COEFF_OF_DRAG_TOOLTIP@@
+
+### dynoCarFrontalAreaM2
+@@DYNO_CAR_FRONTAL_AREA_TOOLTIP@@
 

@@ -975,10 +975,13 @@ static const LogField fields[] = {
 	{engine->module<IdleController>().unmock(), 12, 14, "looksLikeCrankToIdle", ""},
 #endif
 #if EFI_PROD_CODE && EFI_IDLE_CONTROL
-	{engine->module<IdleController>().unmock(), 12, 15, "Idle: coasting", ""},
+	{engine->module<IdleController>().unmock(), 12, 15, "Idle: running", ""},
 #endif
 #if EFI_PROD_CODE && EFI_IDLE_CONTROL
-	{engine->module<IdleController>().unmock(), 12, 16, "Idle: Closed loop active", ""},
+	{engine->module<IdleController>().unmock(), 12, 16, "Idle: coasting", ""},
+#endif
+#if EFI_PROD_CODE && EFI_IDLE_CONTROL
+	{engine->module<IdleController>().unmock(), 12, 17, "Idle: Closed loop active", ""},
 #endif
 #if EFI_PROD_CODE && EFI_IDLE_CONTROL
 	{engine->module<IdleController>().unmock().idleTarget, "Idle: Target RPM", "", 0},

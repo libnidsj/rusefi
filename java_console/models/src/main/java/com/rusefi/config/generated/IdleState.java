@@ -24,8 +24,9 @@ public class IdleState {
 	public static final Field LOOKSLIKERUNNING = Field.create("LOOKSLIKERUNNING", 12, FieldType.BIT, 12).setBaseOffset(1624);
 	public static final Field LOOKSLIKECOASTING = Field.create("LOOKSLIKECOASTING", 12, FieldType.BIT, 13).setBaseOffset(1624);
 	public static final Field LOOKSLIKECRANKTOIDLE = Field.create("LOOKSLIKECRANKTOIDLE", 12, FieldType.BIT, 14).setBaseOffset(1624);
-	public static final Field ISIDLECOASTING = Field.create("ISIDLECOASTING", 12, FieldType.BIT, 15).setBaseOffset(1624);
-	public static final Field ISIDLECLOSEDLOOP = Field.create("ISIDLECLOSEDLOOP", 12, FieldType.BIT, 16).setBaseOffset(1624);
+	public static final Field ISRUNNING = Field.create("ISRUNNING", 12, FieldType.BIT, 15).setBaseOffset(1624);
+	public static final Field ISIDLECOASTING = Field.create("ISIDLECOASTING", 12, FieldType.BIT, 16).setBaseOffset(1624);
+	public static final Field ISIDLECLOSEDLOOP = Field.create("ISIDLECLOSEDLOOP", 12, FieldType.BIT, 17).setBaseOffset(1624);
 	public static final Field IDLETARGET = Field.create("IDLETARGET", 16, FieldType.INT).setScale(1.0).setBaseOffset(1624);
 	public static final Field TARGETRPMBYCLT = Field.create("TARGETRPMBYCLT", 20, FieldType.INT).setScale(1.0).setBaseOffset(1624);
 	public static final Field TARGETRPMAC = Field.create("TARGETRPMAC", 24, FieldType.INT).setScale(1.0).setBaseOffset(1624);
@@ -54,6 +55,7 @@ public class IdleState {
 	LOOKSLIKERUNNING,
 	LOOKSLIKECOASTING,
 	LOOKSLIKECRANKTOIDLE,
+	ISRUNNING,
 	ISIDLECOASTING,
 	ISIDLECLOSEDLOOP,
 	IDLETARGET,
