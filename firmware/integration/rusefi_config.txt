@@ -1930,7 +1930,7 @@ float[IAT_CURVE_SIZE] iatFuelCorr;;"ratio", 1, 0, 0, 5, 2
   int16_t[CRANKING_CYCLE_CLT_SIZE] crankingCycleFuelCltBins;;"C", 1, 0, -100, @@CLT_UPPER_LIMIT@@, 2
 	float[CRANKING_CYCLE_CLT_SIZE x CRANKING_CURVE_SIZE] crankingCycleFuelCoef;;"mult", 1, 0, 0, 5, 2
 
-float[CLT_CURVE_SIZE] rpmIdleCorrBins;RPM-based idle position;"rpm", 50, 0, 0, 9000, 0
+uint8_t[CLT_CURVE_SIZE] autoscale rpmIdleCorrBins;RPM-based idle position;"RPM", 50, 0, 0, 9000, 0
 float[CLT_CURVE_SIZE] cltIdleCorrBins;CLT-based idle position for simple manual idle controller;"C", 1, 0, -100, @@CLT_UPPER_LIMIT@@, 2
 float[CLT_CURVE_SIZE][CLT_CURVE_SIZE] cltIdleCorrTable;    CLT-based idle position for simple manual idle controller;"%", 1, 0, 0, 100, 2
 
