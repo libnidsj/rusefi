@@ -161,6 +161,7 @@ public class VariableRegistryValues {
 	public static final int can_nbc_e_CAN_AIM_DASH = 12;
 	public static final int can_nbc_e_CAN_BUS_BMW_E46 = 4;
 	public static final int can_nbc_e_CAN_BUS_BMW_E90 = 6;
+	public static final int can_nbc_e_CAN_BUS_FIESTA_MK65 = 14;
 	public static final int can_nbc_e_CAN_BUS_GENESIS_COUPE = 10;
 	public static final int can_nbc_e_CAN_BUS_Haltech = 7;
 	public static final int can_nbc_e_CAN_BUS_HONDA_K = 11;
@@ -1564,7 +1565,7 @@ public class VariableRegistryValues {
 	public static final int TS_RESPONSE_UNDERRUN = 0x80;
 	public static final int TS_RESPONSE_UNRECOGNIZED_COMMAND = 0x83;
 	public static final char TS_SET_LOGGER_SWITCH = 'l';
-	public static final String TS_SIGNATURE = "rusEFI testsDG.2025.03.09.f407-discovery.3594644092";
+	public static final String TS_SIGNATURE = "rusEFI testsDG.2025.03.09.f407-discovery.3191110465";
 	public static final char TS_SIMULATE_CAN = '>';
 	public static final char TS_SINGLE_WRITE_COMMAND = 'W';
 	public static final char TS_TEST_COMMAND = 't';
