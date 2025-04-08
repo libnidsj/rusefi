@@ -5791,97 +5791,97 @@ struct persistent_config_s {
 	bool ltftEnabled : 1 {};
 	/**
 	offset 36600 bit 1 */
-	bool simpleLtftMode : 1 {};
+	bool unusedBit_93_1 : 1 {};
 	/**
 	offset 36600 bit 2 */
-	bool unusedBit_94_2 : 1 {};
+	bool unusedBit_93_2 : 1 {};
 	/**
 	offset 36600 bit 3 */
-	bool unusedBit_94_3 : 1 {};
+	bool unusedBit_93_3 : 1 {};
 	/**
 	offset 36600 bit 4 */
-	bool unusedBit_94_4 : 1 {};
+	bool unusedBit_93_4 : 1 {};
 	/**
 	offset 36600 bit 5 */
-	bool unusedBit_94_5 : 1 {};
+	bool unusedBit_93_5 : 1 {};
 	/**
 	offset 36600 bit 6 */
-	bool unusedBit_94_6 : 1 {};
+	bool unusedBit_93_6 : 1 {};
 	/**
 	offset 36600 bit 7 */
-	bool unusedBit_94_7 : 1 {};
+	bool unusedBit_93_7 : 1 {};
 	/**
 	offset 36600 bit 8 */
-	bool unusedBit_94_8 : 1 {};
+	bool unusedBit_93_8 : 1 {};
 	/**
 	offset 36600 bit 9 */
-	bool unusedBit_94_9 : 1 {};
+	bool unusedBit_93_9 : 1 {};
 	/**
 	offset 36600 bit 10 */
-	bool unusedBit_94_10 : 1 {};
+	bool unusedBit_93_10 : 1 {};
 	/**
 	offset 36600 bit 11 */
-	bool unusedBit_94_11 : 1 {};
+	bool unusedBit_93_11 : 1 {};
 	/**
 	offset 36600 bit 12 */
-	bool unusedBit_94_12 : 1 {};
+	bool unusedBit_93_12 : 1 {};
 	/**
 	offset 36600 bit 13 */
-	bool unusedBit_94_13 : 1 {};
+	bool unusedBit_93_13 : 1 {};
 	/**
 	offset 36600 bit 14 */
-	bool unusedBit_94_14 : 1 {};
+	bool unusedBit_93_14 : 1 {};
 	/**
 	offset 36600 bit 15 */
-	bool unusedBit_94_15 : 1 {};
+	bool unusedBit_93_15 : 1 {};
 	/**
 	offset 36600 bit 16 */
-	bool unusedBit_94_16 : 1 {};
+	bool unusedBit_93_16 : 1 {};
 	/**
 	offset 36600 bit 17 */
-	bool unusedBit_94_17 : 1 {};
+	bool unusedBit_93_17 : 1 {};
 	/**
 	offset 36600 bit 18 */
-	bool unusedBit_94_18 : 1 {};
+	bool unusedBit_93_18 : 1 {};
 	/**
 	offset 36600 bit 19 */
-	bool unusedBit_94_19 : 1 {};
+	bool unusedBit_93_19 : 1 {};
 	/**
 	offset 36600 bit 20 */
-	bool unusedBit_94_20 : 1 {};
+	bool unusedBit_93_20 : 1 {};
 	/**
 	offset 36600 bit 21 */
-	bool unusedBit_94_21 : 1 {};
+	bool unusedBit_93_21 : 1 {};
 	/**
 	offset 36600 bit 22 */
-	bool unusedBit_94_22 : 1 {};
+	bool unusedBit_93_22 : 1 {};
 	/**
 	offset 36600 bit 23 */
-	bool unusedBit_94_23 : 1 {};
+	bool unusedBit_93_23 : 1 {};
 	/**
 	offset 36600 bit 24 */
-	bool unusedBit_94_24 : 1 {};
+	bool unusedBit_93_24 : 1 {};
 	/**
 	offset 36600 bit 25 */
-	bool unusedBit_94_25 : 1 {};
+	bool unusedBit_93_25 : 1 {};
 	/**
 	offset 36600 bit 26 */
-	bool unusedBit_94_26 : 1 {};
+	bool unusedBit_93_26 : 1 {};
 	/**
 	offset 36600 bit 27 */
-	bool unusedBit_94_27 : 1 {};
+	bool unusedBit_93_27 : 1 {};
 	/**
 	offset 36600 bit 28 */
-	bool unusedBit_94_28 : 1 {};
+	bool unusedBit_93_28 : 1 {};
 	/**
 	offset 36600 bit 29 */
-	bool unusedBit_94_29 : 1 {};
+	bool unusedBit_93_29 : 1 {};
 	/**
 	offset 36600 bit 30 */
-	bool unusedBit_94_30 : 1 {};
+	bool unusedBit_93_30 : 1 {};
 	/**
 	offset 36600 bit 31 */
-	bool unusedBit_94_31 : 1 {};
+	bool unusedBit_93_31 : 1 {};
 	/**
 	 * units: value
 	 * offset 36604
@@ -5916,878 +5916,862 @@ struct persistent_config_s {
 	 */
 	uint8_t ltftMinCorrection;
 	/**
-	 * need 4 byte alignment
-	 * units: units
-	 * offset 36610
-	 */
-	uint8_t alignmentFill_at_36610[2] = {};
-	/**
-	 * units: %
-	 * offset 36612
-	 */
-	scaled_channel<float, 1, 1> ltftSimpleCorrection;
-	/**
-	 * units: %/s
-	 * offset 36616
-	 */
-	scaled_channel<uint16_t, 1000, 1> ltftSimpleCorrectionRatio;
-	/**
 	 * units: lambda
-	 * offset 36618
+	 * offset 36610
 	 */
 	scaled_channel<uint8_t, 147, 1> lambdaTable[FUEL_LOAD_COUNT][FUEL_RPM_COUNT] = {};
 	/**
-	 * offset 36874
+	 * offset 36866
 	 */
 	uint16_t lambdaLoadBins[FUEL_LOAD_COUNT] = {};
 	/**
 	 * units: RPM
-	 * offset 36906
+	 * offset 36898
 	 */
 	uint16_t lambdaRpmBins[FUEL_RPM_COUNT] = {};
 	/**
 	 * need 4 byte alignment
 	 * units: units
-	 * offset 36938
+	 * offset 36930
 	 */
-	uint8_t alignmentFill_at_36938[2] = {};
+	uint8_t alignmentFill_at_36930[2] = {};
 	/**
 	 * units: value
-	 * offset 36940
+	 * offset 36932
 	 */
 	float tpsTpsAccelTable[TPS_TPS_ACCEL_TABLE][TPS_TPS_ACCEL_TABLE] = {};
 	/**
 	 * units: from
-	 * offset 37196
+	 * offset 37188
 	 */
 	float tpsTpsAccelFromRpmBins[TPS_TPS_ACCEL_TABLE] = {};
 	/**
 	 * units: to
-	 * offset 37228
+	 * offset 37220
 	 */
 	float tpsTpsAccelToRpmBins[TPS_TPS_ACCEL_TABLE] = {};
 	/**
 	 * units: value
-	 * offset 37260
+	 * offset 37252
 	 */
 	float scriptTable1[SCRIPT_TABLE_8][SCRIPT_TABLE_8] = {};
 	/**
 	 * units: L
-	 * offset 37516
+	 * offset 37508
 	 */
 	int16_t scriptTable1LoadBins[SCRIPT_TABLE_8] = {};
 	/**
 	 * units: RPM
-	 * offset 37532
+	 * offset 37524
 	 */
 	int16_t scriptTable1RpmBins[SCRIPT_TABLE_8] = {};
 	/**
 	 * units: value
-	 * offset 37548
+	 * offset 37540
 	 */
 	float scriptTable2[TABLE_2_LOAD_SIZE][TABLE_2_RPM_SIZE] = {};
 	/**
 	 * units: L
-	 * offset 37804
+	 * offset 37796
 	 */
 	int16_t scriptTable2LoadBins[TABLE_2_LOAD_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 37820
+	 * offset 37812
 	 */
 	int16_t scriptTable2RpmBins[TABLE_2_RPM_SIZE] = {};
 	/**
 	 * units: value
-	 * offset 37836
+	 * offset 37828
 	 */
 	uint8_t scriptTable3[SCRIPT_TABLE_8][SCRIPT_TABLE_8] = {};
 	/**
 	 * units: L
-	 * offset 37900
+	 * offset 37892
 	 */
 	int16_t scriptTable3LoadBins[SCRIPT_TABLE_8] = {};
 	/**
 	 * units: RPM
-	 * offset 37916
+	 * offset 37908
 	 */
 	int16_t scriptTable3RpmBins[SCRIPT_TABLE_8] = {};
 	/**
 	 * units: value
-	 * offset 37932
+	 * offset 37924
 	 */
 	uint8_t scriptTable4[SCRIPT_TABLE_8][TABLE_4_RPM] = {};
 	/**
 	 * units: L
-	 * offset 38012
+	 * offset 38004
 	 */
 	int16_t scriptTable4LoadBins[SCRIPT_TABLE_8] = {};
 	/**
 	 * units: RPM
-	 * offset 38028
+	 * offset 38020
 	 */
 	int16_t scriptTable4RpmBins[TABLE_4_RPM] = {};
 	/**
-	 * offset 38048
+	 * offset 38040
 	 */
 	uint16_t ignTrimLoadBins[IGN_TRIM_SIZE] = {};
 	/**
 	 * units: rpm
-	 * offset 38056
+	 * offset 38048
 	 */
 	uint16_t ignTrimRpmBins[IGN_TRIM_SIZE] = {};
 	/**
-	 * offset 38064
+	 * offset 38056
 	 */
 	ign_cyl_trim_s ignTrims[12] = {};
 	/**
-	 * offset 38256
+	 * offset 38248
 	 */
 	uint16_t fuelTrimLoadBins[FUEL_TRIM_SIZE] = {};
 	/**
 	 * units: rpm
-	 * offset 38264
+	 * offset 38256
 	 */
 	uint16_t fuelTrimRpmBins[FUEL_TRIM_SIZE] = {};
 	/**
-	 * offset 38272
+	 * offset 38264
 	 */
 	fuel_cyl_trim_s fuelTrims[12] = {};
 	/**
 	 * units: ratio
-	 * offset 38464
+	 * offset 38456
 	 */
 	scaled_channel<uint16_t, 100, 1> crankingFuelCoefE100[CRANKING_CURVE_SIZE] = {};
 	/**
 	 * units: Airmass
-	 * offset 38480
+	 * offset 38472
 	 */
 	scaled_channel<uint8_t, 1, 5> tcu_pcAirmassBins[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38488
+	 * offset 38480
 	 */
 	uint8_t tcu_pcValsR[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38496
+	 * offset 38488
 	 */
 	uint8_t tcu_pcValsN[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38504
+	 * offset 38496
 	 */
 	uint8_t tcu_pcVals1[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38512
+	 * offset 38504
 	 */
 	uint8_t tcu_pcVals2[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38520
+	 * offset 38512
 	 */
 	uint8_t tcu_pcVals3[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38528
+	 * offset 38520
 	 */
 	uint8_t tcu_pcVals4[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38536
+	 * offset 38528
 	 */
 	uint8_t tcu_pcVals12[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38544
+	 * offset 38536
 	 */
 	uint8_t tcu_pcVals23[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38552
+	 * offset 38544
 	 */
 	uint8_t tcu_pcVals34[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38560
+	 * offset 38552
 	 */
 	uint8_t tcu_pcVals21[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38568
+	 * offset 38560
 	 */
 	uint8_t tcu_pcVals32[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: %
-	 * offset 38576
+	 * offset 38568
 	 */
 	uint8_t tcu_pcVals43[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: TPS
-	 * offset 38584
+	 * offset 38576
 	 */
 	uint8_t tcu_tccTpsBins[8] = {};
 	/**
 	 * units: MPH
-	 * offset 38592
+	 * offset 38584
 	 */
 	uint8_t tcu_tccLockSpeed[8] = {};
 	/**
 	 * units: MPH
-	 * offset 38600
+	 * offset 38592
 	 */
 	uint8_t tcu_tccUnlockSpeed[8] = {};
 	/**
 	 * units: KPH
-	 * offset 38608
+	 * offset 38600
 	 */
 	uint8_t tcu_32SpeedBins[8] = {};
 	/**
 	 * units: %
-	 * offset 38616
+	 * offset 38608
 	 */
 	uint8_t tcu_32Vals[8] = {};
 	/**
 	 * units: %
-	 * offset 38624
+	 * offset 38616
 	 */
 	scaled_channel<int8_t, 10, 1> throttle2TrimTable[ETB2_TRIM_SIZE][ETB2_TRIM_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 38660
+	 * offset 38652
 	 */
 	uint8_t throttle2TrimTpsBins[ETB2_TRIM_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 38666
+	 * offset 38658
 	 */
 	scaled_channel<uint8_t, 1, 100> throttle2TrimRpmBins[ETB2_TRIM_SIZE] = {};
 	/**
 	 * units: deg
-	 * offset 38672
+	 * offset 38664
 	 */
 	scaled_channel<uint8_t, 4, 1> maxKnockRetardTable[KNOCK_TABLE_SIZE][KNOCK_TABLE_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 38708
+	 * offset 38700
 	 */
 	uint8_t maxKnockRetardLoadBins[KNOCK_TABLE_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 38714
+	 * offset 38706
 	 */
 	scaled_channel<uint8_t, 1, 100> maxKnockRetardRpmBins[KNOCK_TABLE_SIZE] = {};
 	/**
 	 * units: deg
-	 * offset 38720
+	 * offset 38712
 	 */
 	scaled_channel<int16_t, 10, 1> ALSTimingRetardTable[ALS_SIZE][ALS_SIZE] = {};
 	/**
 	 * units: TPS
-	 * offset 38752
+	 * offset 38744
 	 */
 	uint16_t alsIgnRetardLoadBins[ALS_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 38760
+	 * offset 38752
 	 */
 	uint16_t alsIgnRetardrpmBins[ALS_SIZE] = {};
 	/**
 	 * units: percent
-	 * offset 38768
+	 * offset 38760
 	 */
 	scaled_channel<int16_t, 10, 1> ALSFuelAdjustment[ALS_SIZE][ALS_SIZE] = {};
 	/**
 	 * units: TPS
-	 * offset 38800
+	 * offset 38792
 	 */
 	uint16_t alsFuelAdjustmentLoadBins[ALS_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 38808
+	 * offset 38800
 	 */
 	uint16_t alsFuelAdjustmentrpmBins[ALS_SIZE] = {};
 	/**
 	 * units: ratio
-	 * offset 38816
+	 * offset 38808
 	 */
 	scaled_channel<int16_t, 1, 10> ALSIgnSkipTable[ALS_SIZE][ALS_SIZE] = {};
 	/**
 	 * units: TPS
-	 * offset 38848
+	 * offset 38840
 	 */
 	uint16_t alsIgnSkipLoadBins[ALS_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 38856
+	 * offset 38848
 	 */
 	uint16_t alsIgnSkiprpmBins[ALS_SIZE] = {};
 	/**
-	 * offset 38864
+	 * offset 38856
 	 */
 	blend_table_s ignBlends[IGN_BLEND_COUNT] = {};
 	/**
-	 * offset 39240
+	 * offset 39232
 	 */
 	blend_table_s veBlends[VE_BLEND_COUNT] = {};
 	/**
 	 * units: %
-	 * offset 39992
+	 * offset 39984
 	 */
 	scaled_channel<uint16_t, 10, 1> throttleEstimateEffectiveAreaBins[THR_EST_SIZE] = {};
 	/**
 	 * In units of g/s normalized to choked flow conditions
 	 * units: g/s
-	 * offset 40016
+	 * offset 40008
 	 */
 	scaled_channel<uint16_t, 10, 1> throttleEstimateEffectiveAreaValues[THR_EST_SIZE] = {};
 	/**
-	 * offset 40040
+	 * offset 40032
 	 */
 	blend_table_s boostOpenLoopBlends[BOOST_BLEND_COUNT] = {};
 	/**
-	 * offset 40416
+	 * offset 40408
 	 */
 	blend_table_s boostClosedLoopBlends[BOOST_BLEND_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40792
+	 * offset 40784
 	 */
 	float tcu_rangeP[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40816
+	 * offset 40808
 	 */
 	float tcu_rangeR[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40840
+	 * offset 40832
 	 */
 	float tcu_rangeN[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40864
+	 * offset 40856
 	 */
 	float tcu_rangeD[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40888
+	 * offset 40880
 	 */
 	float tcu_rangeM[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40912
+	 * offset 40904
 	 */
 	float tcu_rangeM3[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40936
+	 * offset 40928
 	 */
 	float tcu_rangeM2[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40960
+	 * offset 40952
 	 */
 	float tcu_rangeM1[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 40984
+	 * offset 40976
 	 */
 	float tcu_rangePlus[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 41008
+	 * offset 41000
 	 */
 	float tcu_rangeMinus[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: level
-	 * offset 41032
+	 * offset 41024
 	 */
 	float tcu_rangeLow[RANGE_INPUT_COUNT] = {};
 	/**
 	 * units: lambda
-	 * offset 41056
+	 * offset 41048
 	 */
 	scaled_channel<uint8_t, 100, 1> lambdaMaxDeviationTable[LAM_SIZE][LAM_SIZE] = {};
 	/**
-	 * offset 41072
+	 * offset 41064
 	 */
 	uint16_t lambdaMaxDeviationLoadBins[LAM_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41080
+	 * offset 41072
 	 */
 	uint16_t lambdaMaxDeviationRpmBins[LAM_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 41088
+	 * offset 41080
 	 */
 	uint8_t injectorStagingTable[INJ_STAGING_COUNT][INJ_STAGING_COUNT] = {};
 	/**
-	 * offset 41124
+	 * offset 41116
 	 */
 	uint16_t injectorStagingLoadBins[INJ_STAGING_COUNT] = {};
 	/**
 	 * units: RPM
-	 * offset 41136
+	 * offset 41128
 	 */
 	uint16_t injectorStagingRpmBins[INJ_STAGING_COUNT] = {};
 	/**
 	 * units: deg C
-	 * offset 41148
+	 * offset 41140
 	 */
 	int8_t wwCltBins[WWAE_TABLE_SIZE] = {};
 	/**
-	 * offset 41156
+	 * offset 41148
 	 */
 	scaled_channel<uint8_t, 100, 1> wwTauCltValues[WWAE_TABLE_SIZE] = {};
 	/**
-	 * offset 41164
+	 * offset 41156
 	 */
 	scaled_channel<uint8_t, 100, 1> wwBetaCltValues[WWAE_TABLE_SIZE] = {};
 	/**
 	 * units: kPa
-	 * offset 41172
+	 * offset 41164
 	 */
 	int8_t wwMapBins[WWAE_TABLE_SIZE] = {};
 	/**
-	 * offset 41180
+	 * offset 41172
 	 */
 	scaled_channel<uint8_t, 100, 1> wwTauMapValues[WWAE_TABLE_SIZE] = {};
 	/**
-	 * offset 41188
+	 * offset 41180
 	 */
 	scaled_channel<uint8_t, 100, 1> wwBetaMapValues[WWAE_TABLE_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 41196
+	 * offset 41188
 	 */
 	scaled_channel<uint8_t, 2, 1> hpfpLobeProfileQuantityBins[HPFP_LOBE_PROFILE_SIZE] = {};
 	/**
 	 * units: deg
-	 * offset 41212
+	 * offset 41204
 	 */
 	scaled_channel<uint8_t, 2, 1> hpfpLobeProfileAngle[HPFP_LOBE_PROFILE_SIZE] = {};
 	/**
 	 * units: volts
-	 * offset 41228
+	 * offset 41220
 	 */
 	uint8_t hpfpDeadtimeVoltsBins[HPFP_DEADTIME_SIZE] = {};
 	/**
 	 * units: ms
-	 * offset 41236
+	 * offset 41228
 	 */
 	scaled_channel<uint16_t, 1000, 1> hpfpDeadtimeMS[HPFP_DEADTIME_SIZE] = {};
 	/**
 	 * units: kPa
-	 * offset 41252
+	 * offset 41244
 	 */
 	uint16_t hpfpTarget[HPFP_TARGET_SIZE][HPFP_TARGET_SIZE] = {};
 	/**
 	 * units: load
-	 * offset 41452
+	 * offset 41444
 	 */
 	scaled_channel<uint16_t, 10, 1> hpfpTargetLoadBins[HPFP_TARGET_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41472
+	 * offset 41464
 	 */
 	scaled_channel<uint8_t, 1, 50> hpfpTargetRpmBins[HPFP_TARGET_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 41482
+	 * offset 41474
 	 */
 	int8_t hpfpCompensation[HPFP_COMPENSATION_SIZE][HPFP_COMPENSATION_SIZE] = {};
 	/**
 	 * units: cc/lobe
-	 * offset 41582
+	 * offset 41574
 	 */
 	scaled_channel<uint16_t, 1000, 1> hpfpCompensationLoadBins[HPFP_COMPENSATION_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41602
+	 * offset 41594
 	 */
 	scaled_channel<uint8_t, 1, 50> hpfpCompensationRpmBins[HPFP_COMPENSATION_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41612
+	 * offset 41604
 	 */
 	uint16_t knockNoiseRpmBins[ENGINE_NOISE_CURVE_SIZE] = {};
 	/**
 	 * Knock sensor output knock detection threshold depending on current RPM.
 	 * units: dB
-	 * offset 41644
+	 * offset 41636
 	 */
 	scaled_channel<int8_t, 2, 1> knockBaseNoise[ENGINE_NOISE_CURVE_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41660
+	 * offset 41652
 	 */
 	scaled_channel<uint8_t, 1, 50> tpsTspCorrValuesBins[TPS_TPS_ACCEL_RPM_CORR_TABLE] = {};
 	/**
 	 * units: multiplier
-	 * offset 41664
+	 * offset 41656
 	 */
 	scaled_channel<uint8_t, 50, 1> tpsTspCorrValues[TPS_TPS_ACCEL_RPM_CORR_TABLE] = {};
 	/**
 	 * units: C
-	 * offset 41668
+	 * offset 41660
 	 */
 	scaled_channel<uint8_t, 1, 1> tpsAcelEctBins[TPS_TPS_ACCEL_CLT_CORR_TABLE] = {};
 	/**
 	 * units: multiplier
-	 * offset 41676
+	 * offset 41668
 	 */
 	scaled_channel<uint8_t, 50, 1> tpsAcelEctValues[TPS_TPS_ACCEL_CLT_CORR_TABLE] = {};
 	/**
 	 * units: C
-	 * offset 41684
+	 * offset 41676
 	 */
 	int8_t cltRevLimitRpmBins[CLT_LIMITER_CURVE_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41688
+	 * offset 41680
 	 */
 	uint16_t cltRevLimitRpm[CLT_LIMITER_CURVE_SIZE] = {};
 	/**
 	 * units: volt
-	 * offset 41696
+	 * offset 41688
 	 */
 	scaled_channel<uint16_t, 1000, 1> fuelLevelBins[FUEL_LEVEL_TABLE_COUNT] = {};
 	/**
 	 * units: %
-	 * offset 41712
+	 * offset 41704
 	 */
 	uint8_t fuelLevelValues[FUEL_LEVEL_TABLE_COUNT] = {};
 	/**
 	 * units: volts
-	 * offset 41720
+	 * offset 41712
 	 */
 	scaled_channel<uint8_t, 10, 1> dwellVoltageCorrVoltBins[DWELL_CURVE_SIZE] = {};
 	/**
 	 * units: multiplier
-	 * offset 41728
+	 * offset 41720
 	 */
 	scaled_channel<uint8_t, 50, 1> dwellVoltageCorrValues[DWELL_CURVE_SIZE] = {};
 	/**
 	 * units: %
-	 * offset 41736
+	 * offset 41728
 	 */
 	scaled_channel<uint8_t, 1, 1> tcu_shiftTpsBins[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41744
+	 * offset 41736
 	 */
 	uint8_t tcu_shiftSpeed12[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41752
+	 * offset 41744
 	 */
 	uint8_t tcu_shiftSpeed23[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41760
+	 * offset 41752
 	 */
 	uint8_t tcu_shiftSpeed34[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41768
+	 * offset 41760
 	 */
 	uint8_t tcu_shiftSpeed21[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41776
+	 * offset 41768
 	 */
 	uint8_t tcu_shiftSpeed32[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: MPH
-	 * offset 41784
+	 * offset 41776
 	 */
 	uint8_t tcu_shiftSpeed43[TCU_TABLE_WIDTH] = {};
 	/**
 	 * units: ms
-	 * offset 41792
+	 * offset 41784
 	 */
 	float tcu_shiftTime;
 	/**
 	 * units: Volts
-	 * offset 41796
+	 * offset 41788
 	 */
 	scaled_channel<int16_t, 10, 1> alternatorVoltageTargetTable[ALTERNATOR_VOLTAGE_TARGET_SIZE][ALTERNATOR_VOLTAGE_TARGET_SIZE] = {};
 	/**
 	 * units: Load
-	 * offset 41828
+	 * offset 41820
 	 */
 	uint16_t alternatorVoltageTargetLoadBins[ALTERNATOR_VOLTAGE_TARGET_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 41836
+	 * offset 41828
 	 */
 	uint16_t alternatorVoltageTargetRpmBins[ALTERNATOR_VOLTAGE_TARGET_SIZE] = {};
 	/**
 	 * units: C
-	 * offset 41844
+	 * offset 41836
 	 */
 	float cltBoostCorrBins[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: ratio
-	 * offset 41864
+	 * offset 41856
 	 */
 	float cltBoostCorr[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: C
-	 * offset 41884
+	 * offset 41876
 	 */
 	float iatBoostCorrBins[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: ratio
-	 * offset 41904
+	 * offset 41896
 	 */
 	float iatBoostCorr[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: C
-	 * offset 41924
+	 * offset 41916
 	 */
 	float cltBoostAdderBins[BOOST_CURVE_SIZE] = {};
 	/**
-	 * offset 41944
+	 * offset 41936
 	 */
 	float cltBoostAdder[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: C
-	 * offset 41964
+	 * offset 41956
 	 */
 	float iatBoostAdderBins[BOOST_CURVE_SIZE] = {};
 	/**
-	 * offset 41984
+	 * offset 41976
 	 */
 	float iatBoostAdder[BOOST_CURVE_SIZE] = {};
 	/**
 	 * units: RPM
-	 * offset 42004
+	 * offset 41996
 	 */
 	scaled_channel<uint8_t, 1, 100> minimumOilPressureBins[8] = {};
 	/**
 	 * units: kPa
-	 * offset 42012
+	 * offset 42004
 	 */
 	scaled_channel<uint8_t, 1, 10> minimumOilPressureValues[8] = {};
 	/**
-	 * offset 42020
+	 * offset 42012
 	 */
 	blend_table_s targetAfrBlends[TARGET_AFR_BLEND_COUNT] = {};
 	/**
 	 * units: RPM
-	 * offset 42396
+	 * offset 42388
 	 */
 	scaled_channel<uint8_t, 1, 100> trimRpmBins[FUEL_TRIM_RPM_COUNT] = {};
 	/**
-	 * offset 42404
+	 * offset 42396
 	 */
 	uint16_t trimLoadBins[FUEL_TRIM_LOAD_COUNT] = {};
 	/**
 	 * @@DYNO_RPM_STEP_TOOLTIP@@
 	 * units: Rpm
-	 * offset 42420
+	 * offset 42412
 	 */
 	scaled_channel<uint8_t, 1, 1> dynoRpmStep;
 	/**
 	 * @@DYNO_SAE_TEMPERATURE_C_TOOLTIP@@
 	 * units: C
-	 * offset 42421
+	 * offset 42413
 	 */
 	scaled_channel<int8_t, 1, 1> dynoSaeTemperatureC;
 	/**
 	 * @@DYNO_SAE_RELATIVE_HUMIDITY_TOOLTIP@@
 	 * units: %
-	 * offset 42422
+	 * offset 42414
 	 */
 	scaled_channel<uint8_t, 1, 1> dynoSaeRelativeHumidity;
 	/**
 	 * need 4 byte alignment
 	 * units: units
-	 * offset 42423
+	 * offset 42415
 	 */
-	uint8_t alignmentFill_at_42423[1] = {};
+	uint8_t alignmentFill_at_42415[1] = {};
 	/**
 	 * @@DYNO_SAE_BARO_TOOLTIP@@
 	 * units: KPa
-	 * offset 42424
+	 * offset 42416
 	 */
 	scaled_channel<float, 1, 1> dynoSaeBaro;
 	/**
 	 * @@DYNO_CAR_WHEEL_DIA_INCH_TOOLTIP@@
 	 * units: Inch
-	 * offset 42428
+	 * offset 42420
 	 */
 	scaled_channel<int8_t, 1, 1> dynoCarWheelDiaInch;
 	/**
 	 * @@DYNO_CAR_WHEEL_ASPECT_RATIO_TOOLTIP@@
 	 * units: Aspect Ratio (height)
-	 * offset 42429
+	 * offset 42421
 	 */
 	scaled_channel<int8_t, 1, 1> dynoCarWheelAspectRatio;
 	/**
 	 * @@DYNO_CAR_WHEEL_TIRE_WIDTH_TOOLTIP@@
 	 * units: Width mm
-	 * offset 42430
+	 * offset 42422
 	 */
 	scaled_channel<int16_t, 1, 1> dynoCarWheelTireWidthMm;
 	/**
 	 * @@DYNO_CAR_GEAR_PRIMARY_REDUCTION_TOOLTIP@@
 	 * units: Units
-	 * offset 42432
+	 * offset 42424
 	 */
 	scaled_channel<float, 1, 1> dynoCarGearPrimaryReduction;
 	/**
 	 * @@DYNO_CAR_GEAR_RATIO_TOOLTIP@@
 	 * units: Units
-	 * offset 42436
+	 * offset 42428
 	 */
 	scaled_channel<float, 1, 1> dynoCarGearRatio;
 	/**
 	 * @@DYNO_CAR_GEAR_FINAL_DRIVE_TOOLTIP@@
 	 * units: Units
-	 * offset 42440
+	 * offset 42432
 	 */
 	scaled_channel<float, 1, 1> dynoCarGearFinalDrive;
 	/**
 	 * @@DYNO_CAR_CAR_MASS_TOOLTIP@@
 	 * units: Kg
-	 * offset 42444
+	 * offset 42436
 	 */
 	scaled_channel<int16_t, 1, 1> dynoCarCarMassKg;
 	/**
 	 * @@DYNO_CAR_CARGO_MASS_TOOLTIP@@
 	 * units: Kg
-	 * offset 42446
+	 * offset 42438
 	 */
 	scaled_channel<int16_t, 1, 1> dynoCarCargoMassKg;
 	/**
 	 * @@DYNO_CAR_COEFF_OF_DRAG_TOOLTIP@@
 	 * units: Coeff
-	 * offset 42448
+	 * offset 42440
 	 */
 	scaled_channel<float, 1, 1> dynoCarCoeffOfDrag;
 	/**
 	 * @@DYNO_CAR_FRONTAL_AREA_TOOLTIP@@
 	 * units: m2
-	 * offset 42452
+	 * offset 42444
 	 */
 	scaled_channel<float, 1, 1> dynoCarFrontalAreaM2;
 	/**
 	 * units: deg
-	 * offset 42456
+	 * offset 42448
 	 */
 	scaled_channel<int8_t, 10, 1> trailingSparkTable[TRAILING_SPARK_SIZE][TRAILING_SPARK_SIZE] = {};
 	/**
 	 * units: rpm
-	 * offset 42472
+	 * offset 42464
 	 */
 	scaled_channel<uint8_t, 1, 50> trailingSparkRpmBins[TRAILING_SPARK_SIZE] = {};
 	/**
 	 * units: Load
-	 * offset 42476
+	 * offset 42468
 	 */
 	scaled_channel<uint8_t, 1, 5> trailingSparkLoadBins[TRAILING_SPARK_SIZE] = {};
 	/**
-	offset 42480 bit 0 */
+	offset 42472 bit 0 */
 	bool boardUseTempPullUp : 1 {};
 	/**
-	offset 42480 bit 1 */
-	bool unusedBit_286_1 : 1 {};
+	offset 42472 bit 1 */
+	bool unusedBit_283_1 : 1 {};
 	/**
-	offset 42480 bit 2 */
-	bool unusedBit_286_2 : 1 {};
+	offset 42472 bit 2 */
+	bool unusedBit_283_2 : 1 {};
 	/**
-	offset 42480 bit 3 */
-	bool unusedBit_286_3 : 1 {};
+	offset 42472 bit 3 */
+	bool unusedBit_283_3 : 1 {};
 	/**
-	offset 42480 bit 4 */
-	bool unusedBit_286_4 : 1 {};
+	offset 42472 bit 4 */
+	bool unusedBit_283_4 : 1 {};
 	/**
-	offset 42480 bit 5 */
-	bool unusedBit_286_5 : 1 {};
+	offset 42472 bit 5 */
+	bool unusedBit_283_5 : 1 {};
 	/**
-	offset 42480 bit 6 */
-	bool unusedBit_286_6 : 1 {};
+	offset 42472 bit 6 */
+	bool unusedBit_283_6 : 1 {};
 	/**
-	offset 42480 bit 7 */
-	bool unusedBit_286_7 : 1 {};
+	offset 42472 bit 7 */
+	bool unusedBit_283_7 : 1 {};
 	/**
-	offset 42480 bit 8 */
-	bool unusedBit_286_8 : 1 {};
+	offset 42472 bit 8 */
+	bool unusedBit_283_8 : 1 {};
 	/**
-	offset 42480 bit 9 */
-	bool unusedBit_286_9 : 1 {};
+	offset 42472 bit 9 */
+	bool unusedBit_283_9 : 1 {};
 	/**
-	offset 42480 bit 10 */
-	bool unusedBit_286_10 : 1 {};
+	offset 42472 bit 10 */
+	bool unusedBit_283_10 : 1 {};
 	/**
-	offset 42480 bit 11 */
-	bool unusedBit_286_11 : 1 {};
+	offset 42472 bit 11 */
+	bool unusedBit_283_11 : 1 {};
 	/**
-	offset 42480 bit 12 */
-	bool unusedBit_286_12 : 1 {};
+	offset 42472 bit 12 */
+	bool unusedBit_283_12 : 1 {};
 	/**
-	offset 42480 bit 13 */
-	bool unusedBit_286_13 : 1 {};
+	offset 42472 bit 13 */
+	bool unusedBit_283_13 : 1 {};
 	/**
-	offset 42480 bit 14 */
-	bool unusedBit_286_14 : 1 {};
+	offset 42472 bit 14 */
+	bool unusedBit_283_14 : 1 {};
 	/**
-	offset 42480 bit 15 */
-	bool unusedBit_286_15 : 1 {};
+	offset 42472 bit 15 */
+	bool unusedBit_283_15 : 1 {};
 	/**
-	offset 42480 bit 16 */
-	bool unusedBit_286_16 : 1 {};
+	offset 42472 bit 16 */
+	bool unusedBit_283_16 : 1 {};
 	/**
-	offset 42480 bit 17 */
-	bool unusedBit_286_17 : 1 {};
+	offset 42472 bit 17 */
+	bool unusedBit_283_17 : 1 {};
 	/**
-	offset 42480 bit 18 */
-	bool unusedBit_286_18 : 1 {};
+	offset 42472 bit 18 */
+	bool unusedBit_283_18 : 1 {};
 	/**
-	offset 42480 bit 19 */
-	bool unusedBit_286_19 : 1 {};
+	offset 42472 bit 19 */
+	bool unusedBit_283_19 : 1 {};
 	/**
-	offset 42480 bit 20 */
-	bool unusedBit_286_20 : 1 {};
+	offset 42472 bit 20 */
+	bool unusedBit_283_20 : 1 {};
 	/**
-	offset 42480 bit 21 */
-	bool unusedBit_286_21 : 1 {};
+	offset 42472 bit 21 */
+	bool unusedBit_283_21 : 1 {};
 	/**
-	offset 42480 bit 22 */
-	bool unusedBit_286_22 : 1 {};
+	offset 42472 bit 22 */
+	bool unusedBit_283_22 : 1 {};
 	/**
-	offset 42480 bit 23 */
-	bool unusedBit_286_23 : 1 {};
+	offset 42472 bit 23 */
+	bool unusedBit_283_23 : 1 {};
 	/**
-	offset 42480 bit 24 */
-	bool unusedBit_286_24 : 1 {};
+	offset 42472 bit 24 */
+	bool unusedBit_283_24 : 1 {};
 	/**
-	offset 42480 bit 25 */
-	bool unusedBit_286_25 : 1 {};
+	offset 42472 bit 25 */
+	bool unusedBit_283_25 : 1 {};
 	/**
-	offset 42480 bit 26 */
-	bool unusedBit_286_26 : 1 {};
+	offset 42472 bit 26 */
+	bool unusedBit_283_26 : 1 {};
 	/**
-	offset 42480 bit 27 */
-	bool unusedBit_286_27 : 1 {};
+	offset 42472 bit 27 */
+	bool unusedBit_283_27 : 1 {};
 	/**
-	offset 42480 bit 28 */
-	bool unusedBit_286_28 : 1 {};
+	offset 42472 bit 28 */
+	bool unusedBit_283_28 : 1 {};
 	/**
-	offset 42480 bit 29 */
-	bool unusedBit_286_29 : 1 {};
+	offset 42472 bit 29 */
+	bool unusedBit_283_29 : 1 {};
 	/**
-	offset 42480 bit 30 */
-	bool unusedBit_286_30 : 1 {};
+	offset 42472 bit 30 */
+	bool unusedBit_283_30 : 1 {};
 	/**
-	offset 42480 bit 31 */
-	bool unusedBit_286_31 : 1 {};
+	offset 42472 bit 31 */
+	bool unusedBit_283_31 : 1 {};
 };
-static_assert(sizeof(persistent_config_s) == 42484);
+static_assert(sizeof(persistent_config_s) == 42476);
 
 // end
 // this section was generated automatically by rusEFI tool config_definition-all.jar based on (unknown script) integration/rusefi_config.txt
