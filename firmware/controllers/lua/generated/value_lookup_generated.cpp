@@ -530,6 +530,9 @@ float getConfigValueByName(const char *name) {
 // enableAemXSeries
 		case 259909218:
 			return engineConfiguration->enableAemXSeries;
+// sanderoPumpSpeed
+		case -955542108:
+			return engineConfiguration->sanderoPumpSpeed;
 // modeledFlowIdle
 		case 600643125:
 			return engineConfiguration->modeledFlowIdle;
@@ -2906,6 +2909,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case 259909218:
 	{
 		engineConfiguration->enableAemXSeries = (int)value;
+		return 1;
+	}
+		case -955542108:
+	{
+		engineConfiguration->sanderoPumpSpeed = (int)value;
 		return 1;
 	}
 		case 600643125:
