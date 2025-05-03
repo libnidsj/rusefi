@@ -2130,7 +2130,7 @@ ww_adapt ww_adapt
 
 #define ltit_size 8
 
-struct 
+struct ltit_config
     bit ltitEnabled
     float[ltit_size] ltitRpmBins;"RPM Bins for LTIT";"RPM", 1, 0, 0, 18000, 0
     float[ltit_size] ltitCltBins;"CLT Bins for LTIT";"C",1, 0, -40, 120, 2
