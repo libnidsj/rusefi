@@ -96,7 +96,7 @@
 ! This is the version of the data stored in flash configuration
 ! Any time an incompatible change is made to the configuration format stored in flash,
 ! update this string to the current date!
-#define FLASH_DATA_VERSION 250408
+#define FLASH_DATA_VERSION 250503
 
 ! all the sub-structures are going to be nested within the primary structure, that's
 ! needed to get a proper TunerStudio file
@@ -2112,6 +2112,48 @@ end_struct
 blend_table_s[IGN_BLEND_COUNT iterate] ignBlends
 blend_table_s[VE_BLEND_COUNT iterate] veBlends
 
+struct ww_adapt
+	bit wwAdaptEnable; ; "Enable Wall Wetting Adaptation"
+
+	float wwAdaptLambdaOnThreshold; "lambda", 4, 4, 0.01, 0.5, 0.05; "Lambda threshold to start adaptation"
+	float wwAdaptLambdaOffThreshold; "lambda", 4, 4, 0.005, 0.25, 0.02; "Lambda threshold to stop adaptation"
+	float wwAdaptPmanThreshold; "kPa", 4, 4, 1, 100, 10; "Manifold pressure change threshold"
+
+	float wwAdaptGain; "ratio", 4, 4, 0, 1, 0.1; "Adaptation gain (low-pass filter)"
+
+	! Sensor/transport delay estimation (ms vs RPM)
+	float wwAdaptDelayRpmBins[8]; ; "RPM Bins for Delay Table"
+	float wwAdaptDelayValues[8]; "ms"; "Delay Values (ms)"
+
+	! Global Correction Factors (read-only for now, updated by algorithm)
+	float wwAdaptTauCorrection; "ratio", 4, 4, -1, 1, 0; "Tau Correction Factor (Read Only)"
+	float wwAdaptXCorrection; "ratio", 4, 4, -1, 1, 0; "X (Beta) Correction Factor (Read Only)"
+
+end_struct
+
+struct ltit_config
+    ! Configuração Geral
+    bit ltitEnabled; ; "Habilitar Correção de Longo Prazo da Marcha Lenta (LTIT)"
+
+    ! Tabela de Correção (Aditiva, em % de posição/duty cycle)
+    float ltitRpmBins[8]; ; "RPM Bins para Tabela LTIT"
+    float ltitCltBins[8]; ; "CLT Bins para Tabela LTIT"
+    float ltitTable[8][8]; "%", 2, 2, -25, 25, 0; "Tabela de Correção LTIT (% Aditivo)"
+
+    ! Condições de Aprendizagem
+    float ltitMinRpm; "RPM", 0, 0, 0, 8000, 500; "RPM Mínimo para Aprendizagem LTIT"
+    float ltitMaxRpm; "RPM", 0, 0, 0, 8000, 2000; "RPM Máximo para Aprendizagem LTIT"
+    float ltitMaxRpmError; "RPM", 0, 1, 0, 500, 50; "Erro Máximo de RPM (vs Alvo) para Aprendizagem"
+    float ltitMinTimeInCell; "s", 0, 1, 0, 60, 5; "Tempo Mínimo na Célula para Aprendizagem"
+    bit ltitDisableWithAc; ; "Desabilitar Aprendizagem com Ar Condicionado Ligado"
+    bit ltitDisableWithFan; ; "Desabilitar Aprendizagem com Ventoinha Ligada"
+
+    ! Limites de Aprendizagem
+    float ltitMaxCorrectionRate; "%/s", 0, 2, 0, 10, 0.5; "Taxa Máxima de Correção por Segundo"
+    float ltitUpdateInterval; "s", 0, 1, 0.1, 60, 1; "Intervalo Mínimo entre Atualizações da Tabela"
+
+end_struct
+
 #define THR_EST_SIZE 12
 
 uint16_t[THR_EST_SIZE] autoscale throttleEstimateEffectiveAreaBins;;"%", 0.1, 0, 0, 100, 1
@@ -2654,4 +2696,3 @@ end_struct
 
 #define CAN_ECU_SERIAL_RX_ID 0x710
 #define CAN_ECU_SERIAL_TX_ID 0x720
-

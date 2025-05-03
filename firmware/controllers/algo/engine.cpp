@@ -17,6 +17,7 @@
 #include "speed_density.h"
 #include "advance_map.h"
 #include "init.h"
+#include "wall_fuel_adapter.h" // Include wall fuel adapter
 
 #include "rusefi_wideband.h"
 #include "aux_valves.h"
@@ -144,6 +145,9 @@ PUBLIC_API_WEAK void boardPeriodicSlowCallback() {
 
 void Engine::periodicSlowCallback() {
 	ScopePerf perf(PE::EnginePeriodicSlowCallback);
+
+	// Run wall fuel adaptation task
+	getWallFuelAdapter()->PeriodicTask();
 
 #if EFI_CAN_SUPPORT
   if (engineConfiguration->suppressWboWorkaround7048) {

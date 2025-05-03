@@ -6,6 +6,9 @@
 
 #include "pch.h"
 #include "wall_fuel.h"
+#include "wall_fuel_adapter.h" // Include the adapter header
+#include "engine.h" // Include engine for engineConfiguration access
+#include "sensor.h" // Include sensor for Sensor access
 
 void WallFuel::resetWF() {
 	wallFuel = 0;
@@ -88,6 +91,10 @@ float WallFuelController::computeTau() const {
 		config->wwTauCltValues
 	);
 
+	// Apply adaptation correction
+	float tauCorrection = getWallFuelAdapter()->getTauCorrection();
+	 tau *= (1.0f + tauCorrection);
+
 	// If you have a MAP sensor, apply MAP correction
 	if (Sensor::hasSensor(SensorType::Map)) {
 		auto map = Sensor::get(SensorType::Map).value_or(60);
@@ -116,6 +123,10 @@ float WallFuelController::computeBeta() const {
 		config->wwCltBins,
 		config->wwBetaCltValues
 	);
+
+	// Apply adaptation correction
+	float xCorrection = getWallFuelAdapter()->getXCorrection();
+	 beta *= (1.0f + xCorrection);
 
 	// If you have a MAP sensor, apply MAP correction
 	if (Sensor::hasSensor(SensorType::Map)) {

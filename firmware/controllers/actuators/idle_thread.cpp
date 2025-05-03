@@ -15,6 +15,7 @@
 #if EFI_IDLE_CONTROL
 #include "idle_thread.h"
 #include "idle_hardware.h"
+#include "long_term_idle_trim.h" // Include LTIT header
 
 #include "dc_motors.h"
 
@@ -338,6 +339,13 @@ float IdleController::getIdlePosition(float rpm) {
 			// Always apply open loop correction
 		percent_t iacPosition = getOpenLoop(phase, rpm, clt, tps, crankingTaper);
 			baseIdlePosition = iacPosition;
+
+			// Apply Long-Term Idle Trim (LTIT) correction
+			float ltitCorrection = engine->module<LongTermIdleTrim>()->getLtitCorrection(rpm, clt);
+			// TODO: Add output channel for ltitCorrection?
+			// engine->outputChannels.ltitCorrection = ltitCorrection;
+			// Additive correction
+			 iacPosition += ltitCorrection;
 
 			useClosedLoop = tps.Valid && engineConfiguration->idleMode == IM_AUTO;
 			// If TPS is working and automatic mode enabled, add any closed loop correction

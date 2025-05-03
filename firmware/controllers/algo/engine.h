@@ -61,6 +61,7 @@
 #include "vvt.h"
 #include "trip_odometer.h"
 #include "closed_loop_fuel.h"
+#include "long_term_idle_trim.h" // Include LTIT header
 #include "electronic_throttle_generated.h"
 
 #include <functional>
@@ -179,6 +180,7 @@ public:
 		TpsAccelEnrichment,
 		TpsAccelEnrichmentAutoTune,
 		LongTermFuelTrim,
+		LongTermIdleTrim, // Add LTIT module instance
 #if EFI_LAUNCH_CONTROL
         NitrousController,
 #endif // EFI_LAUNCH_CONTROL
