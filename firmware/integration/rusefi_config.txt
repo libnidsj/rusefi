@@ -2115,34 +2115,34 @@ blend_table_s[VE_BLEND_COUNT iterate] veBlends
 struct ww_adapt
 	bit wwAdaptEnable
 
-	float wwAdaptLambdaOnThreshold;"Lambda threshold to start adaptation";"lambda", 4, 4, 0.01, 0.5, 0.05
-	float wwAdaptLambdaOffThreshold;"Lambda threshold to stop adaptation";"lambda", 4, 4, 0.005, 0.25, 0.02
-	float wwAdaptPmanThreshold;"Manifold pressure change threshold";"kPa", 4, 4, 1, 100, 10
+	float wwAdaptLambdaOnThreshold;"Lambda threshold to start adaptation";"lambda", 1, 0, 0.01, 0.5, 3
+	float wwAdaptLambdaOffThreshold;"Lambda threshold to stop adaptation";"lambda", 1, 0, 0.005, 0.25, 3
+	float wwAdaptPmanThreshold;"Manifold pressure change threshold";"kPa", 1, 0, 0, 100, 1
 
-	float wwAdaptGain;"Adaptation gain (low-pass filter)";"ratio", 4, 4, 0, 1, 0.1
+	float wwAdaptGain;"Adaptation gain (low-pass filter)";"ratio", 1, 0, 0, 1, 3
 
-	float wwAdaptDelayRpmBins[8]; "RPM Bins for Delay Table"; "RPM", 1, 0, 0, 18000, 0
-	float wwAdaptDelayValues[8]; "Delay Values (ms)"; "ms", 1, 0, 0, 18000, 0
+	float wwAdaptDelayRpmBins[8]; "RPM Bins for Delay Table"; "RPM", 1, 0, 0, 18000, 1
+	float wwAdaptDelayValues[8]; "Delay Values (ms)"; "ms", 1, 0, 0, 18000, 1
 
-	float wwAdaptTauCorrection;"Tau Correction Factor (Read Only)"; "ratio", 4, 4, -1, 1, 0
-	float wwAdaptXCorrection;"X (Beta) Correction Factor (Read Only)"; "ratio", 4, 4, -1, 1, 0
+	float wwAdaptTauCorrection;"Tau Correction Factor (Read Only)"; "ratio", 1, 0, -1, 1, 3
+	float wwAdaptXCorrection;"X (Beta) Correction Factor (Read Only)"; "ratio", 1, 0, -1, 1, 3
 
 end_struct
 
 struct ltit_config
     bit ltitEnabled
-    float ltitRpmBins[8];"RPM Bins para Tabela LTIT"; "RPM", 1, 0, 0, 18000, 0
-    float ltitCltBins[8]; ; "CLT Bins para Tabela LTIT" ; 1, 0, -40, 120, 1
-    float ltitTable[8][8];  "Tabela de Correção LTIT (% Aditivo)"; "%", 2, 2, -25, 25, 0
+    float ltitRpmBins[8];"RPM Bins para Tabela LTIT"; "RPM", 1, 0, 0, 18000, 1
+    float ltitCltBins[8]; ; "CLT Bins para Tabela LTIT" ; 1, 0, -40, 120, 2
+    float ltitTable[8][8];  "Tabela de Correção LTIT (% Aditivo)"; "%", 1, 0, -25, 25, 2
 	
-    float ltitMinRpm;"RPM Mínimo para Aprendizagem LTIT"; "RPM", 0, 0, 0, 8000, 500
-    float ltitMaxRpm;"RPM Máximo para Aprendizagem LTIT"; "RPM", 0, 0, 0, 8000, 2000
-    float ltitMaxRpmError;"Erro Máximo de RPM (vs Alvo) para Aprendizagem"; "RPM", 0, 1, 0, 500, 50
-    float ltitMinTimeInCell;"Tempo Mínimo na Célula para Aprendizagem"; "s", 0, 1, 0, 60, 5
+    float ltitMinRpm;"RPM Mínimo para Aprendizagem LTIT"; "RPM", 1, 0, 0, 8000, 1
+    float ltitMaxRpm;"RPM Máximo para Aprendizagem LTIT"; "RPM", 1, 0, 0, 8000, 1
+    float ltitMaxRpmError;"Erro Máximo de RPM (vs Alvo) para Aprendizagem"; "RPM", 1, 0, 0, 500, 1
+    float ltitMinTimeInCell;"Tempo Mínimo na Célula para Aprendizagem"; "s", 1, 0, 0, 60, 2
     bit ltitDisableWithAc
     bit ltitDisableWithFan
-    float ltitMaxCorrectionRate;"Taxa Máxima de Correção por Segundo"; "%/s", 0, 2, 0, 10, 0.5
-    float ltitUpdateInterval;"Intervalo Mínimo entre Atualizações da Tabela"; "s", 0, 1, 0.1, 60, 1
+    float ltitMaxCorrectionRate;"Taxa Máxima de Correção por Segundo"; "%/s", 1, 0, 0, 10, 2
+    float ltitUpdateInterval;"Intervalo Mínimo entre Atualizações da Tabela"; "s", 1, 0, 0.1, 60, 3
 
 end_struct
 
