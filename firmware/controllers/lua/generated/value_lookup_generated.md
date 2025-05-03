@@ -1978,6 +1978,54 @@ How much long term fuel trim should act to reduce short term fuel trim, 100 shou
 ### ltftMinCorrection
 
 
+### ww_adapt.wwAdaptEnable
+
+
+### ww_adapt.wwAdaptLambdaOnThreshold
+"Lambda threshold to start adaptation"
+
+### ww_adapt.wwAdaptLambdaOffThreshold
+"Lambda threshold to stop adaptation"
+
+### ww_adapt.wwAdaptPmanThreshold
+"Manifold pressure change threshold"
+
+### ww_adapt.wwAdaptGain
+"Adaptation gain (low-pass filter)"
+
+### ww_adapt.wwAdaptTauCorrection
+"Tau Correction Factor (Read Only)"
+
+### ww_adapt.wwAdaptXCorrection
+"X (Beta) Correction Factor (Read Only)"
+
+### ltit_config.ltitEnabled
+
+
+### ltit_config.ltitMinRpm
+"LTIT min RPM"
+
+### ltit_config.ltitMaxRpm
+"LTIT max RPM"
+
+### ltit_config.ltitMaxRpmError
+"Max RPM error"
+
+### ltit_config.ltitMinTimeInCell
+"Minimum time in cell"
+
+### ltit_config.ltitDisableWithAc
+
+
+### ltit_config.ltitDisableWithFan
+
+
+### ltit_config.ltitMaxCorrectionRate
+"Max correction rate"
+
+### ltit_config.ltitUpdateInterval
+"Update interval"
+
 ### tcu_shiftTime
 
 

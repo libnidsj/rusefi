@@ -1985,6 +1985,54 @@ float getConfigValueByName(const char *name) {
 // ltftMinCorrection
 		case -1987127141:
 			return config->ltftMinCorrection;
+// ww_adapt.wwAdaptEnable
+		case -984235511:
+			return config->ww_adapt.wwAdaptEnable;
+// ww_adapt.wwAdaptLambdaOnThreshold
+		case 664737805:
+			return config->ww_adapt.wwAdaptLambdaOnThreshold;
+// ww_adapt.wwAdaptLambdaOffThreshold
+		case -1139040981:
+			return config->ww_adapt.wwAdaptLambdaOffThreshold;
+// ww_adapt.wwAdaptPmanThreshold
+		case 302375579:
+			return config->ww_adapt.wwAdaptPmanThreshold;
+// ww_adapt.wwAdaptGain
+		case -1771681727:
+			return config->ww_adapt.wwAdaptGain;
+// ww_adapt.wwAdaptTauCorrection
+		case 904700900:
+			return config->ww_adapt.wwAdaptTauCorrection;
+// ww_adapt.wwAdaptXCorrection
+		case -1313574158:
+			return config->ww_adapt.wwAdaptXCorrection;
+// ltit_config.ltitEnabled
+		case 1726811341:
+			return config->ltit_config.ltitEnabled;
+// ltit_config.ltitMinRpm
+		case -30485675:
+			return config->ltit_config.ltitMinRpm;
+// ltit_config.ltitMaxRpm
+		case -39613673:
+			return config->ltit_config.ltitMaxRpm;
+// ltit_config.ltitMaxRpmError
+		case 1973236545:
+			return config->ltit_config.ltitMaxRpmError;
+// ltit_config.ltitMinTimeInCell
+		case 1729321996:
+			return config->ltit_config.ltitMinTimeInCell;
+// ltit_config.ltitDisableWithAc
+		case -277808266:
+			return config->ltit_config.ltitDisableWithAc;
+// ltit_config.ltitDisableWithFan
+		case -577732697:
+			return config->ltit_config.ltitDisableWithFan;
+// ltit_config.ltitMaxCorrectionRate
+		case -1158620788:
+			return config->ltit_config.ltitMaxCorrectionRate;
+// ltit_config.ltitUpdateInterval
+		case 1214020202:
+			return config->ltit_config.ltitUpdateInterval;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -5334,6 +5382,86 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1987127141:
 	{
 		config->ltftMinCorrection = (int)value;
+		return 1;
+	}
+		case -984235511:
+	{
+		config->ww_adapt.wwAdaptEnable = (int)value;
+		return 1;
+	}
+		case 664737805:
+	{
+		config->ww_adapt.wwAdaptLambdaOnThreshold = value;
+		return 1;
+	}
+		case -1139040981:
+	{
+		config->ww_adapt.wwAdaptLambdaOffThreshold = value;
+		return 1;
+	}
+		case 302375579:
+	{
+		config->ww_adapt.wwAdaptPmanThreshold = value;
+		return 1;
+	}
+		case -1771681727:
+	{
+		config->ww_adapt.wwAdaptGain = value;
+		return 1;
+	}
+		case 904700900:
+	{
+		config->ww_adapt.wwAdaptTauCorrection = value;
+		return 1;
+	}
+		case -1313574158:
+	{
+		config->ww_adapt.wwAdaptXCorrection = value;
+		return 1;
+	}
+		case 1726811341:
+	{
+		config->ltit_config.ltitEnabled = (int)value;
+		return 1;
+	}
+		case -30485675:
+	{
+		config->ltit_config.ltitMinRpm = value;
+		return 1;
+	}
+		case -39613673:
+	{
+		config->ltit_config.ltitMaxRpm = value;
+		return 1;
+	}
+		case 1973236545:
+	{
+		config->ltit_config.ltitMaxRpmError = value;
+		return 1;
+	}
+		case 1729321996:
+	{
+		config->ltit_config.ltitMinTimeInCell = value;
+		return 1;
+	}
+		case -277808266:
+	{
+		config->ltit_config.ltitDisableWithAc = (int)value;
+		return 1;
+	}
+		case -577732697:
+	{
+		config->ltit_config.ltitDisableWithFan = (int)value;
+		return 1;
+	}
+		case -1158620788:
+	{
+		config->ltit_config.ltitMaxCorrectionRate = value;
+		return 1;
+	}
+		case 1214020202:
+	{
+		config->ltit_config.ltitUpdateInterval = value;
 		return 1;
 	}
 		case -1658957891:
