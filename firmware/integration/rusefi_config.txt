@@ -2118,25 +2118,25 @@ struct ww_adapt
 	float wwAdaptLambdaOffThreshold;"Lambda threshold to stop adaptation";"lambda", 1, 0, 0.005, 0.25, 3
 	float wwAdaptPmanThreshold;"Manifold pressure change threshold";"kPa", 1, 0, 0, 100, 1
 	float wwAdaptGain;"Adaptation gain (low-pass filter)";"ratio", 1, 0, 0, 1, 3
-	float wwAdaptDelayRpmBins[8];"RPM Bins for Delay Table";"RPM", 1, 0, 0, 18000, 1
-	float wwAdaptDelayValues[8];"Delay Values (ms)";"ms", 1, 0, 0, 18000, 1
+	float wwAdaptDelayRpmBins[8];"RPM Bins for Delay Table";"RPM", 1, 0, 0, 18000, 0
+	float wwAdaptDelayValues[8];"Delay Values (ms)";"ms", 1, 0, 0, 18000, 0
 	float wwAdaptTauCorrection;"Tau Correction Factor (Read Only)";"ratio", 1, 0, -1, 1, 3
 	float wwAdaptXCorrection;"X (Beta) Correction Factor (Read Only)";"ratio", 1, 0, -1, 1, 3
 end_struct
 
 struct ltit_config
     bit ltitEnabled
-    float ltitRpmBins[8];"RPM Bins for LTIT";"RPM", 1, 0, 0, 18000, 1
+    float ltitRpmBins[8];"RPM Bins for LTIT";"RPM", 1, 0, 0, 18000, 0
     float ltitCltBins[8];"CLT Bins for LTIT";"C",1, 0, -40, 120, 2
     float ltitTable[8][8];"LTIT Table";"%", 1, 0, -25, 25, 2
-    float ltitMinRpm;"LTIT min RPM";"RPM", 1, 0, 0, 8000, 1
-    float ltitMaxRpm;"LTIT max RPM";"RPM", 1, 0, 0, 8000, 1
-    float ltitMaxRpmError;"Max RPM error";"RPM", 1, 0, 0, 500, 1
+    float ltitMinRpm;"LTIT min RPM";"RPM", 1, 0, 0, 8000, 0
+    float ltitMaxRpm;"LTIT max RPM";"RPM", 1, 0, 0, 8000, 0
+    float ltitMaxRpmError;"Max RPM error";"RPM", 1, 0, 0, 500, 0
     float ltitMinTimeInCell;"Minimum time in cell";"s", 1, 0, 0, 60, 2
     bit ltitDisableWithAc
     bit ltitDisableWithFan
     float ltitMaxCorrectionRate;"Max correction rate";"%/s", 1, 0, 0, 10, 2
-    float ltitUpdateInterval;"Update interval";"s", 1, 0, 0.1, 60, 3
+    float ltitUpdateInterval;"Update interval";"s", 1, 0, 0.1, 60, 2
 end_struct
 
 #define THR_EST_SIZE 12
