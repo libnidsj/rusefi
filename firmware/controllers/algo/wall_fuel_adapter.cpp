@@ -4,8 +4,7 @@
 #include "engine.h"
 #include "engine_math.h"
 #include "sensor.h"
-#include "lambda_sensor.h"
-#include "matrix_helpers.h" // Assuming matrix functions exist or will be added
+// #include "matrix_helpers.h" // Assuming matrix functions exist or will be added
 
 // Define stoichiometric A/F ratio (should be configurable or accessible globally)
 #define STOICH_AFR 14.7f
