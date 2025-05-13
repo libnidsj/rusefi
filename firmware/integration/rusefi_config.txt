@@ -2185,8 +2185,8 @@ uint16_t autoscale wallWettingAdaptationMaxAfr;Maximum AFR for valid adaptation;
 ! Wall wetting adaptation correction tables
 bit wallWettingAdaptationResetRequired;Set to true to indicate corrections need to be reset (cleared on next reset)
 
-int8_t[WWAE_ADAPT_RPM_SIZE] wwAdaptRpmBins;;"RPM", 100, 0, 0, 8000, 0
-int8_t[WWAE_ADAPT_LOAD_SIZE] wwAdaptLoadBins;;"load", 10, 0, 0, 120, 0
+uint8_t[WWAE_ADAPT_RPM_SIZE] autoscale wwAdaptRpmBins;;"RPM", 100, 0, 0, 8000, 0
+uint8_t[WWAE_ADAPT_LOAD_SIZE] autoscale wwAdaptLoadBins;;"load", 10, 0, 0, 250, 0
 
 int8_t[WWAE_ADAPT_RPM_SIZE x WWAE_ADAPT_LOAD_SIZE] wwAdaptTauCorrections;;"correction", 0.1, 0, -50, 50, 1
 int8_t[WWAE_ADAPT_RPM_SIZE x WWAE_ADAPT_LOAD_SIZE] wwAdaptBetaCorrections;;"correction", 0.1, 0, -50, 50, 1
