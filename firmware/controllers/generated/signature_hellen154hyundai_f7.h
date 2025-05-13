@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 39254810
-#define TS_SIGNATURE "rusEFI testsDG.2025.04.22.hellen154hyundai_f7.39254810"
+#define TS_SIGNATURE "rusEFI revert_LTIT.2025.05.13.hellen154hyundai_f7.39254810"

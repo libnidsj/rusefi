@@ -1880,7 +1880,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI testsDG.2025.04.22.hellen154hyundai_f7.39254810"
+#define TS_SIGNATURE "rusEFI revert_LTIT.2025.05.13.hellen154hyundai_f7.39254810"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'
