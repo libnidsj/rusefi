@@ -1985,6 +1985,75 @@ float getConfigValueByName(const char *name) {
 // ltftMinCorrection
 		case -1987127141:
 			return config->ltftMinCorrection;
+// wallWettingAdaptationTimeConstant
+		case -263300747:
+			return config->wallWettingAdaptationTimeConstant;
+// wallWettingAdaptationThreshold
+		case 1300568841:
+			return config->wallWettingAdaptationThreshold;
+// wallWettingAdaptationRateGain
+		case -711842521:
+			return config->wallWettingAdaptationRateGain;
+// wallWettingAdaptationTauLimit
+		case -1326780699:
+			return config->wallWettingAdaptationTauLimit;
+// wallWettingAdaptationBetaLimit
+		case -400467625:
+			return config->wallWettingAdaptationBetaLimit;
+// wallWettingAdaptationMinClt
+		case 262550019:
+			return config->wallWettingAdaptationMinClt;
+// wallWettingAdaptationMinRpm
+		case 262566479:
+			return config->wallWettingAdaptationMinRpm;
+// wallWettingAdaptationMinMap
+		case 262560542:
+			return config->wallWettingAdaptationMinMap;
+// wallWettingAdaptationMinTps
+		case 262568663:
+			return config->wallWettingAdaptationMinTps;
+// wallWettingAdaptationMaxTps
+		case 253440665:
+			return config->wallWettingAdaptationMaxTps;
+// wallWettingAdaptationMaxLoad
+		case -226681726:
+			return config->wallWettingAdaptationMaxLoad;
+// wallWettingAdaptationDelay
+		case 1428792555:
+			return config->wallWettingAdaptationDelay;
+// wallWettingAdaptationMinFeedback
+		case -24225499:
+			return config->wallWettingAdaptationMinFeedback;
+// wallWettingAdaptationMinAfr
+		case 262547641:
+			return config->wallWettingAdaptationMinAfr;
+// wallWettingAdaptationMaxAfr
+		case 253419643:
+			return config->wallWettingAdaptationMaxAfr;
+// wallWettingAdaptationResetRequired
+		case 2137216448:
+			return config->wallWettingAdaptationResetRequired;
+// wallWettingAdaptTimeCounter
+		case 389414672:
+			return config->wallWettingAdaptTimeCounter;
+// wallWettingAdaptLastLambdaError
+		case 1586508896:
+			return config->wallWettingAdaptLastLambdaError;
+// wallWettingAdaptIntegralTau
+		case -648836223:
+			return config->wallWettingAdaptIntegralTau;
+// wallWettingAdaptIntegralBeta
+		case 62598675:
+			return config->wallWettingAdaptIntegralBeta;
+// wallWettingAdaptLastAppliedTau
+		case 261510686:
+			return config->wallWettingAdaptLastAppliedTau;
+// wallWettingAdaptLastAppliedBeta
+		case 39275600:
+			return config->wallWettingAdaptLastAppliedBeta;
+// wallWettingAdaptationActive
+		case -213967752:
+			return config->wallWettingAdaptationActive;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -5334,6 +5403,121 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1987127141:
 	{
 		config->ltftMinCorrection = (int)value;
+		return 1;
+	}
+		case -263300747:
+	{
+		config->wallWettingAdaptationTimeConstant = value;
+		return 1;
+	}
+		case 1300568841:
+	{
+		config->wallWettingAdaptationThreshold = (int)value;
+		return 1;
+	}
+		case -711842521:
+	{
+		config->wallWettingAdaptationRateGain = (int)value;
+		return 1;
+	}
+		case -1326780699:
+	{
+		config->wallWettingAdaptationTauLimit = value;
+		return 1;
+	}
+		case -400467625:
+	{
+		config->wallWettingAdaptationBetaLimit = value;
+		return 1;
+	}
+		case 262550019:
+	{
+		config->wallWettingAdaptationMinClt = value;
+		return 1;
+	}
+		case 262566479:
+	{
+		config->wallWettingAdaptationMinRpm = value;
+		return 1;
+	}
+		case 262560542:
+	{
+		config->wallWettingAdaptationMinMap = value;
+		return 1;
+	}
+		case 262568663:
+	{
+		config->wallWettingAdaptationMinTps = value;
+		return 1;
+	}
+		case 253440665:
+	{
+		config->wallWettingAdaptationMaxTps = value;
+		return 1;
+	}
+		case -226681726:
+	{
+		config->wallWettingAdaptationMaxLoad = value;
+		return 1;
+	}
+		case 1428792555:
+	{
+		config->wallWettingAdaptationDelay = value;
+		return 1;
+	}
+		case -24225499:
+	{
+		config->wallWettingAdaptationMinFeedback = value;
+		return 1;
+	}
+		case 262547641:
+	{
+		config->wallWettingAdaptationMinAfr = (int)value;
+		return 1;
+	}
+		case 253419643:
+	{
+		config->wallWettingAdaptationMaxAfr = (int)value;
+		return 1;
+	}
+		case 2137216448:
+	{
+		config->wallWettingAdaptationResetRequired = (int)value;
+		return 1;
+	}
+		case 389414672:
+	{
+		config->wallWettingAdaptTimeCounter = (int)value;
+		return 1;
+	}
+		case 1586508896:
+	{
+		config->wallWettingAdaptLastLambdaError = (int)value;
+		return 1;
+	}
+		case -648836223:
+	{
+		config->wallWettingAdaptIntegralTau = (int)value;
+		return 1;
+	}
+		case 62598675:
+	{
+		config->wallWettingAdaptIntegralBeta = (int)value;
+		return 1;
+	}
+		case 261510686:
+	{
+		config->wallWettingAdaptLastAppliedTau = (int)value;
+		return 1;
+	}
+		case 39275600:
+	{
+		config->wallWettingAdaptLastAppliedBeta = (int)value;
+		return 1;
+	}
+		case -213967752:
+	{
+		config->wallWettingAdaptationActive = (int)value;
 		return 1;
 	}
 		case -1658957891:

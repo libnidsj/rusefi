@@ -1978,6 +1978,75 @@ How much long term fuel trim should act to reduce short term fuel trim, 100 shou
 ### ltftMinCorrection
 
 
+### wallWettingAdaptationTimeConstant
+Time constant for adaptation integration (larger = slower adaptation)
+
+### wallWettingAdaptationThreshold
+Minimum lambda error to trigger adaptation
+
+### wallWettingAdaptationRateGain
+Rate at which lambda errors affect adaptation (0.1-5.0)
+
+### wallWettingAdaptationTauLimit
+Maximum +/- % adaptation allowed for tau
+
+### wallWettingAdaptationBetaLimit
+Maximum +/- % adaptation allowed for beta
+
+### wallWettingAdaptationMinClt
+Minimum coolant temperature to enable adaptation
+
+### wallWettingAdaptationMinRpm
+Minimum engine speed for adaptation
+
+### wallWettingAdaptationMinMap
+Minimum MAP for adaptation
+
+### wallWettingAdaptationMinTps
+Minimum TPS for adaptation
+
+### wallWettingAdaptationMaxTps
+Maximum TPS for adaptation
+
+### wallWettingAdaptationMaxLoad
+Maximum engine load for adaptation
+
+### wallWettingAdaptationDelay
+Minimum time after ECU start for adaptation
+
+### wallWettingAdaptationMinFeedback
+Minimum O2 sensor feedback period to enable adaptation
+
+### wallWettingAdaptationMinAfr
+Minimum AFR for valid adaptation
+
+### wallWettingAdaptationMaxAfr
+Maximum AFR for valid adaptation
+
+### wallWettingAdaptationResetRequired
+Set to true to indicate corrections need to be reset (cleared on next reset)
+
+### wallWettingAdaptTimeCounter
+
+
+### wallWettingAdaptLastLambdaError
+
+
+### wallWettingAdaptIntegralTau
+
+
+### wallWettingAdaptIntegralBeta
+
+
+### wallWettingAdaptLastAppliedTau
+
+
+### wallWettingAdaptLastAppliedBeta
+
+
+### wallWettingAdaptationActive
+;
+
 ### tcu_shiftTime
 
 
