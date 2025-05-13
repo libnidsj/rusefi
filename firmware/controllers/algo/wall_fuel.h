@@ -7,6 +7,7 @@
 
 #include "wall_fuel_state_generated.h"
 #include "engine_module.h"
+#include "wall_fuel_adaptation.h"
 
 /**
  * Wall wetting, also known as fuel film
@@ -47,6 +48,15 @@ public:
 	float getBeta() const override {
 		return m_beta;
 	}
+	
+	/**
+	 * Calculate the tau (wall wetting time constant) based on current engine conditions
+	 * @param rpm Current engine rpm
+	 * @param map Current manifold pressure
+	 * @param clt Current coolant temperature 
+	 * @return Tau in seconds
+	 */
+	float getTau(float rpm, float map, float clt) const;
 
 protected:
 	float computeTau() const;

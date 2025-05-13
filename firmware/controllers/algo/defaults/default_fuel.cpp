@@ -361,7 +361,11 @@ void setDefaultFuel() {
 
 	engineConfiguration->tpsAccelEnrichmentThreshold = 40; // TPS % change, per engine cycle
 
+	// Set defaults for wall wetting
 	setDefaultWallWetting();
+	
+	// Set defaults for wall wetting adaptation
+	setDefaultWallWettingAdaptation();
 
 	// TPS/TPS AE curve
 	setMazdaMiataNbTpsTps();

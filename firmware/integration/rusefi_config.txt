@@ -2657,3 +2657,49 @@ end_struct
 #define CAN_ECU_SERIAL_RX_ID 0x710
 #define CAN_ECU_SERIAL_TX_ID 0x720
 
+! Wall wetting adaptation parameters
+#define WWAE_ADAPT_RPM_SIZE 4
+#define WWAE_ADAPT_LOAD_SIZE 4
+
+custom wall_wetting_adaptation_mode_e 4 bits, U32, @OFFSET@, [0:1], "Disabled", "Tau Only", "Beta Only", "Both"
+wall_wetting_adaptation_mode_e wallWettingAdaptationMode;"Controls which parameters are adapted"
+
+custom wall_wetting_adaptation_cell_mode_e 4 bits, U32, @OFFSET@, [0:1], "Cell-based", "Global", "Load interpolated", "Full 3D"
+wall_wetting_adaptation_cell_mode_e wallWettingAdaptationCellMode;"How adaptation corrections are stored"
+
+float wallWettingAdaptationTimeConstant;Time constant for adaptation integration (larger = slower adaptation);seconds, 1, 0, 0.1, 60.0, 1
+float wallWettingAdaptationThreshold;Minimum lambda error to trigger adaptation;ratio, 0.001, 0, 0, 0.2, 3
+float wallWettingAdaptationRateGain;Rate at which lambda errors affect adaptation (0.1-5.0);gain, 0.1, 0, 0.1, 5.0, 1
+float wallWettingAdaptationTauLimit;Maximum +/- % adaptation allowed for tau;%, 1, 0, 0, 50, 0
+float wallWettingAdaptationBetaLimit;Maximum +/- % adaptation allowed for beta;%, 1, 0, 0, 50, 0
+
+float wallWettingAdaptationMinClt;Minimum coolant temperature to enable adaptation;degC, 1, 0, -40, 200, 0
+float wallWettingAdaptationMinRpm;Minimum engine speed for adaptation;RPM, 1, 0, 0, 12000, 0
+float wallWettingAdaptationMinMap;Minimum MAP for adaptation;kPa, 1, 0, 0, 255, 0
+float wallWettingAdaptationMinTps;Minimum TPS for adaptation;%, 1, 0, 0, 100, 0
+float wallWettingAdaptationMaxTps;Maximum TPS for adaptation;%, 1, 0, 0, 100, 0
+float wallWettingAdaptationMaxLoad;Maximum engine load for adaptation;%, 1, 0, 0, 255, 0
+float wallWettingAdaptationDelay;Minimum time after ECU start for adaptation;sec, 1, 0, 0, 600, 0
+
+float wallWettingAdaptationMinFeedback;Minimum O2 sensor feedback period to enable adaptation;sec, 1, 0, 0, 60, 1
+float wallWettingAdaptationMinAfr;Minimum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
+float wallWettingAdaptationMaxAfr;Maximum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
+
+! Wall wetting adaptation correction tables
+bit wallWettingAdaptationResetRequired;Set to true to indicate corrections need to be reset (cleared on next reset)
+
+int8_t[WWAE_ADAPT_RPM_SIZE] wwAdaptRpmBins;;"RPM", 100, 0, 0, 8000, 0
+int8_t[WWAE_ADAPT_LOAD_SIZE] wwAdaptLoadBins;;"load", 10, 0, 0, 120, 0
+
+int8_t[WWAE_ADAPT_RPM_SIZE x WWAE_ADAPT_LOAD_SIZE] wwAdaptTauCorrections;;"correction", 0.1, 0, -50, 50, 1
+int8_t[WWAE_ADAPT_RPM_SIZE x WWAE_ADAPT_LOAD_SIZE] wwAdaptBetaCorrections;;"correction", 0.1, 0, -50, 50, 1
+
+! Wall wetting adaptation state
+int16_t wallWettingAdaptTimeCounter;;"%", 1, 0, 0, 100, 0
+float wallWettingAdaptLastLambdaError;;, 0.001, 0, -1, 1, 3
+float wallWettingAdaptIntegralTau;;, 0.01, 0, -1, 1, 2
+float wallWettingAdaptIntegralBeta;;, 0.01, 0, -1, 1, 2
+float wallWettingAdaptLastAppliedTau;;, 0.01, 0, -50, 50, 2
+float wallWettingAdaptLastAppliedBeta;;, 0.01, 0, -50, 50, 2
+bit wallWettingAdaptationActive;;
+

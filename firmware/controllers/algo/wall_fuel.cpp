@@ -100,6 +100,12 @@ float WallFuelController::computeTau() const {
 			config->wwMapBins, map
 		);
 	}
+	
+	// Apply adaptation correction if enabled
+	auto rpm = Sensor::getOrZero(SensorType::Rpm);
+	auto map = Sensor::get(SensorType::Map).value_or(60);
+	auto adaptCorr = engine->module<WallFuelAdaptation>()->getTauCorrection(rpm, map, clt);
+	tau *= adaptCorr;
 
 	return tau;
 }
@@ -131,6 +137,12 @@ float WallFuelController::computeBeta() const {
 			config->wwMapBins, map
 		);
 	}
+	
+	// Apply adaptation correction if enabled
+	auto rpm = Sensor::getOrZero(SensorType::Rpm);
+	auto map = Sensor::get(SensorType::Map).value_or(60);
+	auto adaptCorr = engine->module<WallFuelAdaptation>()->getBetaCorrection(rpm, map, clt);
+	beta *= adaptCorr;
 
 	// Clamp to 0..1 (you can't have more than 100% of the fuel hit the wall!)
 	return clampF(0, beta, 1);
@@ -176,4 +188,39 @@ void WallFuelController::onFastCallback() {
 	m_alpha = alpha;
 	m_beta = beta;
 	m_enable = true;
+}
+
+float WallFuelController::getTau(float rpm, float map, float clt) const {
+	if (!engineConfiguration->complexWallModel) {
+		return engineConfiguration->wwaeTau;
+	}
+
+	// Default to normal operating temperature in case of CLT failure
+	if (clt < -20 || clt > 150) {
+		clt = 90; // Use a reasonable default temperature
+	}
+
+	// Base tau from temperature
+	float tau = interpolate2d(
+		clt,
+		config->wwCltBins,
+		config->wwTauCltValues
+	);
+
+	// If you have a MAP sensor, apply MAP x RPM correction
+	if (Sensor::hasSensor(SensorType::Map)) {
+		// Use 3D interpolation for MAP x RPM tau adjustment
+		tau *= interpolate3d(
+			config->wwTauMapRpmValues,
+			config->wwRpmBins, rpm,
+			config->wwMapBins, map
+		);
+	}
+	
+	// Apply adaptation correction if enabled
+	auto adaptCorr = engine->module<WallFuelAdaptation>()->getTauCorrection(rpm, map, clt);
+	tau *= adaptCorr;
+
+	// Clamp to reasonable values for stability
+	return clampF(0.0001f, tau, 0.5f);  // Tau is in seconds, 0.5s max
 }

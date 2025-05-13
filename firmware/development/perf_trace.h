@@ -48,6 +48,7 @@ enum class PE : uint8_t {
 	GetTpsEnrichment,
 	GetSpeedDensityFuel,
 	WallFuelAdjust,
+	WallFuelAdaptation,
 	MapAveragingTriggerCallback,
 	Unused1,
 	SingleTimerExecutorScheduleByTimestamp,

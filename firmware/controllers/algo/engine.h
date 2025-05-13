@@ -62,6 +62,7 @@
 #include "trip_odometer.h"
 #include "closed_loop_fuel.h"
 #include "electronic_throttle_generated.h"
+#include "wall_fuel_adaptation.h"
 
 #include <functional>
 
@@ -158,6 +159,7 @@ public:
 		HarleyAcr,
 #endif // EFI_HD_ACR
 		Mockable<WallFuelController>,
+		Mockable<WallFuelAdaptation>,
 #if EFI_VEHICLE_SPEED
 		GearDetector,
 		TripOdometer,

@@ -510,6 +510,11 @@ void commonInitEngineController() {
 
 	initTachometer();
 	initSpeedometer();
+
+	// Wall fuel compensation
+	registerModule<WallFuelController>(&engine);
+	// Wall fuel adaptation
+	registerModule<WallFuelAdaptation>(&engine);
 }
 
 PUBLIC_API_WEAK bool validateBoardConfig() {

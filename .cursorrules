@@ -141,6 +141,28 @@
     ]
   },
 
+  "wall_wetting_adaptation": {
+    "description": "Guidelines for the online wall wetting adaptation system",
+    "details": [
+      "Adaptation is implemented in firmware/controllers/algo/wall_fuel_adaptation.cpp/h based on SAE 2001-MECA01 paper",
+      "Uses recursive least squares (RLS) method to adapt tau and beta parameters based on lambda feedback",
+      "The system operates in fast and slow callback modes: fast for condition checking, slow for parameter adaptation",
+      "Adaptation only happens during steady-state operation (requires low TPS/MAP rate of change) to avoid transient errors",
+      "Four adaptation modes are available: disabled, tau-only, beta-only, and both parameters",
+      "Four cell modes provide different levels of adaptation: global (one value), load-interpolated, full 3D, and cell-based",
+      "Correction values are stored in tables and are applied as multipliers to the base tau/beta values",
+      "Safety limits prevent extreme adaptations: corrections are constrained to 50-200% of base values using MIN/MAX_*_CORRECTION",
+      "Adaptation speed is controlled by a time constant parameter using a forgetting factor λ = exp(-ΔT/TC)",
+      "Numerical stability is maintained by limiting covariance values between MIN_COVARIANCE and MAX_COVARIANCE",
+      "The getTauCorrection() and getBetaCorrection() methods from WallFuelAdaptation are called from wall_fuel.cpp",
+      "The onIgnitionStateChanged() method saves adaptation to flash when the engine stops (if enabled)",
+      "Output channels provide real-time monitoring of adaptation activity and correction values",
+      "Table smoothing is applied to prevent abrupt changes between adjacent cells using applySmoothingTo3DTable()",
+      "Time-based filter (m_steadyStateTime) ensures adaptation only occurs after conditions are stable",
+      "Multiple sensor validations (RPM, MAP, CLT, TPS, AFR) ensure adaptation only occurs in valid operating regions"
+    ]
+  },
+
   "fuel_injection_extensions": {
     "description": "Best practices for adding new fuel injection features",
     "details": [

@@ -1,0 +1,6 @@
+! Wall wetting adaptation state
+bit wallWettingAdaptationActive;\"Is wall wetting adaptation currently active\"
+float wallWettingAdaptationTauCorrection;\"Current tau correction factor\"
+float wallWettingAdaptationBetaCorrection;\"Current beta correction factor\"
+float wallWettingAdaptationLambdaError;\"Current lambda error for adaptation\"
+float wallWettingAdaptationSteadyStateTime;\"Time spent in steady state\" 

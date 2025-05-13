@@ -8,6 +8,26 @@ void setLeftRightBanksNeedBetterName();
 void setDefaultBaseEngine();
 void setDefaultFuel();
 void setDefaultIgnition();
+void setDefaultIdle();
+void setDefaultSpark();
+void setDefaultWallWettingAdaptation();
+void setDefaultVeTable();
+void setDefaultEngineParameters();
+bool isEngineOptionAvailable(engine_type_e type);
+void setTimingMode(engine_type_e type);
+void setStartupFuelConfiguration();
+void prepareOutputSignals();
+void setDefaultVrThresholds();
+void prepareVvtActuators(int phaseCount);
+void setDefaultCranking();
+void setDefaultIacTable();
+void setDefaultFan();
+void setDefaultETB();
+void setDefaultHpfpParameters();
+void setDefaultParametersChryslerNak();
+void setDefaultBoardParameters();
+void setDefaultBatteryCorrection();
+void setPPSInputs(adc_channel_e channel1, adc_channel_e channel2);
 void setDefaultCranking();
 void setGDIFueling();
 void setHpfpLobeProfileAngle(int lobes);
@@ -26,7 +46,6 @@ void setupTLE9201IncludingStepper(Gpio controlPin, Gpio direction, Gpio disable,
 	// around the time the intake valve opens.
 #define PORT_INJECTION_OFFSET -400.0f
 
-void setPPSInputs(adc_channel_e pps1, adc_channel_e pps2);
 void setPPSCalibration(float primaryUp, float primaryDown, float secondaryUp, float secondaryDown);
 
 void setTPS1Inputs(adc_channel_e tps1, adc_channel_e tps2);

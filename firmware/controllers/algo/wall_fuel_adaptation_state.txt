@@ -1,0 +1,13 @@
+struct_no_prefix wall_fuel_adaptation_state_s
+
+! Wall wetting adaptation state
+bit isAdaptationActive;Current adaptation state\nTrue if the adaptation is currently active
+float lastLambdaError;Last measured lambda error
+float tauIntegral;Tau adaptation integral value
+float betaIntegral;Beta adaptation integral value
+float lastTauCorrection;Last applied tau correction
+float lastBetaCorrection;Last applied beta correction
+float m_steadyStateTime;Time in seconds since last transient
+
+! wall_fuel_adaptation_state
+end_struct 
