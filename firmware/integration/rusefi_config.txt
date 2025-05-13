@@ -2163,8 +2163,8 @@ custom wall_wetting_adaptation_cell_mode_e 4 bits, U32, @OFFSET@, [0:1], "Cell-b
 wall_wetting_adaptation_cell_mode_e wallWettingAdaptationCellMode;
 
 float wallWettingAdaptationTimeConstant;Time constant for adaptation integration (larger = slower adaptation);seconds, 1, 0, 0.1, 60.0, 1
-float wallWettingAdaptationThreshold;Minimum lambda error to trigger adaptation;ratio, 0.001, 0, 0, 0.2, 3
-float wallWettingAdaptationRateGain;Rate at which lambda errors affect adaptation (0.1-5.0);gain, 0.1, 0, 0.1, 5.0, 1
+uint16_t autoscale wallWettingAdaptationThreshold;Minimum lambda error to trigger adaptation;ratio, 0.001, 0, 0, 0.2, 3
+uint8_t autoscale wallWettingAdaptationRateGain;Rate at which lambda errors affect adaptation (0.1-5.0);gain, 0.1, 0, 0.1, 5.0, 1
 float wallWettingAdaptationTauLimit;Maximum +/- % adaptation allowed for tau;%, 1, 0, 0, 50, 0
 float wallWettingAdaptationBetaLimit;Maximum +/- % adaptation allowed for beta;%, 1, 0, 0, 50, 0
 
@@ -2177,8 +2177,8 @@ float wallWettingAdaptationMaxLoad;Maximum engine load for adaptation;%, 1, 0, 0
 float wallWettingAdaptationDelay;Minimum time after ECU start for adaptation;sec, 1, 0, 0, 600, 0
 
 float wallWettingAdaptationMinFeedback;Minimum O2 sensor feedback period to enable adaptation;sec, 1, 0, 0, 60, 1
-float wallWettingAdaptationMinAfr;Minimum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
-float wallWettingAdaptationMaxAfr;Maximum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
+uint16_t autoscale wallWettingAdaptationMinAfr;Minimum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
+uint16_t autoscale wallWettingAdaptationMaxAfr;Maximum AFR for valid adaptation;AFR, 0.1, 0, 0, 30, 1
 
 ! Wall wetting adaptation correction tables
 bit wallWettingAdaptationResetRequired;Set to true to indicate corrections need to be reset (cleared on next reset)
@@ -2191,11 +2191,11 @@ int8_t[WWAE_ADAPT_RPM_SIZE x WWAE_ADAPT_LOAD_SIZE] wwAdaptBetaCorrections;;"corr
 
 ! Wall wetting adaptation state
 int16_t wallWettingAdaptTimeCounter;;"%", 1, 0, 0, 100, 0
-float wallWettingAdaptLastLambdaError;;, 0.001, 0, -1, 1, 3
-float wallWettingAdaptIntegralTau;;, 0.01, 0, -1, 1, 2
-float wallWettingAdaptIntegralBeta;;, 0.01, 0, -1, 1, 2
-float wallWettingAdaptLastAppliedTau;;, 0.01, 0, -50, 50, 2
-float wallWettingAdaptLastAppliedBeta;;, 0.01, 0, -50, 50, 2
+uint16_t autoscale wallWettingAdaptLastLambdaError;;, 0.001, 0, -1, 1, 3
+uint16_t autoscale wallWettingAdaptIntegralTau;;, 0.01, 0, -1, 1, 2
+uint16_t autoscale wallWettingAdaptIntegralBeta;;, 0.01, 0, -1, 1, 2
+uint16_t autoscale wallWettingAdaptLastAppliedTau;;, 0.01, 0, -50, 50, 2
+uint16_t autoscale wallWettingAdaptLastAppliedBeta;;, 0.01, 0, -50, 50, 2
 bit wallWettingAdaptationActive;;
 
 uint8_t[HPFP_LOBE_PROFILE_SIZE] autoscale hpfpLobeProfileQuantityBins;;"%", 0.5, 0, 0, 100, 1
