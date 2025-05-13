@@ -2146,6 +2146,8 @@ uint16_t[INJ_STAGING_COUNT] injectorStagingRpmBins;;"RPM",  1, 0, 0, 18000, 0
 
 #define WWAE_TABLE_SIZE 8
 #define WWAE_RPM_SIZE 8
+#define WWAE_ADAPT_RPM_SIZE 4
+#define WWAE_ADAPT_LOAD_SIZE 4
 
 int8_t[WWAE_TABLE_SIZE] wwCltBins;;"deg C", 1, 0, -40, 120, 0
 uint8_t[WWAE_TABLE_SIZE] autoscale wwTauCltValues;;"", 0.01, 0, 0, 2.5, 2
@@ -2698,7 +2700,3 @@ end_struct
 
 #define CAN_ECU_SERIAL_RX_ID 0x710
 #define CAN_ECU_SERIAL_TX_ID 0x720
-
-! Wall wetting adaptation parameters
-#define WWAE_ADAPT_RPM_SIZE 4
-#define WWAE_ADAPT_LOAD_SIZE 4
