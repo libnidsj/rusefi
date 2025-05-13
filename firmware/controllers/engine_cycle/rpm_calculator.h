@@ -182,28 +182,3 @@ operation_mode_e lookupOperationMode();
   * @return tick time of scheduled action
   */
 efitick_t scheduleByAngle(scheduling_s *timer, efitick_t nowNt, angle_t angle, action_s action);
-
-enum class PE {
-	LogicAnalyzer,
-	CreateFuelSchedule,
-	CreateFuelSchedule2,
-	CreateInjectorEvents,
-	CreateSingleInjectorEvent,
-	CreateSparkEvents,
-	HandleFuel,
-	MapAveragingTriggerCallback,
-	RpmCalculatorTriggerCallback,
-	GetBaseFuel,
-	WallFuelAdjust,
-	FuelModelTpsAE,
-	FuelModelCldWall,
-	GetInjectionDuration,
-	GetRunningFuel,
-	FuelScheduleCorrection,
-	WallFuelCorrection,
-	GetEngineLoadT,
-	UpdateEtbwallFuel,
-	GetAtfValue,
-	GetAfr,
-	// update 'perfEventNames' in perf_trace.cpp
-};
