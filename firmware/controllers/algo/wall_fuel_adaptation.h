@@ -12,6 +12,7 @@
 #pragma once
 
 #include "engine_module.h"
+#include "wall_fuel_adaptation_enums.h"
 #include "wall_fuel_adaptation_state_generated.h"
 
 // Logging levels for wall wetting adaptation
