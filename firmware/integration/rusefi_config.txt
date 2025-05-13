@@ -2662,10 +2662,10 @@ end_struct
 #define WWAE_ADAPT_LOAD_SIZE 4
 
 custom wall_wetting_adaptation_mode_e 4 bits, U32, @OFFSET@, [0:1], "Disabled", "Tau Only", "Beta Only", "Both"
-wall_wetting_adaptation_mode_e wallWettingAdaptationMode;"Controls which parameters are adapted"
+wall_wetting_adaptation_mode_e wallWettingAdaptationMode;
 
 custom wall_wetting_adaptation_cell_mode_e 4 bits, U32, @OFFSET@, [0:1], "Cell-based", "Global", "Load interpolated", "Full 3D"
-wall_wetting_adaptation_cell_mode_e wallWettingAdaptationCellMode;"How adaptation corrections are stored"
+wall_wetting_adaptation_cell_mode_e wallWettingAdaptationCellMode;
 
 float wallWettingAdaptationTimeConstant;Time constant for adaptation integration (larger = slower adaptation);seconds, 1, 0, 0.1, 60.0, 1
 float wallWettingAdaptationThreshold;Minimum lambda error to trigger adaptation;ratio, 0.001, 0, 0, 0.2, 3
