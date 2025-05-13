@@ -7,7 +7,7 @@ float tauIntegral;Tau adaptation integral value
 float betaIntegral;Beta adaptation integral value
 float lastTauCorrection;Last applied tau correction
 float lastBetaCorrection;Last applied beta correction
-float m_steadyStateTime;Time in seconds since last transient
+float m_steadyStateTime;Seconds since last transient
 
 ! wall_fuel_adaptation_state
 end_struct 
