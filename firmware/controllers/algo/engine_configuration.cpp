@@ -408,7 +408,7 @@ static void setDefaultEngineConfiguration() {
 	engineConfiguration->turboSpeedSensorMultiplier = 1;
 
 #if EFI_IDLE_CONTROL
-	setDefaultIdleParameters();
+	// setDefaultIdleParameters();
 #endif /* EFI_IDLE_CONTROL */
 
 #if EFI_ELECTRONIC_THROTTLE_BODY
