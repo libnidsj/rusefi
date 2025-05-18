@@ -55,15 +55,6 @@ Tempo mínimo de idle estável para aprender
 ### ltitCorrectionRate
 Taxa de aprendizado LTIT
 
-### ltitAcTrim
-Offset aprendido para AC
-
-### ltitFan1Trim
-Offset aprendido para Fan1
-
-### ltitFan2Trim
-Offset aprendido para Fan2
-
 ### ltitIgnitionOnDelay
 Delay pós-ignição ON para aprendizado/aplicação do LTIT
 
@@ -1986,6 +1977,15 @@ Delay before cutting fuel due to extra high oil pressure. Use this to ignore sho
 
 ### maxOilPressure
 Maximum allowed oil pressure. If oil pressure exceed this level within <timeout> seconds, fuel will be cut. Set to 0 to disable.
+
+### ltitAcTrim
+Offset aprendido para AC
+
+### ltitFan1Trim
+Offset aprendido para Fan1
+
+### ltitFan2Trim
+Offset aprendido para Fan2
 
 ### ltftEnabled
 
