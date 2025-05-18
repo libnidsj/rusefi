@@ -40,6 +40,36 @@ Voltage when the idle valve is closed.\nYou probably don't have one of these!
 ### idlePositionMax
 Voltage when the idle valve is open.\nYou probably don't have one of these!\n1 volt = 1000 units
 
+### ltitEnabled
+Habilita aprendizado LTIT
+
+### ltitEmaAlpha
+Constante de tempo do filtro EMA para LTIT
+
+### ltitStableRpmThreshold
+Faixa de RPM para considerar idle estável
+
+### ltitStableTime
+Tempo mínimo de idle estável para aprender
+
+### ltitCorrectionRate
+Taxa de aprendizado LTIT
+
+### ltitAcTrim
+Offset aprendido para AC
+
+### ltitFan1Trim
+Offset aprendido para Fan1
+
+### ltitFan2Trim
+Offset aprendido para Fan2
+
+### ltitIgnitionOnDelay
+Delay pós-ignição ON para aprendizado/aplicação do LTIT
+
+### ltitIgnitionOffSaveDelay
+Delay após ignição OFF para salvamento do LTIT
+
 ### launchFuelAdderPercent
 
 
