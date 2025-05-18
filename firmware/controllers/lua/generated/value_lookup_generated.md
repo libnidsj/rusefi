@@ -1978,6 +1978,30 @@ How much long term fuel trim should act to reduce short term fuel trim, 100 shou
 ### ltftMinCorrection
 
 
+### ltftEmaAlpha
+Constante de tempo do filtro EMA para STFT usado no LTFT
+
+### ltftStftRejectThreshold
+Limiar de rejeição para STFT (em %)
+
+### ltftRegionalWindow
+Tamanho da janela para detecção de tendência regional
+
+### ltftRegionalIntensity
+Intensidade da correção regional
+
+### ltftHoleThreshold
+Limiar de diferença para detecção de buraco no mapa
+
+### ltftSmoothingIntensity
+Intensidade da suavização automática
+
+### ltftIgnitionOnDelay
+Delay pós-ignição ON para aprendizado/aplicação do LTFT
+
+### ltftIgnitionOffSaveDelay
+Delay após ignição OFF para salvamento do LTFT
+
 ### tcu_shiftTime
 
 
