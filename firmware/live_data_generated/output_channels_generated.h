@@ -1440,8 +1440,48 @@ struct output_channels_s {
 	 * offset 808
 	 */
 	uint8_t unusedAtTheEnd[48] = {};
+	/**
+	 * LTIT multiplicativo
+	 * units: mult
+	 * offset 856
+	 */
+	float ltitFactor = (float)0;
+	/**
+	 * LTIT AC Trim
+	 * units: %
+	 * offset 860
+	 */
+	float ltitAcTrim = (float)0;
+	/**
+	 * LTIT Fan1 Trim
+	 * units: %
+	 * offset 864
+	 */
+	float ltitFan1Trim = (float)0;
+	/**
+	 * LTIT Fan2 Trim
+	 * units: %
+	 * offset 868
+	 */
+	float ltitFan2Trim = (float)0;
+	/**
+	 * Wall Wetting Tau
+	 * units: s
+	 * offset 872
+	 */
+	float wwTau = (float)0;
+	/**
+	 * Wall Wetting Beta
+	 * offset 876
+	 */
+	float wwBeta = (float)0;
+	/**
+	 * Wall Wetting Alpha
+	 * offset 880
+	 */
+	float wwAlpha = (float)0;
 };
-static_assert(sizeof(output_channels_s) == 856);
+static_assert(sizeof(output_channels_s) == 884);
 
 // end
 // this section was generated automatically by rusEFI tool config_definition_base-all.jar based on (unknown script) console/binary/output_channels.txt

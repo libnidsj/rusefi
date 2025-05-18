@@ -404,6 +404,13 @@ static const LogField fields[] = {
 	{engine->outputChannels.hp, "hp", "", 0},
 	{engine->outputChannels.torque, "torque", "", 0},
 	{engine->outputChannels.mcuSerial, "mcuSerial", "", 0},
+	{engine->outputChannels.ltitFactor, "LTIT multiplicativo", "mult", 3},
+	{engine->outputChannels.ltitAcTrim, "LTIT AC Trim", "%", 2},
+	{engine->outputChannels.ltitFan1Trim, "LTIT Fan1 Trim", "%", 2},
+	{engine->outputChannels.ltitFan2Trim, "LTIT Fan2 Trim", "%", 2},
+	{engine->outputChannels.wwTau, "Wall Wetting Tau", "s", 3},
+	{engine->outputChannels.wwBeta, "Wall Wetting Beta", "", 3},
+	{engine->outputChannels.wwAlpha, "Wall Wetting Alpha", "", 3},
 #if EFI_ENGINE_CONTROL
 	{engine->fuelComputer.totalFuelCorrection, "Fuel: Total correction", "mult", 2, "Fuel: math"},
 #endif

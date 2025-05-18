@@ -440,6 +440,13 @@ public class TsOutputs {
 	public static final Field TORQUE = Field.create("TORQUE", 800, FieldType.INT16).setScale(1.0).setBaseOffset(0);
 	public static final Field ALIGNMENTFILL_AT_802 = Field.create("ALIGNMENTFILL_AT_802", 802, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field MCUSERIAL = Field.create("MCUSERIAL", 804, FieldType.INT).setScale(1.0).setBaseOffset(0);
+	public static final Field LTITFACTOR = Field.create("LTITFACTOR", 856, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field LTITACTRIM = Field.create("LTITACTRIM", 860, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field LTITFAN1TRIM = Field.create("LTITFAN1TRIM", 864, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field LTITFAN2TRIM = Field.create("LTITFAN2TRIM", 868, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field WWTAU = Field.create("WWTAU", 872, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field WWBETA = Field.create("WWBETA", 876, FieldType.FLOAT).setBaseOffset(0);
+	public static final Field WWALPHA = Field.create("WWALPHA", 880, FieldType.FLOAT).setBaseOffset(0);
 	public static final Field[] VALUES = {
 	SD_PRESENT,
 	SD_LOGGING_INTERNAL,
@@ -875,5 +882,12 @@ public class TsOutputs {
 	TORQUE,
 	ALIGNMENTFILL_AT_802,
 	MCUSERIAL,
+	LTITFACTOR,
+	LTITACTRIM,
+	LTITFAN1TRIM,
+	LTITFAN2TRIM,
+	WWTAU,
+	WWBETA,
+	WWALPHA,
 	};
 }
