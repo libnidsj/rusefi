@@ -2230,12 +2230,12 @@ bool setConfigValueByName(const char *name, float value) {
 	}
 		case -1622665645:
 	{
-		engineConfiguration->ltitClampMin = (int)value;
+		engineConfiguration->ltitClampMin = value;
 		return 1;
 	}
 		case -1622665899:
 	{
-		engineConfiguration->ltitClampMax = (int)value;
+		engineConfiguration->ltitClampMax = value;
 		return 1;
 	}
 		case 341519713:
