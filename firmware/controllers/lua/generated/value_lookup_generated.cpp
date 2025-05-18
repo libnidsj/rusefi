@@ -1985,6 +1985,30 @@ float getConfigValueByName(const char *name) {
 // ltftMinCorrection
 		case -1987127141:
 			return config->ltftMinCorrection;
+// ltftEmaAlpha
+		case -1211433352:
+			return config->ltftEmaAlpha;
+// ltftStftRejectThreshold
+		case 1940059402:
+			return config->ltftStftRejectThreshold;
+// ltftRegionalWindow
+		case 907872520:
+			return config->ltftRegionalWindow;
+// ltftRegionalIntensity
+		case 1888214935:
+			return config->ltftRegionalIntensity;
+// ltftHoleThreshold
+		case 750420468:
+			return config->ltftHoleThreshold;
+// ltftSmoothingIntensity
+		case -1343905218:
+			return config->ltftSmoothingIntensity;
+// ltftIgnitionOnDelay
+		case 1063583180:
+			return config->ltftIgnitionOnDelay;
+// ltftIgnitionOffSaveDelay
+		case -1053058503:
+			return config->ltftIgnitionOffSaveDelay;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -5334,6 +5358,46 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1987127141:
 	{
 		config->ltftMinCorrection = (int)value;
+		return 1;
+	}
+		case -1211433352:
+	{
+		config->ltftEmaAlpha = (int)value;
+		return 1;
+	}
+		case 1940059402:
+	{
+		config->ltftStftRejectThreshold = (int)value;
+		return 1;
+	}
+		case 907872520:
+	{
+		config->ltftRegionalWindow = (int)value;
+		return 1;
+	}
+		case 1888214935:
+	{
+		config->ltftRegionalIntensity = (int)value;
+		return 1;
+	}
+		case 750420468:
+	{
+		config->ltftHoleThreshold = (int)value;
+		return 1;
+	}
+		case -1343905218:
+	{
+		config->ltftSmoothingIntensity = (int)value;
+		return 1;
+	}
+		case 1063583180:
+	{
+		config->ltftIgnitionOnDelay = (int)value;
+		return 1;
+	}
+		case -1053058503:
+	{
+		config->ltftIgnitionOffSaveDelay = (int)value;
 		return 1;
 	}
 		case -1658957891:
