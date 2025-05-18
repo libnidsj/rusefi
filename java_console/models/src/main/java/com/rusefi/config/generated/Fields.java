@@ -675,14 +675,14 @@ public class Fields {
 	public static final Field STARTSTOPBUTTONMODE = Field.create("STARTSTOPBUTTONMODE", 1442, FieldType.INT8, pin_input_mode_e).setScale(1.0).setBaseOffset(0);
 	public static final Field ALIGNMENTFILL_AT_1443 = Field.create("ALIGNMENTFILL_AT_1443", 1443, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field MC33816_FLAG0 = Field.create("MC33816_FLAG0", 1444, FieldType.INT16, Gpio).setScale(1.0).setBaseOffset(0);
-	public static final Field WWLEARNINGRATE = Field.create("WWLEARNINGRATE", 1446, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WBETAIMEDIATO = Field.create("WBETAIMEDIATO", 1447, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WBETAPROLONGADO = Field.create("WBETAPROLONGADO", 1448, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WTAUIMEDIATO = Field.create("WTAUIMEDIATO", 1449, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WTAUPROLONGADO = Field.create("WTAUPROLONGADO", 1450, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WWSMOOTHINTENSITY = Field.create("WWSMOOTHINTENSITY", 1451, FieldType.INT8).setScale(0.01).setBaseOffset(0);
-	public static final Field WWIGNITIONOFFSAVEDELAY = Field.create("WWIGNITIONOFFSAVEDELAY", 1452, FieldType.INT8).setScale(5.0).setBaseOffset(0);
-	public static final Field ALIGNMENTFILL_AT_1453 = Field.create("ALIGNMENTFILL_AT_1453", 1453, FieldType.INT8).setScale(1.0).setBaseOffset(0);
+	public static final Field WWMINCLT = Field.create("WWMINCLT", 1446, FieldType.INT8).setScale(1.0).setBaseOffset(0);
+	public static final Field WWLEARNINGRATE = Field.create("WWLEARNINGRATE", 1447, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WBETAIMEDIATO = Field.create("WBETAIMEDIATO", 1448, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WBETAPROLONGADO = Field.create("WBETAPROLONGADO", 1449, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WTAUIMEDIATO = Field.create("WTAUIMEDIATO", 1450, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WTAUPROLONGADO = Field.create("WTAUPROLONGADO", 1451, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WWSMOOTHINTENSITY = Field.create("WWSMOOTHINTENSITY", 1452, FieldType.INT8).setScale(0.01).setBaseOffset(0);
+	public static final Field WWIGNITIONOFFSAVEDELAY = Field.create("WWIGNITIONOFFSAVEDELAY", 1453, FieldType.INT8).setScale(5.0).setBaseOffset(0);
 	public static final Field TACHPULSEPERREV = Field.create("TACHPULSEPERREV", 1454, FieldType.INT16).setScale(0.001).setBaseOffset(0);
 	public static final Field MAPERRORDETECTIONTOOLOW = Field.create("MAPERRORDETECTIONTOOLOW", 1456, FieldType.FLOAT).setBaseOffset(0);
 	public static final Field MAPERRORDETECTIONTOOHIGH = Field.create("MAPERRORDETECTIONTOOHIGH", 1460, FieldType.FLOAT).setBaseOffset(0);
@@ -2508,6 +2508,7 @@ public class Fields {
 	STARTSTOPBUTTONMODE,
 	ALIGNMENTFILL_AT_1443,
 	MC33816_FLAG0,
+	WWMINCLT,
 	WWLEARNINGRATE,
 	WBETAIMEDIATO,
 	WBETAPROLONGADO,
@@ -2515,7 +2516,6 @@ public class Fields {
 	WTAUPROLONGADO,
 	WWSMOOTHINTENSITY,
 	WWIGNITIONOFFSAVEDELAY,
-	ALIGNMENTFILL_AT_1453,
 	TACHPULSEPERREV,
 	MAPERRORDETECTIONTOOLOW,
 	MAPERRORDETECTIONTOOHIGH,

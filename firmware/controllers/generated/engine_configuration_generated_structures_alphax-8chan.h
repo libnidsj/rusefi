@@ -3208,46 +3208,45 @@ struct engine_configuration_s {
 	 */
 	Gpio mc33816_flag0;
 	/**
-	 * units: %
+	 * units: C
 	 * offset 1462
 	 */
-	scaled_channel<uint8_t, 100, 1> wwLearningRate;
+	scaled_channel<uint8_t, 1, 1> wwMinClt;
 	/**
 	 * units: %
 	 * offset 1463
 	 */
-	scaled_channel<uint8_t, 100, 1> wBetaImediato;
+	scaled_channel<uint8_t, 100, 1> wwLearningRate;
 	/**
 	 * units: %
 	 * offset 1464
 	 */
-	scaled_channel<uint8_t, 100, 1> wBetaProlongado;
+	scaled_channel<uint8_t, 100, 1> wBetaImediato;
 	/**
 	 * units: %
 	 * offset 1465
 	 */
-	scaled_channel<uint8_t, 100, 1> wTauImediato;
+	scaled_channel<uint8_t, 100, 1> wBetaProlongado;
 	/**
 	 * units: %
 	 * offset 1466
 	 */
-	scaled_channel<uint8_t, 100, 1> wTauProlongado;
+	scaled_channel<uint8_t, 100, 1> wTauImediato;
 	/**
 	 * units: %
 	 * offset 1467
 	 */
+	scaled_channel<uint8_t, 100, 1> wTauProlongado;
+	/**
+	 * units: %
+	 * offset 1468
+	 */
 	scaled_channel<uint8_t, 100, 1> wwSmoothIntensity;
 	/**
 	 * units: s
-	 * offset 1468
-	 */
-	scaled_channel<uint8_t, 1, 5> wwIgnitionOffSaveDelay;
-	/**
-	 * need 4 byte alignment
-	 * units: units
 	 * offset 1469
 	 */
-	uint8_t alignmentFill_at_1469[1] = {};
+	scaled_channel<uint8_t, 1, 5> wwIgnitionOffSaveDelay;
 	/**
 	 * offset 1470
 	 */

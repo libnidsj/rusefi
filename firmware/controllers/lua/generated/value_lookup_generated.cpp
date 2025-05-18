@@ -1043,6 +1043,9 @@ float getConfigValueByName(const char *name) {
 // tps2Max
 		case -224185132:
 			return engineConfiguration->tps2Max;
+// wwMinClt
+		case 478927610:
+			return engineConfiguration->wwMinClt;
 // wwLearningRate
 		case 1193560623:
 			return engineConfiguration->wwLearningRate;
@@ -3839,6 +3842,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case -224185132:
 	{
 		engineConfiguration->tps2Max = (int)value;
+		return 1;
+	}
+		case 478927610:
+	{
+		engineConfiguration->wwMinClt = (int)value;
 		return 1;
 	}
 		case 1193560623:
