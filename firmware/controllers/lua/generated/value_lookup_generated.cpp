@@ -62,15 +62,6 @@ float getConfigValueByName(const char *name) {
 // ltitCorrectionRate
 		case 743163558:
 			return engineConfiguration->ltitCorrectionRate;
-// ltitAcTrim
-		case 1685033762:
-			return engineConfiguration->ltitAcTrim;
-// ltitFan1Trim
-		case 795119972:
-			return engineConfiguration->ltitFan1Trim;
-// ltitFan2Trim
-		case 796305893:
-			return engineConfiguration->ltitFan2Trim;
 // ltitIgnitionOnDelay
 		case -135093297:
 			return engineConfiguration->ltitIgnitionOnDelay;
@@ -1994,6 +1985,15 @@ float getConfigValueByName(const char *name) {
 // maxOilPressure
 		case -2079066360:
 			return engineConfiguration->maxOilPressure;
+// ltitAcTrim
+		case 1685033762:
+			return config->ltitAcTrim;
+// ltitFan1Trim
+		case 795119972:
+			return config->ltitFan1Trim;
+// ltitFan2Trim
+		case 796305893:
+			return config->ltitFan2Trim;
 // ltftEnabled
 		case -518141238:
 			return config->ltftEnabled;
@@ -2183,21 +2183,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case 743163558:
 	{
 		engineConfiguration->ltitCorrectionRate = (int)value;
-		return 1;
-	}
-		case 1685033762:
-	{
-		engineConfiguration->ltitAcTrim = (int)value;
-		return 1;
-	}
-		case 795119972:
-	{
-		engineConfiguration->ltitFan1Trim = (int)value;
-		return 1;
-	}
-		case 796305893:
-	{
-		engineConfiguration->ltitFan2Trim = (int)value;
 		return 1;
 	}
 		case -135093297:
@@ -5403,6 +5388,21 @@ bool setConfigValueByName(const char *name, float value) {
 		case -2079066360:
 	{
 		engineConfiguration->maxOilPressure = (int)value;
+		return 1;
+	}
+		case 1685033762:
+	{
+		config->ltitAcTrim = (int)value;
+		return 1;
+	}
+		case 795119972:
+	{
+		config->ltitFan1Trim = (int)value;
+		return 1;
+	}
+		case 796305893:
+	{
+		config->ltitFan2Trim = (int)value;
 		return 1;
 	}
 		case -518141238:
