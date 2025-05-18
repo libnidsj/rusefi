@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 616994212
-#define TS_SIGNATURE "rusEFI revert_aww.2025.05.16.at_start_f435.616994212"
+#define SIGNATURE_HASH 1143819897
+#define TS_SIGNATURE "rusEFI revert_aww.2025.05.18.at_start_f435.1143819897"
