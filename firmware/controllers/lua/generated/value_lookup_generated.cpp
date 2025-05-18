@@ -1043,6 +1043,27 @@ float getConfigValueByName(const char *name) {
 // tps2Max
 		case -224185132:
 			return engineConfiguration->tps2Max;
+// wwLearningRate
+		case 1193560623:
+			return engineConfiguration->wwLearningRate;
+// wBetaImediato
+		case 1162387044:
+			return engineConfiguration->wBetaImediato;
+// wBetaProlongado
+		case -840364467:
+			return engineConfiguration->wBetaProlongado;
+// wTauImediato
+		case -317195982:
+			return engineConfiguration->wTauImediato;
+// wTauProlongado
+		case -1493543781:
+			return engineConfiguration->wTauProlongado;
+// wwSmoothIntensity
+		case -788112908:
+			return engineConfiguration->wwSmoothIntensity;
+// wwIgnitionOffSaveDelay
+		case 1121100493:
+			return engineConfiguration->wwIgnitionOffSaveDelay;
 // tachPulsePerRev
 		case -2142425790:
 			return engineConfiguration->tachPulsePerRev;
@@ -3818,6 +3839,41 @@ bool setConfigValueByName(const char *name, float value) {
 		case -224185132:
 	{
 		engineConfiguration->tps2Max = (int)value;
+		return 1;
+	}
+		case 1193560623:
+	{
+		engineConfiguration->wwLearningRate = (int)value;
+		return 1;
+	}
+		case 1162387044:
+	{
+		engineConfiguration->wBetaImediato = (int)value;
+		return 1;
+	}
+		case -840364467:
+	{
+		engineConfiguration->wBetaProlongado = (int)value;
+		return 1;
+	}
+		case -317195982:
+	{
+		engineConfiguration->wTauImediato = (int)value;
+		return 1;
+	}
+		case -1493543781:
+	{
+		engineConfiguration->wTauProlongado = (int)value;
+		return 1;
+	}
+		case -788112908:
+	{
+		engineConfiguration->wwSmoothIntensity = (int)value;
+		return 1;
+	}
+		case 1121100493:
+	{
+		engineConfiguration->wwIgnitionOffSaveDelay = (int)value;
 		return 1;
 	}
 		case -2142425790:

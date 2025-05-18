@@ -1036,6 +1036,27 @@ Closed throttle#2. todo: extract these two fields into a structure\nSee also tps
 ### tps2Max
 Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1AdcChannel
 
+### wwLearningRate
+
+
+### wBetaImediato
+
+
+### wBetaProlongado
+
+
+### wTauImediato
+
+
+### wTauProlongado
+
+
+### wwSmoothIntensity
+
+
+### wwIgnitionOffSaveDelay
+
+
 ### tachPulsePerRev
 
 
