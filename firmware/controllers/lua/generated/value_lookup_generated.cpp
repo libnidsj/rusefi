@@ -68,6 +68,15 @@ float getConfigValueByName(const char *name) {
 // ltitIgnitionOffSaveDelay
 		case 423655964:
 			return engineConfiguration->ltitIgnitionOffSaveDelay;
+// ltitClampMin
+		case -1622665645:
+			return engineConfiguration->ltitClampMin;
+// ltitClampMax
+		case -1622665899:
+			return engineConfiguration->ltitClampMax;
+// ltitSmoothingIntensity
+		case 341519713:
+			return engineConfiguration->ltitSmoothingIntensity;
 // launchFuelAdderPercent
 		case -904771683:
 			return engineConfiguration->launchFuelAdderPercent;
@@ -2217,6 +2226,21 @@ bool setConfigValueByName(const char *name, float value) {
 		case 423655964:
 	{
 		engineConfiguration->ltitIgnitionOffSaveDelay = (int)value;
+		return 1;
+	}
+		case -1622665645:
+	{
+		engineConfiguration->ltitClampMin = (int)value;
+		return 1;
+	}
+		case -1622665899:
+	{
+		engineConfiguration->ltitClampMax = (int)value;
+		return 1;
+	}
+		case 341519713:
+	{
+		engineConfiguration->ltitSmoothingIntensity = (int)value;
 		return 1;
 	}
 		case -904771683:

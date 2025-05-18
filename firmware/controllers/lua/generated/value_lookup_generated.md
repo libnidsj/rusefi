@@ -61,6 +61,15 @@ Delay pós-ignição ON para aprendizado/aplicação do LTIT
 ### ltitIgnitionOffSaveDelay
 Delay após ignição OFF para salvamento do LTIT
 
+### ltitClampMin
+Valor mínimo de correção multiplicativa LTIT
+
+### ltitClampMax
+Valor máximo de correção multiplicativa LTIT
+
+### ltitSmoothingIntensity
+Intensidade de suavização regional da tabela LTIT (0=sem suavização, 1=total)
+
 ### launchFuelAdderPercent
 
 
