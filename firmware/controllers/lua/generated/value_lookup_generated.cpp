@@ -1058,18 +1058,36 @@ float getConfigValueByName(const char *name) {
 // wwLearningRate
 		case 1193560623:
 			return engineConfiguration->wwLearningRate;
-// wBetaImediato
-		case 1162387044:
-			return engineConfiguration->wBetaImediato;
-// wBetaProlongado
-		case -840364467:
-			return engineConfiguration->wBetaProlongado;
-// wTauImediato
-		case -317195982:
-			return engineConfiguration->wTauImediato;
-// wTauProlongado
-		case -1493543781:
-			return engineConfiguration->wTauProlongado;
+// wwTransientTimeoutMs
+		case -645422222:
+			return engineConfiguration->wwTransientTimeoutMs;
+// wwMinSampleSize
+		case 1946952756:
+			return engineConfiguration->wwMinSampleSize;
+// wwMaxSampleSize
+		case 571493814:
+			return engineConfiguration->wwMaxSampleSize;
+// wwSampleMultiplier
+		case 1609802300:
+			return engineConfiguration->wwSampleMultiplier;
+// wwBetaInitWeight
+		case -1588150613:
+			return engineConfiguration->wwBetaInitWeight;
+// wwBetaTransWeight
+		case 1605547711:
+			return engineConfiguration->wwBetaTransWeight;
+// wwBetaFinalWeight
+		case -1067190431:
+			return engineConfiguration->wwBetaFinalWeight;
+// wwTauInitWeight
+		case 469785113:
+			return engineConfiguration->wwTauInitWeight;
+// wwTauTransWeight
+		case 797949933:
+			return engineConfiguration->wwTauTransWeight;
+// wwTauFinalWeight
+		case -1874788209:
+			return engineConfiguration->wwTauFinalWeight;
 // wwSmoothIntensity
 		case -788112908:
 			return engineConfiguration->wwSmoothIntensity;
@@ -3878,24 +3896,54 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->wwLearningRate = (int)value;
 		return 1;
 	}
-		case 1162387044:
+		case -645422222:
 	{
-		engineConfiguration->wBetaImediato = (int)value;
+		engineConfiguration->wwTransientTimeoutMs = (int)value;
 		return 1;
 	}
-		case -840364467:
+		case 1946952756:
 	{
-		engineConfiguration->wBetaProlongado = (int)value;
+		engineConfiguration->wwMinSampleSize = (int)value;
 		return 1;
 	}
-		case -317195982:
+		case 571493814:
 	{
-		engineConfiguration->wTauImediato = (int)value;
+		engineConfiguration->wwMaxSampleSize = (int)value;
 		return 1;
 	}
-		case -1493543781:
+		case 1609802300:
 	{
-		engineConfiguration->wTauProlongado = (int)value;
+		engineConfiguration->wwSampleMultiplier = value;
+		return 1;
+	}
+		case -1588150613:
+	{
+		engineConfiguration->wwBetaInitWeight = value;
+		return 1;
+	}
+		case 1605547711:
+	{
+		engineConfiguration->wwBetaTransWeight = value;
+		return 1;
+	}
+		case -1067190431:
+	{
+		engineConfiguration->wwBetaFinalWeight = value;
+		return 1;
+	}
+		case 469785113:
+	{
+		engineConfiguration->wwTauInitWeight = value;
+		return 1;
+	}
+		case 797949933:
+	{
+		engineConfiguration->wwTauTransWeight = value;
+		return 1;
+	}
+		case -1874788209:
+	{
+		engineConfiguration->wwTauFinalWeight = value;
 		return 1;
 	}
 		case -788112908:

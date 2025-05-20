@@ -1051,16 +1051,34 @@ Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1
 ### wwLearningRate
 
 
-### wBetaImediato
+### wwTransientTimeoutMs
 
 
-### wBetaProlongado
+### wwMinSampleSize
 
 
-### wTauImediato
+### wwMaxSampleSize
 
 
-### wTauProlongado
+### wwSampleMultiplier
+
+
+### wwBetaInitWeight
+0.2
+
+### wwBetaTransWeight
+0.3
+
+### wwBetaFinalWeight
+0.5
+
+### wwTauInitWeight
+
+
+### wwTauTransWeight
+
+
+### wwTauFinalWeight
 
 
 ### wwSmoothIntensity
