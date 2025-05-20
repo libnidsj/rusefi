@@ -82,7 +82,7 @@ void LongTermIdleTrim::update(float rpm, float clt, bool acActive, bool fan1Acti
 
     // Verificar se estamos dentro da faixa de RPM considerada lenta e estável
 	float clt = Sensor::get(SensorType::Clt).value_or(0);
-    float rpmDelta = fabsf(rpm - engine->module<IdleController>().unmock().getTargetRpm(clt);
+    float rpmDelta = fabsf(rpm - engine->module<IdleController>().unmock().getTargetRpm(clt));
     bool isIdleRpm = rpmDelta < engineConfiguration->ltitStableRpmThreshold;
 
     // Verificar estabilidade da lenta
