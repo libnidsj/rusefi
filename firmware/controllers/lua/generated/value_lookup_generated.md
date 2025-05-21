@@ -2083,6 +2083,12 @@ Delay pós-ignição ON para aprendizado/aplicação do LTFT
 ### ltftIgnitionOffSaveDelay
 Delay após ignição OFF para salvamento do LTFT
 
+### wwBufferSize
+
+
+### wwDirectionalCorrections
+"Use directional corrections for wall wetting"
+
 ### tcu_shiftTime
 
 
