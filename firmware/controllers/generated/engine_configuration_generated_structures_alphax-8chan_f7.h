@@ -3269,11 +3269,10 @@ struct engine_configuration_s {
 	 */
 	uint16_t wwMaxSampleSize;
 	/**
-	 * need 4 byte alignment
-	 * units: units
+	 * units: count
 	 * offset 1482
 	 */
-	uint8_t alignmentFill_at_1482[2] = {};
+	uint16_t wwBufferSize;
 	/**
 	 * units: mult
 	 * offset 1484
@@ -3388,95 +3387,96 @@ struct engine_configuration_s {
 	offset 1528 bit 1 */
 	bool wwEnableDriftReset : 1 {};
 	/**
+	 * "Enable directional wall wetting corrections"
 	offset 1528 bit 2 */
-	bool unusedBit_647_2 : 1 {};
+	bool wwDirectionalCorrections : 1 {};
 	/**
 	offset 1528 bit 3 */
-	bool unusedBit_647_3 : 1 {};
+	bool unusedBit_648_3 : 1 {};
 	/**
 	offset 1528 bit 4 */
-	bool unusedBit_647_4 : 1 {};
+	bool unusedBit_648_4 : 1 {};
 	/**
 	offset 1528 bit 5 */
-	bool unusedBit_647_5 : 1 {};
+	bool unusedBit_648_5 : 1 {};
 	/**
 	offset 1528 bit 6 */
-	bool unusedBit_647_6 : 1 {};
+	bool unusedBit_648_6 : 1 {};
 	/**
 	offset 1528 bit 7 */
-	bool unusedBit_647_7 : 1 {};
+	bool unusedBit_648_7 : 1 {};
 	/**
 	offset 1528 bit 8 */
-	bool unusedBit_647_8 : 1 {};
+	bool unusedBit_648_8 : 1 {};
 	/**
 	offset 1528 bit 9 */
-	bool unusedBit_647_9 : 1 {};
+	bool unusedBit_648_9 : 1 {};
 	/**
 	offset 1528 bit 10 */
-	bool unusedBit_647_10 : 1 {};
+	bool unusedBit_648_10 : 1 {};
 	/**
 	offset 1528 bit 11 */
-	bool unusedBit_647_11 : 1 {};
+	bool unusedBit_648_11 : 1 {};
 	/**
 	offset 1528 bit 12 */
-	bool unusedBit_647_12 : 1 {};
+	bool unusedBit_648_12 : 1 {};
 	/**
 	offset 1528 bit 13 */
-	bool unusedBit_647_13 : 1 {};
+	bool unusedBit_648_13 : 1 {};
 	/**
 	offset 1528 bit 14 */
-	bool unusedBit_647_14 : 1 {};
+	bool unusedBit_648_14 : 1 {};
 	/**
 	offset 1528 bit 15 */
-	bool unusedBit_647_15 : 1 {};
+	bool unusedBit_648_15 : 1 {};
 	/**
 	offset 1528 bit 16 */
-	bool unusedBit_647_16 : 1 {};
+	bool unusedBit_648_16 : 1 {};
 	/**
 	offset 1528 bit 17 */
-	bool unusedBit_647_17 : 1 {};
+	bool unusedBit_648_17 : 1 {};
 	/**
 	offset 1528 bit 18 */
-	bool unusedBit_647_18 : 1 {};
+	bool unusedBit_648_18 : 1 {};
 	/**
 	offset 1528 bit 19 */
-	bool unusedBit_647_19 : 1 {};
+	bool unusedBit_648_19 : 1 {};
 	/**
 	offset 1528 bit 20 */
-	bool unusedBit_647_20 : 1 {};
+	bool unusedBit_648_20 : 1 {};
 	/**
 	offset 1528 bit 21 */
-	bool unusedBit_647_21 : 1 {};
+	bool unusedBit_648_21 : 1 {};
 	/**
 	offset 1528 bit 22 */
-	bool unusedBit_647_22 : 1 {};
+	bool unusedBit_648_22 : 1 {};
 	/**
 	offset 1528 bit 23 */
-	bool unusedBit_647_23 : 1 {};
+	bool unusedBit_648_23 : 1 {};
 	/**
 	offset 1528 bit 24 */
-	bool unusedBit_647_24 : 1 {};
+	bool unusedBit_648_24 : 1 {};
 	/**
 	offset 1528 bit 25 */
-	bool unusedBit_647_25 : 1 {};
+	bool unusedBit_648_25 : 1 {};
 	/**
 	offset 1528 bit 26 */
-	bool unusedBit_647_26 : 1 {};
+	bool unusedBit_648_26 : 1 {};
 	/**
 	offset 1528 bit 27 */
-	bool unusedBit_647_27 : 1 {};
+	bool unusedBit_648_27 : 1 {};
 	/**
 	offset 1528 bit 28 */
-	bool unusedBit_647_28 : 1 {};
+	bool unusedBit_648_28 : 1 {};
 	/**
 	offset 1528 bit 29 */
-	bool unusedBit_647_29 : 1 {};
+	bool unusedBit_648_29 : 1 {};
 	/**
 	offset 1528 bit 30 */
-	bool unusedBit_647_30 : 1 {};
+	bool unusedBit_648_30 : 1 {};
 	/**
 	offset 1528 bit 31 */
-	bool unusedBit_647_31 : 1 {};
+	bool unusedBit_648_31 : 1 {};
 	/**
 	 * offset 1532
 	 */

@@ -686,7 +686,7 @@ public class Fields {
 	public static final Field WWMINSAMPLESIZE = Field.create("WWMINSAMPLESIZE", 1462, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field ALIGNMENTFILL_AT_1463 = Field.create("ALIGNMENTFILL_AT_1463", 1463, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field WWMAXSAMPLESIZE = Field.create("WWMAXSAMPLESIZE", 1464, FieldType.INT16).setScale(1.0).setBaseOffset(0);
-	public static final Field ALIGNMENTFILL_AT_1466 = Field.create("ALIGNMENTFILL_AT_1466", 1466, FieldType.INT8).setScale(1.0).setBaseOffset(0);
+	public static final Field WWBUFFERSIZE = Field.create("WWBUFFERSIZE", 1466, FieldType.INT16).setScale(1.0).setBaseOffset(0);
 	public static final Field WWSAMPLEMULTIPLIER = Field.create("WWSAMPLEMULTIPLIER", 1468, FieldType.FLOAT).setBaseOffset(0);
 	public static final Field WWBETAINITWEIGHT = Field.create("WWBETAINITWEIGHT", 1472, FieldType.FLOAT).setBaseOffset(0);
 	public static final Field WWBETATRANSWEIGHT = Field.create("WWBETATRANSWEIGHT", 1476, FieldType.FLOAT).setBaseOffset(0);
@@ -707,6 +707,7 @@ public class Fields {
 	public static final Field ALIGNMENTFILL_AT_1509 = Field.create("ALIGNMENTFILL_AT_1509", 1509, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field WWENABLEROBUSTVALIDATION = Field.create("WWENABLEROBUSTVALIDATION", 1512, FieldType.BIT, 0).setBaseOffset(0);
 	public static final Field WWENABLEDRIFTRESET = Field.create("WWENABLEDRIFTRESET", 1512, FieldType.BIT, 1).setBaseOffset(0);
+	public static final Field WWDIRECTIONALCORRECTIONS = Field.create("WWDIRECTIONALCORRECTIONS", 1512, FieldType.BIT, 2).setBaseOffset(0);
 	public static final Field TACHPULSEPERREV = Field.create("TACHPULSEPERREV", 1516, FieldType.INT16).setScale(0.001).setBaseOffset(0);
 	public static final Field ALIGNMENTFILL_AT_1518 = Field.create("ALIGNMENTFILL_AT_1518", 1518, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field MAPERRORDETECTIONTOOLOW = Field.create("MAPERRORDETECTIONTOOLOW", 1520, FieldType.FLOAT).setBaseOffset(0);
@@ -2549,7 +2550,7 @@ public class Fields {
 	WWMINSAMPLESIZE,
 	ALIGNMENTFILL_AT_1463,
 	WWMAXSAMPLESIZE,
-	ALIGNMENTFILL_AT_1466,
+	WWBUFFERSIZE,
 	WWSAMPLEMULTIPLIER,
 	WWBETAINITWEIGHT,
 	WWBETATRANSWEIGHT,
@@ -2570,6 +2571,7 @@ public class Fields {
 	ALIGNMENTFILL_AT_1509,
 	WWENABLEROBUSTVALIDATION,
 	WWENABLEDRIFTRESET,
+	WWDIRECTIONALCORRECTIONS,
 	TACHPULSEPERREV,
 	ALIGNMENTFILL_AT_1518,
 	MAPERRORDETECTIONTOOLOW,
