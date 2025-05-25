@@ -1094,6 +1094,36 @@ float getConfigValueByName(const char *name) {
 // wwIgnitionOffSaveDelay
 		case 1121100493:
 			return engineConfiguration->wwIgnitionOffSaveDelay;
+// wwDriftResetIntervalMin
+		case -618339592:
+			return engineConfiguration->wwDriftResetIntervalMin;
+// wwMaxVarianceThreshold
+		case 1826120079:
+			return engineConfiguration->wwMaxVarianceThreshold;
+// wwMaxConsecutiveAdjustments
+		case -148059629:
+			return engineConfiguration->wwMaxConsecutiveAdjustments;
+// wwMinSamplesForConfidence
+		case 247617121:
+			return engineConfiguration->wwMinSamplesForConfidence;
+// wwConfidenceDecayRate
+		case -1854160781:
+			return engineConfiguration->wwConfidenceDecayRate;
+// wwMinLambdaStability
+		case -1840665747:
+			return engineConfiguration->wwMinLambdaStability;
+// wwMaxCltForLearning
+		case 301633875:
+			return engineConfiguration->wwMaxCltForLearning;
+// wwMinMapForLearning
+		case 913889548:
+			return engineConfiguration->wwMinMapForLearning;
+// wwEnableRobustValidation
+		case -422178428:
+			return engineConfiguration->wwEnableRobustValidation;
+// wwEnableDriftReset
+		case 2130112406:
+			return engineConfiguration->wwEnableDriftReset;
 // tachPulsePerRev
 		case -2142425790:
 			return engineConfiguration->tachPulsePerRev;
@@ -3960,6 +3990,56 @@ bool setConfigValueByName(const char *name, float value) {
 		case 1121100493:
 	{
 		engineConfiguration->wwIgnitionOffSaveDelay = (int)value;
+		return 1;
+	}
+		case -618339592:
+	{
+		engineConfiguration->wwDriftResetIntervalMin = (int)value;
+		return 1;
+	}
+		case 1826120079:
+	{
+		engineConfiguration->wwMaxVarianceThreshold = (int)value;
+		return 1;
+	}
+		case -148059629:
+	{
+		engineConfiguration->wwMaxConsecutiveAdjustments = (int)value;
+		return 1;
+	}
+		case 247617121:
+	{
+		engineConfiguration->wwMinSamplesForConfidence = (int)value;
+		return 1;
+	}
+		case -1854160781:
+	{
+		engineConfiguration->wwConfidenceDecayRate = (int)value;
+		return 1;
+	}
+		case -1840665747:
+	{
+		engineConfiguration->wwMinLambdaStability = (int)value;
+		return 1;
+	}
+		case 301633875:
+	{
+		engineConfiguration->wwMaxCltForLearning = value;
+		return 1;
+	}
+		case 913889548:
+	{
+		engineConfiguration->wwMinMapForLearning = (int)value;
+		return 1;
+	}
+		case -422178428:
+	{
+		engineConfiguration->wwEnableRobustValidation = (int)value;
+		return 1;
+	}
+		case 2130112406:
+	{
+		engineConfiguration->wwEnableDriftReset = (int)value;
 		return 1;
 	}
 		case -2142425790:

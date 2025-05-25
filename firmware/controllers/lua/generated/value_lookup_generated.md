@@ -1073,19 +1073,49 @@ Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1
 0.5
 
 ### wwTauInitWeight
-
+0.2
 
 ### wwTauTransWeight
-
+0.3
 
 ### wwTauFinalWeight
-
+0.5
 
 ### wwSmoothIntensity
 
 
 ### wwIgnitionOffSaveDelay
 
+
+### wwDriftResetIntervalMin
+30
+
+### wwMaxVarianceThreshold
+10
+
+### wwMaxConsecutiveAdjustments
+10
+
+### wwMinSamplesForConfidence
+5
+
+### wwConfidenceDecayRate
+95
+
+### wwMinLambdaStability
+15
+
+### wwMaxCltForLearning
+110.0
+
+### wwMinMapForLearning
+30
+
+### wwEnableRobustValidation
+"Enable robust sensor validation for wall wetting learning"
+
+### wwEnableDriftReset
+"Enable automatic drift reset for wall wetting tables"
 
 ### tachPulsePerRev
 
