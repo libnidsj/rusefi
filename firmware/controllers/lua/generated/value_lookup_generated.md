@@ -1045,84 +1045,6 @@ Closed throttle#2. todo: extract these two fields into a structure\nSee also tps
 ### tps2Max
 Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1AdcChannel
 
-### wwMinClt
-
-
-### wwLearningRate
-
-
-### wwTransientTimeoutMs
-
-
-### wwMinSampleSize
-
-
-### wwMaxSampleSize
-
-
-### wwBufferSize
-
-
-### wwSampleMultiplier
-
-
-### wwBetaInitWeight
-0.2
-
-### wwBetaTransWeight
-0.3
-
-### wwBetaFinalWeight
-0.5
-
-### wwTauInitWeight
-0.2
-
-### wwTauTransWeight
-0.3
-
-### wwTauFinalWeight
-0.5
-
-### wwSmoothIntensity
-
-
-### wwIgnitionOffSaveDelay
-
-
-### wwDriftResetIntervalMin
-30
-
-### wwMaxVarianceThreshold
-10
-
-### wwMaxConsecutiveAdjustments
-10
-
-### wwMinSamplesForConfidence
-5
-
-### wwConfidenceDecayRate
-95
-
-### wwMinLambdaStability
-15
-
-### wwMaxCltForLearning
-110.0
-
-### wwMinMapForLearning
-30
-
-### wwEnableRobustValidation
-"Enable robust sensor validation for wall wetting learning"
-
-### wwEnableDriftReset
-"Enable automatic drift reset for wall wetting tables"
-
-### wwDirectionalCorrections
-"Enable directional wall wetting corrections"
-
 ### tachPulsePerRev
 
 
@@ -2120,10 +2042,10 @@ Delay pós-ignição ON para aprendizado/aplicação do LTFT
 Delay após ignição OFF para salvamento do LTFT
 
 ### wwBufferSize
-
+200
 
 ### wwDirectionalCorrections
-"Use directional corrections for wall wetting"
+"Enable directional wall wetting corrections"
 
 ### tcu_shiftTime
 

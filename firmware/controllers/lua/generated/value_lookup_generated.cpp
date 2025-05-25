@@ -1052,78 +1052,6 @@ float getConfigValueByName(const char *name) {
 // tps2Max
 		case -224185132:
 			return engineConfiguration->tps2Max;
-// wwMinClt
-		case 478927610:
-			return engineConfiguration->wwMinClt;
-// wwLearningRate
-		case 1193560623:
-			return engineConfiguration->wwLearningRate;
-// wwTransientTimeoutMs
-		case -645422222:
-			return engineConfiguration->wwTransientTimeoutMs;
-// wwMinSampleSize
-		case 1946952756:
-			return engineConfiguration->wwMinSampleSize;
-// wwMaxSampleSize
-		case 571493814:
-			return engineConfiguration->wwMaxSampleSize;
-// wwSampleMultiplier
-		case 1609802300:
-			return engineConfiguration->wwSampleMultiplier;
-// wwBetaInitWeight
-		case -1588150613:
-			return engineConfiguration->wwBetaInitWeight;
-// wwBetaTransWeight
-		case 1605547711:
-			return engineConfiguration->wwBetaTransWeight;
-// wwBetaFinalWeight
-		case -1067190431:
-			return engineConfiguration->wwBetaFinalWeight;
-// wwTauInitWeight
-		case 469785113:
-			return engineConfiguration->wwTauInitWeight;
-// wwTauTransWeight
-		case 797949933:
-			return engineConfiguration->wwTauTransWeight;
-// wwTauFinalWeight
-		case -1874788209:
-			return engineConfiguration->wwTauFinalWeight;
-// wwSmoothIntensity
-		case -788112908:
-			return engineConfiguration->wwSmoothIntensity;
-// wwIgnitionOffSaveDelay
-		case 1121100493:
-			return engineConfiguration->wwIgnitionOffSaveDelay;
-// wwDriftResetIntervalMin
-		case -618339592:
-			return engineConfiguration->wwDriftResetIntervalMin;
-// wwMaxVarianceThreshold
-		case 1826120079:
-			return engineConfiguration->wwMaxVarianceThreshold;
-// wwMaxConsecutiveAdjustments
-		case -148059629:
-			return engineConfiguration->wwMaxConsecutiveAdjustments;
-// wwMinSamplesForConfidence
-		case 247617121:
-			return engineConfiguration->wwMinSamplesForConfidence;
-// wwConfidenceDecayRate
-		case -1854160781:
-			return engineConfiguration->wwConfidenceDecayRate;
-// wwMinLambdaStability
-		case -1840665747:
-			return engineConfiguration->wwMinLambdaStability;
-// wwMaxCltForLearning
-		case 301633875:
-			return engineConfiguration->wwMaxCltForLearning;
-// wwMinMapForLearning
-		case 913889548:
-			return engineConfiguration->wwMinMapForLearning;
-// wwEnableRobustValidation
-		case -422178428:
-			return engineConfiguration->wwEnableRobustValidation;
-// wwEnableDriftReset
-		case 2130112406:
-			return engineConfiguration->wwEnableDriftReset;
 // tachPulsePerRev
 		case -2142425790:
 			return engineConfiguration->tachPulsePerRev;
@@ -2120,6 +2048,12 @@ float getConfigValueByName(const char *name) {
 // ltftIgnitionOffSaveDelay
 		case -1053058503:
 			return config->ltftIgnitionOffSaveDelay;
+// wwBufferSize
+		case -1566672952:
+			return config->wwBufferSize;
+// wwDirectionalCorrections
+		case -1534096468:
+			return config->wwDirectionalCorrections;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -2166,14 +2100,6 @@ float getConfigValueByName(const char *name) {
 		case -1661556925:
 			return config->dynoCarFrontalAreaM2;
 	}
-	if (strEqualCaseInsensitive(name, "wwBufferSize"))
-		return engineConfiguration->wwBufferSize;
-	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
-		return engineConfiguration->wwDirectionalCorrections;
-	if (strEqualCaseInsensitive(name, "wwBufferSize"))
-		return config->wwBufferSize;
-	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
-		return config->wwDirectionalCorrections;
 	return EFI_ERROR_CODE;
 }
 bool setConfigValueByName(const char *name, float value) {
@@ -3924,126 +3850,6 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->tps2Max = (int)value;
 		return 1;
 	}
-		case 478927610:
-	{
-		engineConfiguration->wwMinClt = (int)value;
-		return 1;
-	}
-		case 1193560623:
-	{
-		engineConfiguration->wwLearningRate = (int)value;
-		return 1;
-	}
-		case -645422222:
-	{
-		engineConfiguration->wwTransientTimeoutMs = (int)value;
-		return 1;
-	}
-		case 1946952756:
-	{
-		engineConfiguration->wwMinSampleSize = (int)value;
-		return 1;
-	}
-		case 571493814:
-	{
-		engineConfiguration->wwMaxSampleSize = (int)value;
-		return 1;
-	}
-		case 1609802300:
-	{
-		engineConfiguration->wwSampleMultiplier = value;
-		return 1;
-	}
-		case -1588150613:
-	{
-		engineConfiguration->wwBetaInitWeight = value;
-		return 1;
-	}
-		case 1605547711:
-	{
-		engineConfiguration->wwBetaTransWeight = value;
-		return 1;
-	}
-		case -1067190431:
-	{
-		engineConfiguration->wwBetaFinalWeight = value;
-		return 1;
-	}
-		case 469785113:
-	{
-		engineConfiguration->wwTauInitWeight = value;
-		return 1;
-	}
-		case 797949933:
-	{
-		engineConfiguration->wwTauTransWeight = value;
-		return 1;
-	}
-		case -1874788209:
-	{
-		engineConfiguration->wwTauFinalWeight = value;
-		return 1;
-	}
-		case -788112908:
-	{
-		engineConfiguration->wwSmoothIntensity = (int)value;
-		return 1;
-	}
-		case 1121100493:
-	{
-		engineConfiguration->wwIgnitionOffSaveDelay = (int)value;
-		return 1;
-	}
-		case -618339592:
-	{
-		engineConfiguration->wwDriftResetIntervalMin = (int)value;
-		return 1;
-	}
-		case 1826120079:
-	{
-		engineConfiguration->wwMaxVarianceThreshold = (int)value;
-		return 1;
-	}
-		case -148059629:
-	{
-		engineConfiguration->wwMaxConsecutiveAdjustments = (int)value;
-		return 1;
-	}
-		case 247617121:
-	{
-		engineConfiguration->wwMinSamplesForConfidence = (int)value;
-		return 1;
-	}
-		case -1854160781:
-	{
-		engineConfiguration->wwConfidenceDecayRate = (int)value;
-		return 1;
-	}
-		case -1840665747:
-	{
-		engineConfiguration->wwMinLambdaStability = (int)value;
-		return 1;
-	}
-		case 301633875:
-	{
-		engineConfiguration->wwMaxCltForLearning = value;
-		return 1;
-	}
-		case 913889548:
-	{
-		engineConfiguration->wwMinMapForLearning = (int)value;
-		return 1;
-	}
-		case -422178428:
-	{
-		engineConfiguration->wwEnableRobustValidation = (int)value;
-		return 1;
-	}
-		case 2130112406:
-	{
-		engineConfiguration->wwEnableDriftReset = (int)value;
-		return 1;
-	}
 		case -2142425790:
 	{
 		engineConfiguration->tachPulsePerRev = (int)value;
@@ -5704,6 +5510,16 @@ bool setConfigValueByName(const char *name, float value) {
 		config->ltftIgnitionOffSaveDelay = (int)value;
 		return 1;
 	}
+		case -1566672952:
+	{
+		config->wwBufferSize = (int)value;
+		return 1;
+	}
+		case -1534096468:
+	{
+		config->wwDirectionalCorrections = (int)value;
+		return 1;
+	}
 		case -1658957891:
 	{
 		config->tcu_shiftTime = value;
@@ -5781,24 +5597,4 @@ bool setConfigValueByName(const char *name, float value) {
 	}
 	}
 	return 0;
-	if (strEqualCaseInsensitive(name, "wwBufferSize"))
-	{
-		engineConfiguration->wwBufferSize = (int)value;
-		return 1;
-	}
-	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
-	{
-		engineConfiguration->wwDirectionalCorrections = (int)value;
-		return 1;
-	}
-	if (strEqualCaseInsensitive(name, "wwBufferSize"))
-	{
-		config->wwBufferSize = (int)value;
-		return 1;
-	}
-	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
-	{
-		config->wwDirectionalCorrections = (int)value;
-		return 1;
-	}
 }
