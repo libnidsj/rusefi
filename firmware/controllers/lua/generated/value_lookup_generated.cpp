@@ -2120,12 +2120,6 @@ float getConfigValueByName(const char *name) {
 // ltftIgnitionOffSaveDelay
 		case -1053058503:
 			return config->ltftIgnitionOffSaveDelay;
-// wwBufferSize
-		case -1566672952:
-			return config->wwBufferSize;
-// wwDirectionalCorrections
-		case -1534096468:
-			return config->wwDirectionalCorrections;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -2172,6 +2166,14 @@ float getConfigValueByName(const char *name) {
 		case -1661556925:
 			return config->dynoCarFrontalAreaM2;
 	}
+	if (strEqualCaseInsensitive(name, "wwBufferSize"))
+		return engineConfiguration->wwBufferSize;
+	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
+		return engineConfiguration->wwDirectionalCorrections;
+	if (strEqualCaseInsensitive(name, "wwBufferSize"))
+		return config->wwBufferSize;
+	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
+		return config->wwDirectionalCorrections;
 	return EFI_ERROR_CODE;
 }
 bool setConfigValueByName(const char *name, float value) {
@@ -5702,16 +5704,6 @@ bool setConfigValueByName(const char *name, float value) {
 		config->ltftIgnitionOffSaveDelay = (int)value;
 		return 1;
 	}
-		case -1566672952:
-	{
-		config->wwBufferSize = (int)value;
-		return 1;
-	}
-		case -1534096468:
-	{
-		config->wwDirectionalCorrections = (int)value;
-		return 1;
-	}
 		case -1658957891:
 	{
 		config->tcu_shiftTime = value;
@@ -5789,4 +5781,24 @@ bool setConfigValueByName(const char *name, float value) {
 	}
 	}
 	return 0;
+	if (strEqualCaseInsensitive(name, "wwBufferSize"))
+	{
+		engineConfiguration->wwBufferSize = (int)value;
+		return 1;
+	}
+	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
+	{
+		engineConfiguration->wwDirectionalCorrections = (int)value;
+		return 1;
+	}
+	if (strEqualCaseInsensitive(name, "wwBufferSize"))
+	{
+		config->wwBufferSize = (int)value;
+		return 1;
+	}
+	if (strEqualCaseInsensitive(name, "wwDirectionalCorrections"))
+	{
+		config->wwDirectionalCorrections = (int)value;
+		return 1;
+	}
 }

@@ -1060,6 +1060,9 @@ Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1
 ### wwMaxSampleSize
 
 
+### wwBufferSize
+
+
 ### wwSampleMultiplier
 
 
@@ -1116,6 +1119,9 @@ Full throttle#2. tpsMax value as 10 bit ADC value. Not Voltage!\nSee also tps1_1
 
 ### wwEnableDriftReset
 "Enable automatic drift reset for wall wetting tables"
+
+### wwDirectionalCorrections
+"Enable directional wall wetting corrections"
 
 ### tachPulsePerRev
 
