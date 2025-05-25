@@ -1853,6 +1853,8 @@ public class Fields {
 	public static final Field TRAILINGSPARKTABLE = Field.create("TRAILINGSPARKTABLE", 25232, FieldType.INT8).setScale(0.1).setBaseOffset(0);
 	public static final Field TRAILINGSPARKRPMBINS = Field.create("TRAILINGSPARKRPMBINS", 25248, FieldType.INT8).setScale(50.0).setBaseOffset(0);
 	public static final Field TRAILINGSPARKLOADBINS = Field.create("TRAILINGSPARKLOADBINS", 25252, FieldType.INT8).setScale(5.0).setBaseOffset(0);
+	public static final Field COMMUNITYCOMMSLEDPIN = Field.create("COMMUNITYCOMMSLEDPIN", 25256, FieldType.INT16, Gpio).setScale(1.0).setBaseOffset(0);
+	public static final Field ALIGNMENTFILL_AT_25258 = Field.create("ALIGNMENTFILL_AT_25258", 25258, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field[] VALUES = {
 	ENGINETYPE,
 	STARTBUTTONSUPPRESSONSTARTUPMS,
@@ -3664,5 +3666,7 @@ public class Fields {
 	TRAILINGSPARKTABLE,
 	TRAILINGSPARKRPMBINS,
 	TRAILINGSPARKLOADBINS,
+	COMMUNITYCOMMSLEDPIN,
+	ALIGNMENTFILL_AT_25258,
 	};
 }
