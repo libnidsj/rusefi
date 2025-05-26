@@ -1,4 +1,4 @@
-// this section was generated automatically by rusEFI tool config_definition-all.jar based on (unknown script) integration/rusefi_config.txt
+// this section was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh integration/evotech_config.txt
 // by class com.rusefi.output.CHeaderConsumer
 // begin
 #pragma once
@@ -1001,7 +1001,7 @@ struct engine_configuration_s {
 	offset 192 bit 22 */
 	bool usescriptTableForCanSniffingFiltering : 1 {};
 	/**
-	 * Print incoming and outgoing first bus CAN messages in rusEFI console
+	 * Print incoming and outgoing first bus CAN messages in evoTech console
 	offset 192 bit 23 */
 	bool verboseCan : 1 {};
 	/**
@@ -1919,7 +1919,7 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_749[1] = {};
 	/**
-	 * Each rusEFI piece can provide synthetic trigger signal for external ECU. Sometimes these wires are routed back into trigger inputs of the same rusEFI board.
+	 * Each evoTech piece can provide synthetic trigger signal for external ECU. Sometimes these wires are routed back into trigger inputs of the same evoTech board.
 	 * See also directSelfStimulation which is different.
 	 * offset 750
 	 */
@@ -1982,7 +1982,7 @@ struct engine_configuration_s {
 	offset 768 bit 3 */
 	bool isSdCardEnabled : 1 {};
 	/**
-	 * Use 11 bit (standard) or 29 bit (extended) IDs for rusEFI verbose CAN format.
+	 * Use 11 bit (standard) or 29 bit (extended) IDs for evoTech verbose CAN format.
 	offset 768 bit 4 */
 	bool rusefiVerbose29b : 1 {};
 	/**
@@ -2014,7 +2014,7 @@ struct engine_configuration_s {
 	offset 768 bit 13 */
 	bool verboseTLE8888 : 1 {};
 	/**
-	 * CAN broadcast using custom rusEFI protocol
+	 * CAN broadcast using custom evoTech protocol
 	 * enable can_broadcast/disable can_broadcast
 	offset 768 bit 14 */
 	bool enableVerboseCanTx : 1 {};
@@ -2067,7 +2067,7 @@ struct engine_configuration_s {
 	offset 768 bit 28 */
 	bool idleIncrementalPidCic : 1 {};
 	/**
-	 * AEM X-Series or rusEFI Wideband
+	 * AEM X-Series or evoTech Wideband
 	offset 768 bit 29 */
 	bool enableAemXSeries : 1 {};
 	/**
@@ -2510,7 +2510,7 @@ struct engine_configuration_s {
 	 */
 	uart_device_e consoleUartDevice;
 	/**
-	 * rusEFI console Sensor Sniffer mode
+	 * evoTech console Sensor Sniffer mode
 	 * offset 941
 	 */
 	sensor_chart_e sensorChartMode;
@@ -2544,7 +2544,7 @@ struct engine_configuration_s {
 	offset 944 bit 5 */
 	bool canInputBCM : 1 {};
 	/**
-	 * This property is useful if using rusEFI as TCM or BCM only
+	 * This property is useful if using evoTech as TCM or BCM only
 	offset 944 bit 6 */
 	bool consumeObdSensors : 1 {};
 	/**
@@ -2623,7 +2623,7 @@ struct engine_configuration_s {
 	offset 944 bit 29 */
 	bool useRawOutputToDriveIdleStepper : 1 {};
 	/**
-	 * Print incoming and outgoing second bus CAN messages in rusEFI console
+	 * Print incoming and outgoing second bus CAN messages in evoTech console
 	offset 944 bit 30 */
 	bool verboseCan2 : 1 {};
 	/**
@@ -2768,20 +2768,20 @@ struct engine_configuration_s {
 	dc_io stepperDcIo[DC_PER_STEPPER] = {};
 	/**
 	 * For example, BMW, GM or Chevrolet
-	 * REQUIRED for rusEFI Online
+	 * REQUIRED for evoTech Online
 	 * offset 1088
 	 */
 	vehicle_info_t engineMake;
 	/**
 	 * For example, LS1 or NB2
-	 * REQUIRED for rusEFI Online
+	 * REQUIRED for evoTech Online
 	 * offset 1120
 	 */
 	vehicle_info_t engineCode;
 	/**
 	 * For example, Hunchback or Orange Miata
 	 * Vehicle name has to be unique between your vehicles.
-	 * REQUIRED for rusEFI Online
+	 * REQUIRED for evoTech Online
 	 * offset 1152
 	 */
 	vehicle_info_t vehicleName;
@@ -3383,7 +3383,7 @@ struct engine_configuration_s {
 	offset 1528 bit 12 */
 	bool is_enabled_spi_6 : 1 {};
 	/**
-	 * AEM X-Series EGT gauge kit or rusEFI EGT sensor from Wideband controller
+	 * AEM X-Series EGT gauge kit or evoTech EGT sensor from Wideband controller
 	offset 1528 bit 13 */
 	bool enableAemXSeriesEgt : 1 {};
 	/**
@@ -7251,4 +7251,4 @@ struct persistent_config_s {
 static_assert(sizeof(persistent_config_s) == 25260);
 
 // end
-// this section was generated automatically by rusEFI tool config_definition-all.jar based on (unknown script) integration/rusefi_config.txt
+// this section was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh integration/evotech_config.txt

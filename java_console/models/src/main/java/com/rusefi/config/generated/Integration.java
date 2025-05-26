@@ -63,7 +63,7 @@ public class Integration {
 	public static final int DEFAULT_SELT_STIM_RPM = 1200;
 	public static final int DEFAULT_SELT_STIM_VVT0 = 23;
 	public static final int ENGINE_SNIFFER_UNIT_US = 10;
-	public static final String FRONTEND_TITLE_BAR_NAME = "rusEFI";
+	public static final String FRONTEND_TITLE_BAR_NAME = "evoTech";
 	public static final String LOG_DELIMITER = "`";
 	public static final int MLQ_FIELD_HEADER_SIZE = 89;
 	public static final int MLQ_HEADER_SIZE = 24;
@@ -79,9 +79,9 @@ public class Integration {
 	public static final String PROTOCOL_INJ_STAGE2_SHORT_PREFIX = "j";
 	public static final String PROTOCOL_MSG = "msg";
 	public static final String PROTOCOL_OUTPIN = "outpin";
-	public static final String PROTOCOL_SIGNATURE_PREFIX = "rusEFI ";
+	public static final String PROTOCOL_SIGNATURE_PREFIX = "evoTech ";
 	public static final String PROTOCOL_TEST_RESPONSE_TAG = "ts_p_alive";
-	public static final String PROTOCOL_VERSION_TAG = "rusEfiVersion";
+	public static final String PROTOCOL_VERSION_TAG = "evoTechVersion";
 	public static final int REBOOT_COMMAND = 0xbb;
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME = "generated/simulator_tune_image.bin";
 	public static final String SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX = "generated/simulator_tune_image";
