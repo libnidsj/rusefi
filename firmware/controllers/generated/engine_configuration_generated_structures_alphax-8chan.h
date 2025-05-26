@@ -675,7 +675,7 @@ struct engine_configuration_s {
 	 */
 	uint16_t idlePositionMax;
 	/**
-	 * Habilita aprendizado LTIT
+	 * Enable LTIT (Long Term Idle Trim) learning
 	offset 28 bit 0 */
 	bool ltitEnabled : 1 {};
 	/**
@@ -772,37 +772,37 @@ struct engine_configuration_s {
 	offset 28 bit 31 */
 	bool unusedBit_16_31 : 1 {};
 	/**
-	 * Constante de tempo do filtro EMA para LTIT
+	 * EMA filter constant for LTIT (0-255)
 	 * units: 0-255
 	 * offset 32
 	 */
 	uint8_t ltitEmaAlpha;
 	/**
-	 * Faixa de RPM para considerar idle estável
+	 * RPM range to consider stable idle
 	 * units: rpm
 	 * offset 33
 	 */
 	uint8_t ltitStableRpmThreshold;
 	/**
-	 * Tempo mínimo de idle estável para aprender
+	 * Minimum time of stable idle before learning
 	 * units: s
 	 * offset 34
 	 */
 	uint8_t ltitStableTime;
 	/**
-	 * Taxa de aprendizado LTIT
+	 * LTIT learning rate
 	 * units: %/s
 	 * offset 35
 	 */
 	uint8_t ltitCorrectionRate;
 	/**
-	 * Delay pós-ignição ON para aprendizado/aplicação do LTIT
+	 * Delay after ignition ON before LTIT learning/application
 	 * units: s
 	 * offset 36
 	 */
 	uint8_t ltitIgnitionOnDelay;
 	/**
-	 * Delay após ignição OFF para salvamento do LTIT
+	 * Delay after ignition OFF before LTIT save
 	 * units: s
 	 * offset 37
 	 */
@@ -814,19 +814,19 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_38[2] = {};
 	/**
-	 * Valor mínimo de correção multiplicativa LTIT
+	 * Minimum LTIT multiplicative correction value
 	 * units: %
 	 * offset 40
 	 */
 	float ltitClampMin;
 	/**
-	 * Valor máximo de correção multiplicativa LTIT
+	 * Maximum LTIT multiplicative correction value
 	 * units: %
 	 * offset 44
 	 */
 	float ltitClampMax;
 	/**
-	 * Intensidade de suavização regional da tabela LTIT (0=sem suavização, 1=total)
+	 * LTIT table regional smoothing intensity (0=no smoothing)
 	 * units: ratio
 	 * offset 48
 	 */
