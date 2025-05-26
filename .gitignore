@@ -29,7 +29,7 @@ log.txt
 .metadata/
 
 # rusEFI simulator makes logs, ignore those
-rusefi_simulator_log.mlg
+evotech_simulator_log.mlg
 
 # bundle
 artifacts

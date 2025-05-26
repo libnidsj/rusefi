@@ -288,7 +288,7 @@ runs:
         : Building simulator separately just to make github logs more readable
         if [ "$RUN_SIMULATOR" == "true" ]; then
           echo Building simulator...
-          bash bin/compile.sh $BOARD_META_PATH ../simulator/build/rusefi_simulator.linux
+          bash bin/compile.sh $BOARD_META_PATH ../simulator/build/evotech_simulator.linux
           echo DONE: simulator
         fi
 
@@ -322,7 +322,7 @@ runs:
       run: |
         : Build Firmware
         if [ "$RUN_SIMULATOR" == "true" ]; then
-          TARGETS=("../simulator/build/rusefi_simulator.linux")
+          TARGETS=("../simulator/build/evotech_simulator.linux")
         fi
         bash bin/compile.sh $BOARD_META_PATH --output-sync=recurse ${{inputs.artifacts}} ${{inputs.uploads}} ${TARGETS[@]}
 
@@ -348,9 +348,9 @@ runs:
       run: |
         : Run Simulator
         cd ${{inputs.rusefi_dir}}/simulator/
-        ./build/rusefi_simulator 10
+        ./build/evotech_simulator 10
         mkdir -p ${{inputs.sim_output}}canned-tunes
-        ./write_tune.sh ${ABSOLUTE_BOARD_DIR}/generated/tunerstudio/generated/rusefi_${SHORT_BOARD_NAME}.ini
+        ./write_tune.sh ${ABSOLUTE_BOARD_DIR}/generated/tunerstudio/generated/evotech_${SHORT_BOARD_NAME}.ini
 
     - name: Add Tune to Commit
       if: ${{ inputs.run_simulator == 'true' && inputs.push == 'true' }}
@@ -427,36 +427,36 @@ runs:
       if: ${{ contains(inputs.artifacts, 'bin') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.bin
-        path: ${{inputs.rusefi_dir}}/firmware/deliver/rusefi*.bin
+        name: evotech.bin
+        path: ${{inputs.rusefi_dir}}/firmware/deliver/evotech*.bin
 
     - name: Upload github action srec artifact
       if: ${{ contains(inputs.artifacts, 'srec') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi_update.srec
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi.srec
+        name: evotech_update.srec
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech.srec
 
     - name: Upload github action hex artifact
       if: ${{ contains(inputs.artifacts, 'hex') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.hex
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi*.hex
+        name: evotech.hex
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech*.hex
 
     - name: Upload github action list artifact
       if: ${{ contains(inputs.artifacts, 'list') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.list
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi*.list
+        name: evotech.list
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech*.list
 
     - name: Upload github action map artifact
       if: ${{ contains(inputs.artifacts, 'map') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.map
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi*.map
+        name: evotech.map
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech*.map
 
     # sad: we have duplication with build-firmware.yaml :(
     # todo: is this insanity? does not gcc produce similar file directly?
@@ -465,21 +465,21 @@ runs:
       if: ${{ contains(inputs.artifacts, 'elf') }}
       working-directory: ${{inputs.rusefi_dir}}/firmware/build
       run: |
-        arm-none-eabi-objdump -d rusefi.elf > rusefi.txt
+        arm-none-eabi-objdump -d evotech.elf > evotech.txt
 
     - name: Upload github action text artifact
       if: ${{ contains(inputs.artifacts, 'elf') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.txt
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi*.txt
+        name: evotech.txt
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech*.txt
 
     - name: Upload github action elf artifact
       if: ${{ contains(inputs.artifacts, 'elf') }}
       uses: actions/upload-artifact@v4
       with:
-        name: rusefi.elf
-        path: ${{inputs.rusefi_dir}}/firmware/build/rusefi*.elf
+        name: evotech.elf
+        path: ${{inputs.rusefi_dir}}/firmware/build/evotech*.elf
 
     - name: Upload github action bootloader bin artifact
       if: ${{ contains(inputs.artifacts, 'bootloader') }}

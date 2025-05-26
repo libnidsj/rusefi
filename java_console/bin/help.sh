@@ -1,1 +1,1 @@
-java -jar console/rusefi_console.jar help
+java -jar console/evotech_console.jar help

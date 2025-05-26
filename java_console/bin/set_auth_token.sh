@@ -1,1 +1,1 @@
-java -jar console/rusefi_console.jar set_auth_token $1
+java -jar console/evotech_console.jar set_auth_token $1

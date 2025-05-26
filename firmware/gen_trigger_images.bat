@@ -18,4 +18,4 @@ pwd
 if not exist triggers.txt echo triggers.txt generation FAILED
 if not exist triggers.txt exit -1
 
-java -cp ../console/rusefi_console.jar com.rusefi.TriggerImage
+java -cp ../console/evotech_console.jar com.rusefi.TriggerImage
