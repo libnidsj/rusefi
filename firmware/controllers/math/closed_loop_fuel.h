@@ -23,12 +23,12 @@ size_t computeStftBin(float rpm, float load, stft_s& cfg);
 bool shouldUpdateCorrection(SensorType sensor);
 
 class LongTermFuelTrim : public EngineModule{
-	float ltftTableHelper[16][16];
+	float ltftTableHelper[FUEL_LOAD_COUNT][FUEL_RPM_COUNT];
 	bool ltftTableHelperInit = false;
 	float ltftResult = 1;
-	bool updatedLtft = false;
+	bool m_pendingSave = false;
 	// Novas variáveis para aprimoramentos
-	float stftEma = 1.0f;
+	float stftEma = 0.0f;
 	bool m_ignitionState = false;
 	// Para detecção regional
 	float regionalErrorBuffer[16]; // Exemplo: buffer para erros por faixa de RPM
@@ -38,6 +38,8 @@ class LongTermFuelTrim : public EngineModule{
 	void applyRegionalCorrection(float load, float rpm, float correction);
 	bool canLearn();
 	float filterStft(float stftRaw);
+	void resetStftFilter();
+	float computeCorrection(float stftFiltered, float correctionRate, float permissivity);
 	
 	// Timer-based implementation
 	Timer m_updateTimer;            // Controls update frequency
@@ -50,4 +52,5 @@ public:
 	void resetLtftTimer();
 	void updateLtft(float load, float rpm);
 	void onIgnitionStateChanged(bool ignitionState) override;
+	void onSlowCallback() override;
 };

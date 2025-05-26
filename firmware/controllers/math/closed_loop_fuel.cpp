@@ -32,6 +32,26 @@ float LongTermFuelTrim::filterStft(float stftRaw) {
 	return stftEma;
 }
 
+void LongTermFuelTrim::resetStftFilter() {
+	// Reset EMA filter to neutral value when LTFT is enabled/disabled
+	stftEma = 0.0f;
+}
+
+float LongTermFuelTrim::computeCorrection(float stftFiltered, float correctionRate, float permissivity) {
+	// Evitar divisão por zero e valores muito pequenos
+	if (fabsf(stftFiltered) < 0.001f) return 0.0f;
+	
+	// Taxa de aprendizado adaptativa baseada na magnitude do erro
+	// Usa exponencial negativa para suavizar a resposta
+	float adaptiveRate = correctionRate * (1.0f - expf(-fabsf(stftFiltered) * permissivity / 100.0f));
+	
+	// Aplicar correção proporcional com saturação suave
+	float correction = stftFiltered * adaptiveRate * 0.1f; // 10% por ciclo máximo
+	
+	// Limitar correção máxima por ciclo para estabilidade
+	return clampF(-0.05f, correction, 0.05f); // ±5% máximo por ciclo
+}
+
 bool LongTermFuelTrim::canLearn() {
 	// Só aprende se passou tempo suficiente desde ignição ON
 	if (!m_ignitionOnTimer.hasElapsedSec(config->ltftIgnitionOnDelay)) {
@@ -45,26 +65,42 @@ bool LongTermFuelTrim::canLearn() {
 }
 
 void LongTermFuelTrim::applyRegionalCorrection(float load, float rpm, float correction) {
-	// Exemplo: aplicar correção em toda a faixa de RPM se padrão consistente detectado
-	if(load < 10.0f) return;
-	int binRpm = priv::getBin(rpm, config->veRpmBins).Idx;
+	// Aplicar correção regional apenas se configurada e com erro significativo
+	if(load < 10.0f || config->ltftRegionalIntensity == 0) return;
+	
+	auto binLoad = priv::getBin(load, config->veLoadBins);
+	auto binRpm = priv::getBin(rpm, config->veRpmBins);
+	
+	int centerLoad = binLoad.Idx;
+	int centerRpm = binRpm.Idx;
 	int window = config->ltftRegionalWindow;
 	float intensity = (float)config->ltftRegionalIntensity / 100.0f;
-	for (int i = 0; i < 16; i++) {
-		if (abs(i - binRpm) <= window/2) {
-			for (int j = 0; j < 16; j++) {
-				float weight = 1.0f - (float)abs(i - binRpm) / (window/2 + 1);
-				ltftTableHelper[j][i] *= (1.0f + correction * weight * intensity);
+	
+	// Aplicar correção regional com intensidade reduzida baseada na distância
+	for (int i = 0; i < FUEL_LOAD_COUNT; i++) {
+		for (int j = 0; j < FUEL_RPM_COUNT; j++) {
+			int loadDist = abs(i - centerLoad);
+			int rpmDist = abs(j - centerRpm);
+			
+			// Aplicar apenas dentro da janela configurada
+			if (loadDist <= window/2 && rpmDist <= window/2) {
+				float loadWeight = 1.0f - (float)loadDist / (window/2 + 1);
+				float rpmWeight = 1.0f - (float)rpmDist / (window/2 + 1);
+				float totalWeight = loadWeight * rpmWeight * intensity;
+				
+				// Aplicar correção ponderada
+				ltftTableHelper[i][j] *= (1.0f + correction * totalWeight);
 			}
 		}
 	}
 }
 
 void LongTermFuelTrim::smoothHoles() {
-	// Use the generic smoothTable function with configured intensity
-	//float intensity = (float)config->ltftSmoothingIntensity / 100.0f;
-	//smoothTable<float, 16, 16>(ltftTableHelper, intensity);
-	return;
+	// Ativar suavização se configurada
+	if (!config->ltftEnabled || config->ltftSmoothingIntensity == 0) return;
+	
+	float intensity = (float)config->ltftSmoothingIntensity / 100.0f;
+	smoothTable<float, FUEL_LOAD_COUNT, FUEL_RPM_COUNT>(ltftTableHelper, intensity);
 }
 
 // Função utilitária para checar se a ignição está ligada
@@ -91,44 +127,63 @@ void LongTermFuelTrim::updateLtft(float load, float rpm) {
 	float fracLoad = binLoad.Frac;
 	int lowRpm = binRpm.Idx;
 	float fracRpm = binRpm.Frac;
-	if (lowLoad > 14 || lowRpm > 14 || fracLoad <= 0.0f || fracLoad >= 1.0f || fracRpm <= 0.0f || fracRpm >= 1.0f) return;
+	
+	// Validação adequada usando constantes do sistema
+	if (lowLoad >= (FUEL_LOAD_COUNT-1) || lowRpm >= (FUEL_RPM_COUNT-1) ||
+		fracLoad < 0.01f || fracLoad > 0.99f ||
+		fracRpm < 0.01f || fracRpm > 0.99f) {
+		return;
+	}
+	
 	float stftRaw = engine->engineState.stftCorrection[0] - 1.0f;
 	float stftFiltered = filterStft(stftRaw);
+	
+	// Rejeitar STFT muito grandes (ruído/transientes)
 	if (fabsf(stftFiltered) > (float)config->ltftStftRejectThreshold / 100.0f) return;
+	
+	// Validação de consistência com lambda
 	auto lambda = Sensor::get(SensorType::Lambda1);
-	float lambdaError = lambda.Value - engine->fuelComputer.targetLambda;
-	if ((stftFiltered > 0.0f && lambdaError < 0.0f) || (stftFiltered < 0.0f && lambdaError > 0.0f)) return;
+	if (lambda.Valid) {
+		float lambdaError = lambda.Value - engine->fuelComputer.targetLambda;
+		// Verificar se STFT e lambda error têm sinais opostos (inconsistente)
+		if ((stftFiltered > 0.0f && lambdaError < 0.0f) || (stftFiltered < 0.0f && lambdaError > 0.0f)) {
+			return;
+		}
+	}
+	
 	float correctionRate = interpolate3d(
 		config->ltftCorrectionRate,
 		config->veLoadBins, load,
 		config->veRpmBins, rpm
 	) * 0.01f;
-	float correction = correctionRate * 0.005f * (stftFiltered / (fabsf(stftFiltered))) * (1 - powf(10, -20 * (100.0f / config->ltftPermissivity) * fabsf(stftFiltered)));
-	if (fabsf(correction) > fabsf(stftFiltered)) {
-		correction = stftFiltered * stftFiltered / fabsf(stftFiltered);
-	}
-	if (fabsf(correction) <= 0.2f) {
+	
+	// Usar nova fórmula de correção robusta
+	float correction = computeCorrection(stftFiltered, correctionRate, config->ltftPermissivity);
+	
+	// Aplicar correção apenas se estiver dentro de limites razoáveis
+	if (fabsf(correction) > 0.001f && fabsf(correction) <= 0.2f) {
 		// Correção regional se padrão consistente
 		if (fabsf(stftFiltered) > 0.05f) {
 			applyRegionalCorrection(load, rpm, correction);
 		}
+		
 		// Correção bilinear padrão
 		ltftTableHelper[lowLoad][lowRpm]     *= (1 + correction * (1-fracLoad) * (1-fracRpm));
 		ltftTableHelper[lowLoad+1][lowRpm]   *= (1 + correction * (fracLoad) * (1-fracRpm));
 		ltftTableHelper[lowLoad][lowRpm+1]   *= (1 + correction * (1-fracLoad) * (fracRpm));
 		ltftTableHelper[lowLoad+1][lowRpm+1] *= (1 + correction * (fracLoad) * (fracRpm));
-		// Clamping
+		
+		// Clamping usando constantes de configuração
 		for(int i = 0; i < 2; i++){
 			for (int j = 0; j < 2; j++) {
-				if(ltftTableHelper[lowLoad+i][lowRpm+j] > float(100.0f + float(config->ltftMaxCorrection))) {
-					ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f + float(config->ltftMaxCorrection));
-				} else if (ltftTableHelper[lowLoad+i][lowRpm+j] < float(100.0f - float(config->ltftMinCorrection))) {
-					ltftTableHelper[lowLoad+i][lowRpm+j] = float(100.0f - float(config->ltftMinCorrection));
-				}
+				float maxValue = 100.0f + (float)config->ltftMaxCorrection;
+				float minValue = 100.0f - (float)config->ltftMinCorrection;
+				ltftTableHelper[lowLoad+i][lowRpm+j] = clampF(minValue, ltftTableHelper[lowLoad+i][lowRpm+j], maxValue);
 			}
 		}
+		
 		// Após atualização da tabela, marcar aprendizado pendente
-		updatedLtft = true;
+		m_pendingSave = true;
 		smoothHoles();
 	}
 }
@@ -140,21 +195,31 @@ void LongTermFuelTrim::onIgnitionStateChanged(bool ignitionState) {
 		// Reset timers quando ignição liga
 		m_ignitionOnTimer.reset();
 		isLearnConditionsMet = false;
-	} else if (updatedLtft) {
-		// Reset timer para contagem do delay de salvamento
-		m_ignitionOffTimer.reset();
+		m_pendingSave = false;
 		
-		// Verificar se passou o tempo de delay após desligar a ignição
+		// Reset filtro EMA se LTFT foi desabilitado e reabilitado
+		if (config->ltftEnabled) {
+			resetStftFilter();
+		}
+	} else if (m_pendingSave) {
+		// Iniciar timer para delay de salvamento
+		m_ignitionOffTimer.reset();
+	}
+}
+
+void LongTermFuelTrim::onSlowCallback() {
+	// Implementar salvamento com delay adequado após ignição OFF
+	if (m_pendingSave && !m_ignitionState) {
 		float saveDelaySeconds = config->ltftIgnitionOffSaveDelay;
 		if (saveDelaySeconds <= 0) {
 			saveDelaySeconds = 5.0f; // Valor padrão de 5 segundos
 		}
 		
-		// Na implementação atual, salvamos imediatamente
-		// O ideal seria verificar o timer em um callback periódico
-		copyTable(config->ltftTable, ltftTableHelper);
-		setNeedToWriteConfiguration();
-		updatedLtft = false;
+		if (m_ignitionOffTimer.hasElapsedSec(saveDelaySeconds)) {
+			copyTable(config->ltftTable, ltftTableHelper);
+			setNeedToWriteConfiguration();
+			m_pendingSave = false;
+		}
 	}
 }
 
@@ -273,26 +338,33 @@ ClosedLoopFuelResult fuelStftClosedLoopCorrection() {
 		return {};
 	}
 
-	size_t binIdx = computeStftBin(Sensor::getOrZero(SensorType::Rpm), getFuelingLoad(), engineConfiguration->stft);
-
-#if EFI_TUNER_STUDIO
-	engine->outputChannels.fuelClosedLoopBinIdx = binIdx;
-#endif // EFI_TUNER_STUDIO
-
 	ClosedLoopFuelResult result;
 
-	for (int i = 0; i < STFT_BANK_COUNT; i++) {
-		auto& cell = banks[i].cells[binIdx];
+	for (size_t i = 0; i < STFT_BANK_COUNT; i++) {
+		auto sensor = getSensorForBankIndex(i);
 
-		SensorType sensor = getSensorForBankIndex(i);
-		cell.configure(&engineConfiguration->stft.cellCfgs[binIdx], sensor);
-
-		// todo: push configuration at startup
-		if (shouldUpdateCorrection(sensor)) {
-			cell.update(engineConfiguration->stft.deadband * 0.01f, engineConfiguration->stftIgnoreErrorMagnitude);
+		if (!shouldUpdateCorrection(sensor)) {
+			// TODO: should we leave this cell alone, or run it but not update it?
+			continue;
 		}
 
-		result.banks[i] = cell.getAdjustment();
+		if (!Sensor::hasSensor(sensor)) {
+			continue;
+		}
+
+		auto tps = Sensor::get(SensorType::Tps1);
+		auto rpm = Sensor::get(SensorType::Rpm);
+		auto load = getEngineLoadT();
+
+		if (!(rpm.Valid && tps.Valid && load.Valid)) {
+			continue;
+		}
+
+		auto binIdx = computeStftBin(rpm.Value, load.Value, config->stft);
+
+		auto& cell = banks[i].cells[binIdx];
+
+		result.banks[i] = cell.getCorrection(sensor);
 	}
 
 	return result;
@@ -324,13 +396,6 @@ float LongTermFuelTrim::getLtft(float load, float rpm) {
 			  config->veRpmBins, rpm
 		) * 0.01f;
 
-    /*
-		if(100.0f * ltft > config->ltftMaxCorrection || 100.0f * ltft < config->ltftMinCorrection) {
-			config->ltftEnabled = 0;
-			return 1.00f;
-		}
-    */
-
 		return ltft;
 	} else {
 		return 1.00f;
@@ -338,13 +403,14 @@ float LongTermFuelTrim::getLtft(float load, float rpm) {
 }
 
 LongTermFuelTrim::LongTermFuelTrim() {
-	stftEma = 1.0f;
+	stftEma = 0.0f; // Inicializar filtro EMA em valor neutro
 	m_ignitionOnTimer.reset();
 	m_ignitionOffTimer.reset();
 	m_updateTimer.reset();
 	m_ignitionState = false;
 	isLearnConditionsMet = false;
 	ltftTableHelperInit = false;
+	m_pendingSave = false;
 }
 
 #endif // EFI_ENGINE_CONTROL
