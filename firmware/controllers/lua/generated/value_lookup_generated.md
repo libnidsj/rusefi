@@ -41,34 +41,34 @@ Voltage when the idle valve is closed.\nYou probably don't have one of these!
 Voltage when the idle valve is open.\nYou probably don't have one of these!\n1 volt = 1000 units
 
 ### ltitEnabled
-Habilita aprendizado LTIT
+Enable LTIT (Long Term Idle Trim) learning
 
 ### ltitEmaAlpha
-Constante de tempo do filtro EMA para LTIT
+EMA filter constant for LTIT (0-255)
 
 ### ltitStableRpmThreshold
-Faixa de RPM para considerar idle estável
+RPM range to consider stable idle
 
 ### ltitStableTime
-Tempo mínimo de idle estável para aprender
+Minimum time of stable idle before learning
 
 ### ltitCorrectionRate
-Taxa de aprendizado LTIT
+LTIT learning rate
 
 ### ltitIgnitionOnDelay
-Delay pós-ignição ON para aprendizado/aplicação do LTIT
+Delay after ignition ON before LTIT learning/application
 
 ### ltitIgnitionOffSaveDelay
-Delay após ignição OFF para salvamento do LTIT
+Delay after ignition OFF before LTIT save
 
 ### ltitClampMin
-Valor mínimo de correção multiplicativa LTIT
+Minimum LTIT multiplicative correction value
 
 ### ltitClampMax
-Valor máximo de correção multiplicativa LTIT
+Maximum LTIT multiplicative correction value
 
 ### ltitSmoothingIntensity
-Intensidade de suavização regional da tabela LTIT (0=sem suavização, 1=total)
+LTIT table regional smoothing intensity (0=no smoothing)
 
 ### launchFuelAdderPercent
 
