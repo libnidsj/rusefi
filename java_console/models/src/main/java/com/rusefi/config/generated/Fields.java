@@ -1,6 +1,6 @@
 package com.rusefi.config.generated;
 
-// this file was generated automatically by rusEFI tool config_definition-all.jar based on (unknown script) integration/rusefi_config.txt
+// this file was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh integration/evotech_config.txt
 
 // by class com.rusefi.output.FileJavaFieldsConsumer
 import com.rusefi.config.*;
@@ -1133,12 +1133,12 @@ public class Fields {
 	public static final Field MAXCAMPHASERESOLVERPM = Field.create("MAXCAMPHASERESOLVERPM", 3076, FieldType.INT8).setScale(50.0).setBaseOffset(0);
 	public static final Field DFCODELAY = Field.create("DFCODELAY", 3077, FieldType.INT8).setScale(0.1).setBaseOffset(0);
 	public static final Field ACDELAY = Field.create("ACDELAY", 3078, FieldType.INT8).setScale(0.1).setBaseOffset(0);
-	public static final String[] tChargeMode_e = {"RPM+TPS (Default)", "Air Mass Interpolation", "Table"};
+	public static final String[] tChargeMode_e = {"RPM+TPS (Padrão)", "Interpolação de Massa de Ar", "Tabela"};
 	public static final Field TCHARGEMODE = Field.create("TCHARGEMODE", 3079, FieldType.INT8, tChargeMode_e).setScale(1.0).setBaseOffset(0);
 	public static final Field FORDINJECTORSMALLPULSEBREAKPOINT = Field.create("FORDINJECTORSMALLPULSEBREAKPOINT", 3080, FieldType.INT16).setScale(0.001).setBaseOffset(0);
 	public static final Field ETBJAMDETECTTHRESHOLD = Field.create("ETBJAMDETECTTHRESHOLD", 3082, FieldType.INT8).setScale(1.0).setBaseOffset(0);
 	public static final Field HPFPCAMLOBES = Field.create("HPFPCAMLOBES", 3083, FieldType.INT8).setScale(1.0).setBaseOffset(0);
-	public static final String[] hpfp_cam_e = {"NONE", "Intake 1", "Exhaust 1", "Intake 2", "Exhaust 2"};
+	public static final String[] hpfp_cam_e = {"NENHUM", "Admissão 1", "Escape 1", "Admissão 2", "Escape 2"};
 	public static final Field HPFPCAM = Field.create("HPFPCAM", 3084, FieldType.INT8, hpfp_cam_e).setScale(1.0).setBaseOffset(0);
 	public static final Field ACLOWRPMLIMIT = Field.create("ACLOWRPMLIMIT", 3085, FieldType.INT8).setScale(10.0).setBaseOffset(0);
 	public static final Field HPFPMINANGLE = Field.create("HPFPMINANGLE", 3086, FieldType.INT8).setScale(1.0).setBaseOffset(0);

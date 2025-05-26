@@ -6,21 +6,21 @@
 // start of stft_cell_cfg_s
 struct stft_cell_cfg_s {
 	/**
-	 * Maximum % that the short term fuel trim can add
+	 * Porcentagem maxima que o trim de combustivel de curto prazo pode adicionar
 	 * units: %
 	 * offset 0
 	 */
 	int8_t maxAdd;
 	/**
-	 * Maximum % that the short term fuel trim can remove
+	 * Porcentagem maxima que o trim de combustivel de curto prazo pode remover
 	 * units: %
 	 * offset 1
 	 */
 	int8_t maxRemove;
 	/**
-	 * Commonly referred as Integral gain.
-	 * Time constant for correction while in this cell: this sets responsiveness of the closed loop correction. A value of 5.0 means it will try to make most of the correction within 5 seconds, and a value of 1.0 will try to correct within 1 second.
-	 * Lower values makes the correction more sensitive, higher values slow the correction down.
+	 * Comumente referenciado como ganho integral.
+	 * Constante de tempo para correcao nesta celula: define a responsividade da correcao em malha fechada. Um valor de 5.0 significa que tentara fazer a maior parte da correcao em 5 segundos, e um valor de 1.0 tentara corrigir em 1 segundo.
+	 * Valores menores tornam a correcao mais sensivel, valores maiores desaceleram a correcao.
 	 * units: sec
 	 * offset 2
 	 */
@@ -31,7 +31,7 @@ static_assert(sizeof(stft_cell_cfg_s) == 4);
 // start of stft_s
 struct stft_s {
 	/**
-	 * Below this RPM, the idle region is active, idle+300 would be a good value
+	 * Abaixo desta RPM, a regiao de marcha lenta esta ativa, marcha lenta+300 seria um bom valor
 	 * units: RPM
 	 * offset 0
 	 */
@@ -43,45 +43,45 @@ struct stft_s {
 	 */
 	uint8_t alignmentFill_at_1[1] = {};
 	/**
-	 * Below this engine load, the overrun region is active
-	 * When tuning by MAP the units are kPa, e.g. 30 would mean 30kPa. When tuning TPS, 30 would be 30%
+	 * Abaixo desta carga do motor, a regiao de desaceleracao esta ativa
+	 * Quando ajustando por MAP as unidades sao kPa, ex. 30 significaria 30kPa. Quando ajustando TPS, 30 seria 30%
 	 * units: load
 	 * offset 2
 	 */
 	uint16_t maxOverrunLoad;
 	/**
-	 * Above this engine load, the power region is active
-	 * When tuning by MAP the units are kPa
+	 * Acima desta carga do motor, a regiao de potencia esta ativa
+	 * Quando ajustando por MAP as unidades sao kPa
 	 * units: load
 	 * offset 4
 	 */
 	uint16_t minPowerLoad;
 	/**
-	 * When close to correct AFR, pause correction. This can improve stability by not changing the adjustment if the error is extremely small, but is not required.
+	 * Quando proximo do AFR correto, pausar correcao. Isso pode melhorar a estabilidade nao alterando o ajuste se o erro for extremamente pequeno, mas nao e obrigatorio.
 	 * units: %
 	 * offset 6
 	 */
 	scaled_channel<uint8_t, 10, 1> deadband;
 	/**
-	 * Below this temperature, correction is disabled.
+	 * Abaixo desta temperatura, a correcao e desabilitada.
 	 * units: C
 	 * offset 7
 	 */
 	int8_t minClt;
 	/**
-	 * Below this AFR, correction is paused
+	 * Abaixo deste AFR, a correcao e pausada
 	 * units: afr
 	 * offset 8
 	 */
 	scaled_channel<uint8_t, 10, 1> minAfr;
 	/**
-	 * Above this AFR, correction is paused
+	 * Acima deste AFR, a correcao e pausada
 	 * units: afr
 	 * offset 9
 	 */
 	scaled_channel<uint8_t, 10, 1> maxAfr;
 	/**
-	 * Delay after starting the engine before beginning closed loop correction.
+	 * Atraso apos ligar o motor antes de iniciar a correcao em malha fechada.
 	 * units: seconds
 	 * offset 10
 	 */
@@ -114,23 +114,23 @@ struct pid_s {
 	 */
 	float dFactor;
 	/**
-	 * Linear addition to PID logic
+	 * Adicao linear a logica PID
 	 * offset 12
 	 */
 	int16_t offset;
 	/**
-	 * PID dTime
+	 * Tempo PID dTime
 	 * units: ms
 	 * offset 14
 	 */
 	int16_t periodMs;
 	/**
-	 * Output Min Duty Cycle
+	 * Ciclo de Trabalho Minimo de Saida
 	 * offset 16
 	 */
 	int16_t minValue;
 	/**
-	 * Output Max Duty Cycle
+	 * Ciclo de Trabalho Maximo de Saida
 	 * offset 18
 	 */
 	int16_t maxValue;
@@ -159,15 +159,15 @@ static_assert(sizeof(MsIoBox_config_s) == 4);
 // start of cranking_parameters_s
 struct cranking_parameters_s {
 	/**
-	 * Base mass of the per-cylinder fuel injected during cranking. This is then modified by the multipliers for CLT, IAT, TPS ect, to give the final cranking pulse width.
-	 * A reasonable starting point is 60mg per liter per cylinder.
-	 * ex: 2 liter 4 cyl = 500cc/cyl, so 30mg cranking fuel.
+	 * Massa base do combustivel por cilindro injetado durante a partida. Isso e modificado pelos multiplicadores para CLT, IAT, TPS etc, para dar a largura final do pulso de partida.
+	 * Um ponto de partida razoavel e 60mg por litro por cilindro.
+	 * ex: 2 litros 4 cil = 500cc/cil, entao 30mg combustivel de partida.
 	 * units: mg
 	 * offset 0
 	 */
 	float baseFuel;
 	/**
-	 * This sets the RPM limit below which the ECU will use cranking fuel and ignition logic, typically this is around 350-450rpm. 
+	 * Isso define o limite de RPM abaixo do qual a ECU usara combustivel e logica de ignicao de partida, tipicamente isso e cerca de 350-450rpm. 
 	 * set cranking_rpm X
 	 * units: RPM
 	 * offset 4
@@ -185,13 +185,13 @@ static_assert(sizeof(cranking_parameters_s) == 8);
 // start of gppwm_channel
 struct gppwm_channel {
 	/**
-	 * Select a pin to use for PWM or on-off output.
+	 * Selecione um pino para usar para saida PWM ou liga-desliga.
 	 * offset 0
 	 */
 	output_pin_e pin;
 	/**
-	 * If an error (with a sensor, etc) is detected, this value is used instead of reading from the table.
-	 * This should be a safe value for whatever hardware is connected to prevent damage.
+	 * Se um erro (com um sensor, etc) for detectado, este valor e usado em vez de ler da tabela.
+	 * Este deve ser um valor seguro para qualquer hardware conectado para prevenir danos.
 	 * units: %
 	 * offset 2
 	 */
@@ -203,31 +203,31 @@ struct gppwm_channel {
 	 */
 	uint8_t alignmentFill_at_3[1] = {};
 	/**
-	 * Select a frequency to run PWM at.
-	 * Set this to 0hz to enable on-off mode.
+	 * Selecione uma frequencia para executar PWM.
+	 * Defina como 0hz para habilitar modo liga-desliga.
 	 * units: hz
 	 * offset 4
 	 */
 	uint16_t pwmFrequency;
 	/**
-	 * Hysteresis: in on-off mode, turn the output on when the table value is above this duty.
+	 * Histerese: no modo liga-desliga, ligar a saida quando o valor da tabela estiver acima deste ciclo de trabalho.
 	 * units: %
 	 * offset 6
 	 */
 	uint8_t onAboveDuty;
 	/**
-	 * Hysteresis: in on-off mode, turn the output off when the table value is below this duty.
+	 * Histerese: no modo liga-desliga, desligar a saida quando o valor da tabela estiver abaixo deste ciclo de trabalho.
 	 * units: %
 	 * offset 7
 	 */
 	uint8_t offBelowDuty;
 	/**
-	 * Selects the Y axis to use for the table.
+	 * Seleciona o eixo Y para usar na tabela.
 	 * offset 8
 	 */
 	gppwm_channel_e loadAxis;
 	/**
-	 * Selects the X axis to use for the table.
+	 * Seleciona o eixo X para usar na tabela.
 	 * offset 9
 	 */
 	gppwm_channel_e rpmAxis;
@@ -256,13 +256,13 @@ static_assert(sizeof(gppwm_channel) == 68);
 // start of air_pressure_sensor_config_s
 struct air_pressure_sensor_config_s {
 	/**
-	 * kPa value at low volts
+	 * Valor kPa em voltagem baixa
 	 * units: kpa
 	 * offset 0
 	 */
 	float lowValue;
 	/**
-	 * kPa value at high volts
+	 * Valor kPa em voltagem alta
 	 * units: kpa
 	 * offset 4
 	 */
@@ -291,7 +291,7 @@ struct MAP_sensor_config_s {
 	 */
 	float samplingAngleBins[MAP_ANGLE_SIZE] = {};
 	/**
-	 * MAP averaging sampling start crank degree angle
+	 * Angulo em graus do virabrequim de inicio de amostragem de media MAP
 	 * units: deg
 	 * offset 32
 	 */
@@ -301,7 +301,7 @@ struct MAP_sensor_config_s {
 	 */
 	float samplingWindowBins[MAP_WINDOW_SIZE] = {};
 	/**
-	 * MAP averaging angle crank degree duration
+	 * Duracao do angulo em graus do virabrequim para media MAP
 	 * units: deg
 	 * offset 96
 	 */
@@ -320,7 +320,7 @@ static_assert(sizeof(MAP_sensor_config_s) == 140);
 // start of thermistor_conf_s
 struct thermistor_conf_s {
 	/**
-	 * these values are in Celcius
+	 * estes valores estao em Celsius
 	 * units: *C
 	 * offset 0
 	 */
@@ -351,7 +351,7 @@ struct thermistor_conf_s {
 	 */
 	float resistance_3;
 	/**
-	 * Pull-up resistor value on your board
+	 * Valor do resistor pull-up em sua placa
 	 * units: Ohm
 	 * offset 24
 	 */
@@ -414,8 +414,8 @@ static_assert(sizeof(ThermistorConf) == 32);
 // start of injector_s
 struct injector_s {
 	/**
-	 * This is your injector flow at the fuel pressure used in the vehicle
-	 * See units setting below
+	 * Este e o fluxo do seu injetor na pressao de combustivel usada no veiculo
+	 * Veja configuracao de unidades abaixo
 	 * offset 0
 	 */
 	float flow;
@@ -425,13 +425,13 @@ struct injector_s {
 	 */
 	scaled_channel<int16_t, 100, 1> battLagCorrBattBins[VBAT_INJECTOR_CURVE_SIZE] = {};
 	/**
-	 * Injector correction pressure
+	 * Pressao de correcao do injetor
 	 * units: kPa
 	 * offset 20
 	 */
 	scaled_channel<uint32_t, 10, 1> battLagCorrPressBins[VBAT_INJECTOR_CURVE_PRESSURE_SIZE] = {};
 	/**
-	 * ms delay between injector open and close dead times
+	 * Atraso em ms entre os tempos mortos de abertura e fechamento do injetor
 	 * units: ms
 	 * offset 28
 	 */
@@ -590,13 +590,13 @@ struct engine_configuration_s {
 	 */
 	uint16_t startButtonSuppressOnStartUpMs;
 	/**
-	 * Disable sensor sniffer above this rpm
+	 * Desabilitar sensor sniffer acima desta rpm
 	 * units: RPM
 	 * offset 4
 	 */
 	uint16_t sensorSnifferRpmThreshold;
 	/**
-	 * A secondary Rev limit engaged by the driver to help launch the vehicle faster
+	 * Um limitador de giros secundario acionado pelo piloto para ajudar o veiculo a acelerar mais rapido
 	 * units: rpm
 	 * offset 6
 	 */
@@ -608,68 +608,68 @@ struct engine_configuration_s {
 	 */
 	uint16_t rpmHardLimit;
 	/**
-	 * Engine sniffer would be disabled above this rpm
+	 * Engine sniffer seria desabilitado acima desta rpm
 	 * set engineSnifferRpmThreshold X
 	 * units: RPM
 	 * offset 10
 	 */
 	uint16_t engineSnifferRpmThreshold;
 	/**
-	 * Disable multispark above this engine speed.
+	 * Desabilitar multispark acima desta velocidade do motor.
 	 * units: rpm
 	 * offset 12
 	 */
 	scaled_channel<uint8_t, 1, 50> multisparkMaxRpm;
 	/**
-	 * Above this RPM, disable AC. Set to 0 to disable check.
+	 * Acima desta RPM, desabilitar ar condicionado. Configure 0 para desabilitar verificacao.
 	 * units: rpm
 	 * offset 13
 	 */
 	scaled_channel<uint8_t, 1, 50> maxAcRpm;
 	/**
-	 * Above this TPS, disable AC. Set to 0 to disable check.
+	 * Acima deste TPS, desabilitar ar condicionado. Configure 0 para desabilitar verificacao.
 	 * units: %
 	 * offset 14
 	 */
 	uint8_t maxAcTps;
 	/**
-	 * Above this CLT, disable AC to prevent overheating the engine. Set to 0 to disable check.
+	 * Acima desta CLT, desabilitar ar condicionado para prevenir superaquecimento do motor. Configure 0 para desabilitar verificacao.
 	 * units: deg C
 	 * offset 15
 	 */
 	uint8_t maxAcClt;
 	/**
-	 * Just for reference really, not taken into account by any logic at this point
+	 * Apenas para referencia, nao levado em conta por nenhuma logica neste ponto
 	 * units: CR
 	 * offset 16
 	 */
 	float compressionRatio;
 	/**
-	 * Voltage when the wastegate is closed.
-	 * You probably don't have one of these!
+	 * Voltagem quando a wastegate esta fechada.
+	 * Voce provavelmente nao tem uma dessas!
 	 * units: mv
 	 * offset 20
 	 */
 	uint16_t wastegatePositionMin;
 	/**
-	 * Voltage when the wastegate is fully open.
-	 * You probably don't have one of these!
-	 * 1 volt = 1000 units
+	 * Voltagem quando a wastegate esta totalmente aberta.
+	 * Voce provavelmente nao tem uma dessas!
+	 * 1 volt = 1000 unidades
 	 * units: mv
 	 * offset 22
 	 */
 	uint16_t wastegatePositionMax;
 	/**
-	 * Voltage when the idle valve is closed.
-	 * You probably don't have one of these!
+	 * Voltagem quando a valvula de marcha lenta esta fechada.
+	 * Voce provavelmente nao tem uma dessas!
 	 * units: mv
 	 * offset 24
 	 */
 	uint16_t idlePositionMin;
 	/**
-	 * Voltage when the idle valve is open.
-	 * You probably don't have one of these!
-	 * 1 volt = 1000 units
+	 * Voltagem quando a valvula de marcha lenta esta aberta.
+	 * Voce provavelmente nao tem uma dessas!
+	 * 1 volt = 1000 unidades
 	 * units: mv
 	 * offset 26
 	 */
@@ -772,37 +772,37 @@ struct engine_configuration_s {
 	offset 28 bit 31 */
 	bool unusedBit_16_31 : 1 {};
 	/**
-	 * EMA filter constant for LTIT (0-255)
+	 * Constante de filtro EMA para LTIT (0-255)
 	 * units: 0-255
 	 * offset 32
 	 */
 	uint8_t ltitEmaAlpha;
 	/**
-	 * RPM range to consider stable idle
+	 * Faixa de RPM para considerar marcha lenta estavel
 	 * units: rpm
 	 * offset 33
 	 */
 	uint8_t ltitStableRpmThreshold;
 	/**
-	 * Minimum time of stable idle before learning
+	 * Tempo minimo de marcha lenta estavel antes do aprendizado
 	 * units: s
 	 * offset 34
 	 */
 	uint8_t ltitStableTime;
 	/**
-	 * LTIT learning rate
+	 * Taxa de aprendizado LTIT
 	 * units: %/s
 	 * offset 35
 	 */
 	uint8_t ltitCorrectionRate;
 	/**
-	 * Delay after ignition ON before LTIT learning/application
+	 * Atraso apos ignicao ligada antes do aprendizado/aplicacao LTIT
 	 * units: s
 	 * offset 36
 	 */
 	uint8_t ltitIgnitionOnDelay;
 	/**
-	 * Delay after ignition OFF before LTIT save
+	 * Atraso apos ignicao desligada antes de salvar LTIT
 	 * units: s
 	 * offset 37
 	 */
@@ -814,19 +814,19 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_38[2] = {};
 	/**
-	 * Minimum LTIT multiplicative correction value
+	 * Valor minimo de correcao multiplicativa LTIT
 	 * units: %
 	 * offset 40
 	 */
 	float ltitClampMin;
 	/**
-	 * Maximum LTIT multiplicative correction value
+	 * Valor maximo de correcao multiplicativa LTIT
 	 * units: %
 	 * offset 44
 	 */
 	float ltitClampMax;
 	/**
-	 * LTIT table regional smoothing intensity (0=no smoothing)
+	 * Intensidade de suavizacao regional da tabela LTIT (0=sem suavizacao)
 	 * units: ratio
 	 * offset 48
 	 */
@@ -864,7 +864,7 @@ struct engine_configuration_s {
 	 */
 	int8_t launchFuelAdderPercent;
 	/**
-	 * Time after which the throttle is considered jammed.
+	 * Tempo apos o qual o acelerador e considerado travado.
 	 * units: sec
 	 * offset 61
 	 */
@@ -878,19 +878,19 @@ struct engine_configuration_s {
 	 */
 	pin_output_mode_e tachOutputPinMode;
 	/**
-	 * Additional idle % while A/C is active
+	 * Porcentagem adicional de marcha lenta enquanto ar condicionado estiver ativo
 	 * units: %
 	 * offset 65
 	 */
 	uint8_t acIdleExtraOffset;
 	/**
-	 * This parameter sets the latest that the last multispark can occur after the main ignition event. For example, if the ignition timing is 30 degrees BTDC, and this parameter is set to 45, no multispark will ever be fired after 15 degrees ATDC.
+	 * Este parametro define o mais tardio que o ultimo multispark pode ocorrer apos o evento principal de ignicao. Por exemplo, se o tempo de ignicao e 30 graus BTDC, e este parametro e definido como 45, nenhum multispark sera disparado apos 15 graus ATDC.
 	 * units: deg
 	 * offset 66
 	 */
 	uint8_t multisparkMaxSparkingAngle;
 	/**
-	 * Configures the maximum number of extra sparks to fire (does not include main spark)
+	 * Configura o numero maximo de fagulhas extras para disparar (nao inclui fagulha principal)
 	 * units: count
 	 * offset 67
 	 */
@@ -1188,19 +1188,19 @@ struct engine_configuration_s {
 	 */
 	cranking_parameters_s cranking;
 	/**
-	 * Dwell duration while cranking
+	 * Duracao do dwell durante a partida
 	 * units: ms
 	 * offset 220
 	 */
 	float ignitionDwellForCrankingMs;
 	/**
-	 * Once engine speed passes this value, start reducing ETB angle.
+	 * Uma vez que a velocidade do motor passe este valor, comece a reduzir o angulo ETB.
 	 * units: rpm
 	 * offset 224
 	 */
 	uint16_t etbRevLimitStart;
 	/**
-	 * This far above 'Soft limiter start', fully close the throttle. At the bottom of the range, throttle control is normal. At the top of the range, the throttle is fully closed.
+	 * Esta distancia acima do 'Inicio do limitador suave', feche totalmente a borboleta. Na parte inferior da faixa, o controle da borboleta e normal. Na parte superior da faixa, a borboleta esta totalmente fechada.
 	 * units: rpm
 	 * offset 226
 	 */
@@ -1241,18 +1241,18 @@ struct engine_configuration_s {
 	 */
 	uint8_t unusedHip1;
 	/**
-	 * Zero value means do not detect tuning
+	 * Valor zero significa nao detectar ajuste
 	 * units: seconds
 	 * offset 439
 	 */
 	uint8_t tuningDetector;
 	/**
-	 * iTerm min value
+	 * Valor minimo iTerm
 	 * offset 440
 	 */
 	int16_t alternator_iTermMin;
 	/**
-	 * iTerm max value
+	 * Valor maximo iTerm
 	 * offset 442
 	 */
 	int16_t alternator_iTermMax;
@@ -1281,13 +1281,13 @@ struct engine_configuration_s {
 	 */
 	uint8_t justATempTest;
 	/**
-	 * Delta kPa for MAP sync
+	 * Delta kPa para sincronizacao MAP
 	 * units: kPa
 	 * offset 454
 	 */
 	uint8_t mapSyncThreshold;
 	/**
-	 * How many % of ignition events will be cut
+	 * Quantos % dos eventos de ignicao serao cortados
 	 * units: %
 	 * offset 455
 	 */
@@ -1366,13 +1366,13 @@ struct engine_configuration_s {
 	 */
 	ignition_mode_e ignitionMode;
 	/**
-	 * How many consecutive gap rations have to match expected ranges for sync to happen
+	 * Quantas razoes de lacuna consecutivas tem que corresponder aos intervalos esperados para que a sincronizacao aconteca
 	 * units: count
 	 * offset 477
 	 */
 	int8_t gapTrackingLengthOverride;
 	/**
-	 * Above this speed, disable closed loop idle control. Set to 0 to disable (allow closed loop idle at any speed).
+	 * Acima desta velocidade, desabilitar controle de marcha lenta em malha fechada. Configure 0 para desabilitar (permitir marcha lenta em malha fechada em qualquer velocidade).
 	 * units: kph
 	 * offset 478
 	 */
@@ -1382,7 +1382,7 @@ struct engine_configuration_s {
 	 */
 	uint8_t camDecoder2jzPrecision;
 	/**
-	 * Expected oil pressure after starting the engine. If oil pressure does not reach this level within 5 seconds of engine start, fuel will be cut. Set to 0 to disable and always allow starting.
+	 * Pressao de oleo esperada apos ligar o motor. Se a pressao de oleo nao atingir este nivel dentro de 5 segundos apos a partida do motor, o combustivel sera cortado. Configure 0 para desabilitar e sempre permitir a partida.
 	 * units: kPa
 	 * offset 480
 	 */
@@ -1502,37 +1502,37 @@ struct engine_configuration_s {
 	 */
 	angle_t fixedModeTiming;
 	/**
-	 * Angle between Top Dead Center (TDC) and the first trigger event.
-	 * Positive value in case of synchronization point before TDC and negative in case of synchronization point after TDC
-	 * .Knowing this angle allows us to control timing and other angles in reference to TDC.
-	 * HOWTO:
-	 * 1: Switch to fixed timing mode on 'ignition setting' dialog
-	 * 2: use an actual timing light to calibrate
-	 * 3: add/subtract until timing light confirms desired fixed timing value!'
+	 * Angulo entre o Ponto Morto Superior (TDC) e o primeiro evento de trigger.
+	 * Valor positivo no caso de ponto de sincronizacao antes do TDC e negativo no caso de ponto de sincronizacao apos TDC
+	 * .Conhecer este angulo nos permite controlar tempo e outros angulos em referencia ao TDC.
+	 * COMO FAZER:
+	 * 1: Mude para modo de tempo fixo no dialogo de configuracao de ignicao
+	 * 2: use uma pistola de ponto real para calibrar
+	 * 3: adicione/subtraia ate que a pistola de ponto confirme o valor de tempo fixo desejado!'
 	 * units: deg btdc
 	 * offset 492
 	 */
 	angle_t globalTriggerAngleOffset;
 	/**
-	 * Ratio/coefficient of input voltage dividers on your PCB. For example, use '2' if your board divides 5v into 2.5v. Use '1.66' if your board divides 5v into 3v.
+	 * Razao/coeficiente dos divisores de voltagem de entrada em sua PCB. Por exemplo, use '2' se sua placa dividir 5v em 2.5v. Use '1.66' se sua placa dividir 5v em 3v.
 	 * units: coef
 	 * offset 496
 	 */
 	float analogInputDividerCoefficient;
 	/**
-	 * This is the ratio of the resistors for the battery voltage, measure the voltage at the battery and then adjust this number until the gauge matches the reading.
+	 * Esta e a razao dos resistores para a voltagem da bateria, meca a voltagem na bateria e entao ajuste este numero ate que o medidor corresponda a leitura.
 	 * units: coef
 	 * offset 500
 	 */
 	float vbattDividerCoeff;
 	/**
-	 * Cooling fan turn-on temperature threshold, in Celsius
+	 * Limite de temperatura para ligar o ventilador de resfriamento, em Celsius
 	 * units: deg C
 	 * offset 504
 	 */
 	float fanOnTemperature;
 	/**
-	 * Cooling fan turn-off temperature threshold, in Celsius
+	 * Limite de temperatura para desligar o ventilador de resfriamento, em Celsius
 	 * units: deg C
 	 * offset 508
 	 */
@@ -1548,13 +1548,13 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_514[2] = {};
 	/**
-	 * Number of revolutions per kilometer for the wheels your vehicle speed sensor is connected to. Use an online calculator to determine this based on your tire size.
+	 * Numero de revolucoes por quilometro para as rodas onde seu sensor de velocidade do veiculo esta conectado. Use uma calculadora online para determinar isso baseado no tamanho do seu pneu.
 	 * units: revs/km
 	 * offset 516
 	 */
 	float driveWheelRevPerKm;
 	/**
-	 * CANbus thread period in ms
+	 * Periodo da thread CANbus em ms
 	 * units: ms
 	 * offset 520
 	 */
@@ -1565,22 +1565,22 @@ struct engine_configuration_s {
 	 */
 	int byFirmwareVersion;
 	/**
-	 * First throttle body, first sensor. See also pedalPositionAdcChannel
+	 * Primeiro corpo de borboleta, primeiro sensor. Veja tambem pedalPositionAdcChannel
 	 * offset 528
 	 */
 	adc_channel_e tps1_1AdcChannel;
 	/**
-	 * This is the processor input pin that the battery voltage circuit is connected to, if you are unsure of what pin to use, check the schematic that corresponds to your PCB.
+	 * Este e o pino de entrada do processador ao qual o circuito de voltagem da bateria esta conectado, se voce nao tem certeza de qual pino usar, verifique o esquematico que corresponde a sua PCB.
 	 * offset 529
 	 */
 	adc_channel_e vbattAdcChannel;
 	/**
-	 * This is the processor pin that your fuel level sensor in connected to. This is a non standard input so will need to be user defined.
+	 * Este e o pino do processador ao qual seu sensor de nivel de combustivel esta conectado. Esta e uma entrada nao padrao entao precisara ser definida pelo usuario.
 	 * offset 530
 	 */
 	adc_channel_e fuelLevelSensor;
 	/**
-	 * Second throttle body position sensor, single channel so far
+	 * Segundo sensor de posicao do corpo de borboleta, canal unico ate agora
 	 * offset 531
 	 */
 	adc_channel_e tps2_1AdcChannel;
@@ -1595,7 +1595,7 @@ struct engine_configuration_s {
 	 */
 	trigger_config_s trigger;
 	/**
-	 * Extra air taper amount
+	 * Quantidade de afunilamento de ar extra
 	 * units: %
 	 * offset 548
 	 */
@@ -1605,7 +1605,7 @@ struct engine_configuration_s {
 	 */
 	spi_device_e hip9011SpiDevice;
 	/**
-	 * Duty cycle to use in case of a sensor failure. This duty cycle should produce the minimum possible amount of boost. This duty is also used in case any of the minimum RPM/TPS/MAP conditions are not met.
+	 * Ciclo de trabalho para usar em caso de falha do sensor. Este ciclo de trabalho deve produzir a menor quantidade possivel de boost. Este ciclo tambem e usado caso qualquer das condicoes minimas de RPM/TPS/MAP nao sejam atendidas.
 	 * units: %
 	 * offset 553
 	 */
@@ -1628,13 +1628,13 @@ struct engine_configuration_s {
 	 */
 	float adcVcc;
 	/**
-	 * Magic engine phase: we compare instant MAP at X to instant MAP at x+360 angle in one complete cycle
+	 * Fase magica do motor: comparamos MAP instantaneo em X com MAP instantaneo em x+360 graus em um ciclo completo
 	 * units: Deg
 	 * offset 564
 	 */
 	float mapCamDetectionAnglePosition;
 	/**
-	 * Camshaft input could be used either just for engine phase detection if your trigger shape does not include cam sensor as 'primary' channel, or it could be used for Variable Valve timing on one of the camshafts.
+	 * A entrada do comando de valvulas pode ser usada apenas para deteccao de fase do motor se sua forma de trigger nao incluir sensor de comando como canal 'primario', ou pode ser usada para Variacao de Tempo de Valvulas em um dos comandos.
 	 * offset 568
 	 */
 	brain_input_pin_e camInputs[CAM_INPUTS_COUNT] = {};
@@ -1643,15 +1643,15 @@ struct engine_configuration_s {
 	 */
 	afr_sensor_s afr;
 	/**
-	 * Electronic throttle pedal position first channel
-	 * See throttlePedalPositionSecondAdcChannel for second channel
-	 * See also tps1_1AdcChannel
-	 * See throttlePedalUpVoltage and throttlePedalWOTVoltage
+	 * Primeiro canal de posicao do pedal do acelerador eletronico
+	 * Veja throttlePedalPositionSecondAdcChannel para segundo canal
+	 * Veja tambem tps1_1AdcChannel
+	 * Veja throttlePedalUpVoltage e throttlePedalWOTVoltage
 	 * offset 596
 	 */
 	adc_channel_e throttlePedalPositionAdcChannel;
 	/**
-	 * TPS/PPS error threshold
+	 * Limite de erro TPS/PPS
 	 * units: %
 	 * offset 597
 	 */
@@ -1684,13 +1684,13 @@ struct engine_configuration_s {
 	 */
 	idle_hardware_s idle;
 	/**
-	 * Ignition timing to remove when a knock event occurs. Advice: 5% (mild), 10% (turbo/high comp.), 15% (high knock, e.g. GDI), 20% (spicy lump),
+	 * Tempo de ignicao para remover quando um evento de detonacao ocorrer. Conselho: 5% (leve), 10% (turbo/alta compressao), 15% (alta detonacao, ex. GDI), 20% (bem agressivo)
 	 * units: %
 	 * offset 628
 	 */
 	scaled_channel<uint8_t, 10, 1> knockRetardAggression;
 	/**
-	 * After a knock event, reapply timing at this rate.
+	 * Apos um evento de detonacao, reaplicar tempo nesta taxa.
 	 * units: deg/s
 	 * offset 629
 	 */
@@ -1762,7 +1762,7 @@ struct engine_configuration_s {
 	 */
 	pin_output_mode_e fuelPumpPinMode;
 	/**
-	 * How many consecutive VVT gap rations have to match expected ranges for sync to happen
+	 * Quantas razoes de lacuna VVT consecutivas tem que corresponder aos intervalos esperados para que a sincronizacao aconteca
 	 * units: count
 	 * offset 693
 	 */
@@ -2219,7 +2219,7 @@ struct engine_configuration_s {
 	 */
 	uint32_t verboseCanBaseAddress;
 	/**
-	 * Boost Voltage
+	 * Voltagem de Boost
 	 * units: v
 	 * offset 800
 	 */
@@ -2231,7 +2231,7 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_801[1] = {};
 	/**
-	 * Minimum MAP before closed loop boost is enabled. Use to prevent misbehavior upon entering boost.
+	 * MAP minimo antes que o boost em malha fechada seja habilitado. Use para prevenir comportamento inadequado ao entrar em boost.
 	 * units: kPa
 	 * offset 802
 	 */
@@ -2290,7 +2290,7 @@ struct engine_configuration_s {
 	 */
 	brain_input_pin_e vehicleSpeedSensorInputPin;
 	/**
-	 * Some vehicles have a switch to indicate that clutch pedal is all the way up
+	 * Alguns veiculos tem um interruptor para indicar que o pedal da embreagem esta totalmente levantado
 	 * offset 820
 	 */
 	switch_input_pin_e clutchUpPin;
@@ -2307,12 +2307,12 @@ struct engine_configuration_s {
 	 */
 	Gpio max31855_cs[EGT_CHANNEL_COUNT] = {};
 	/**
-	 * Continental/GM flex fuel sensor, 50-150hz type
+	 * Sensor de combustivel flex Continental/GM, tipo 50-150hz
 	 * offset 840
 	 */
 	brain_input_pin_e flexSensorPin;
 	/**
-	 * Since torque reduction pin is usually shared with launch control, most people have an RPM where behavior under that is Launch Control, over that is Flat Shift/Torque Reduction
+	 * Como o pino de reducao de torque e geralmente compartilhado com controle de largada, a maioria das pessoas tem uma RPM onde o comportamento abaixo disso e Controle de Largada, acima disso e Reducao de Torque
 	 * units: rpm
 	 * offset 842
 	 */
@@ -2326,19 +2326,19 @@ struct engine_configuration_s {
 	 */
 	spi_device_e mc33972spiDevice;
 	/**
-	 * Stoichiometric ratio for your secondary fuel. This value is used when the Flex Fuel sensor indicates E100, typically 9.0
+	 * Razao estequiometrica para seu combustivel secundario. Este valor e usado quando o sensor Flex Fuel indica E100, tipicamente 9.0
 	 * units: :1
 	 * offset 846
 	 */
 	scaled_channel<uint8_t, 10, 1> stoichRatioSecondary;
 	/**
-	 * Maximum allowed ETB position. Some throttles go past fully open, so this allows you to limit it to fully open.
+	 * Posicao maxima permitida do ETB. Algumas borboletas passam da totalmente aberta, entao isso permite limitar a totalmente aberta.
 	 * units: %
 	 * offset 847
 	 */
 	uint8_t etbMaximumPosition;
 	/**
-	 * Rate the ECU will log to the SD card, in hz (log lines per second).
+	 * Taxa que a ECU ira registrar no cartao SD, em hz (linhas de log por segundo).
 	 * units: hz
 	 * offset 848
 	 */
@@ -2362,7 +2362,7 @@ struct engine_configuration_s {
 	 */
 	output_pin_e starterRelayDisablePin;
 	/**
-	 * On some vehicles we can disable starter once engine is already running
+	 * Em alguns veiculos podemos desabilitar o motor de partida uma vez que o motor ja esta funcionando
 	 * offset 856
 	 */
 	pin_output_mode_e starterRelayDisablePinMode;
@@ -2373,12 +2373,12 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_857[1] = {};
 	/**
-	 * Some Subaru and some Mazda use double-solenoid idle air valve
+	 * Alguns Subaru e alguns Mazda usam valvula de ar de marcha lenta de duplo solenoide
 	 * offset 858
 	 */
 	output_pin_e secondSolenoidPin;
 	/**
-	 * See also starterControlPin
+	 * Veja tambem starterControlPin
 	 * offset 860
 	 */
 	switch_input_pin_e startStopButtonPin;
@@ -2392,13 +2392,13 @@ struct engine_configuration_s {
 	 */
 	pin_output_mode_e acRelayPinMode;
 	/**
-	 * This many MAP samples are used to estimate the current MAP. This many samples are considered, and the minimum taken. Recommended value is 1 for single-throttle engines, and your number of cylinders for individual throttle bodies.
+	 * Esta quantidade de amostras MAP e usada para estimar o MAP atual. Esta quantidade de amostras e considerada, e o minimo e tomado. Valor recomendado e 1 para motores de borboleta unica, e seu numero de cilindros para corpos de borboleta individuais.
 	 * units: count
 	 * offset 864
 	 */
 	int mapMinBufferLength;
 	/**
-	 * Below this throttle position, the engine is considered idling. If you have an electronic throttle, this checks accelerator pedal position instead of throttle position, and should be set to 1-2%.
+	 * Abaixo desta posicao da borboleta, o motor e considerado em marcha lenta. Se voce tem uma borboleta eletronica, isso verifica a posicao do pedal do acelerador em vez da posicao da borboleta, e deve ser definido para 1-2%.
 	 * units: %
 	 * offset 868
 	 */
@@ -2424,7 +2424,7 @@ struct engine_configuration_s {
 	 */
 	int16_t antiLagRpmTreshold;
 	/**
-	 * Maximum time to crank starter when start/stop button is pressed
+	 * Tempo maximo para girar o motor de partida quando o botao start/stop e pressionado
 	 * units: Seconds
 	 * offset 878
 	 */
@@ -2722,13 +2722,13 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_1009[3] = {};
 	/**
-	 * Launch disabled above this speed if setting is above zero
+	 * Launch desabilitado acima desta velocidade se a configuracao estiver acima de zero
 	 * units: Kph
 	 * offset 1012
 	 */
 	int launchSpeedThreshold;
 	/**
-	 * Starting Launch RPM window to activate (subtracts from Launch RPM)
+	 * Janela de RPM de Launch inicial para ativar (subtrai do RPM de Launch)
 	 * units: RPM
 	 * offset 1016
 	 */
@@ -2832,7 +2832,7 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_1222[2] = {};
 	/**
-	 * Angle between cam sensor and VVT zero position
+	 * Angulo entre sensor de comando e posicao zero VVT
 	 * units: value
 	 * offset 1224
 	 */
@@ -2988,7 +2988,7 @@ struct engine_configuration_s {
 	 */
 	adc_channel_e vRefAdcChannel;
 	/**
-	 * Expected neutral position
+	 * Posicao neutra esperada
 	 * units: %
 	 * offset 1349
 	 */
@@ -3146,7 +3146,7 @@ struct engine_configuration_s {
 	 */
 	int16_t acIdleRpmTarget;
 	/**
-	 * set warningPeriod X
+	 * definir warningPeriod X
 	 * units: seconds
 	 * offset 1374
 	 */
@@ -3167,12 +3167,12 @@ struct engine_configuration_s {
 	 */
 	int idleStepperTotalSteps;
 	/**
-	 * Pedal position to realize that we need to reduce torque when the trigger pin is uuuh triggered
+	 * Posicao do pedal para perceber que precisamos reduzir o torque quando o pino de trigger e acionado
 	 * offset 1388
 	 */
 	int torqueReductionArmingApp;
 	/**
-	 * Duration in ms or duty cycle depending on selected mode
+	 * Duracao em ms ou ciclo de trabalho dependendo do modo selecionado
 	 * offset 1392
 	 */
 	float tachPulseDuractionMs;
@@ -3195,7 +3195,7 @@ struct engine_configuration_s {
 	 */
 	Gpio triggerInputDebugPins[TRIGGER_INPUT_PIN_COUNT] = {};
 	/**
-	 * RPM range above upper limit for extra air taper
+	 * Faixa de RPM acima do limite superior para afunilamento de ar extra
 	 * units: RPM
 	 * offset 1444
 	 */
@@ -3242,13 +3242,13 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint16_t, 1000, 1> tachPulsePerRev;
 	/**
-	 * kPa value which is too low to be true
+	 * Valor kPa que e muito baixo para ser verdadeiro
 	 * units: kPa
 	 * offset 1460
 	 */
 	float mapErrorDetectionTooLow;
 	/**
-	 * kPa value which is too high to be true
+	 * Valor kPa que e muito alto para ser verdadeiro
 	 * units: kPa
 	 * offset 1464
 	 */
@@ -3303,13 +3303,13 @@ struct engine_configuration_s {
 	 */
 	float throttlePedalUpVoltage;
 	/**
-	 * Pedal in the floor
+	 * Pedal no chao
 	 * units: voltage
 	 * offset 1512
 	 */
 	float throttlePedalWOTVoltage;
 	/**
-	 * on IGN voltage detection turn fuel pump on to build fuel pressure
+	 * na deteccao de voltagem IGN ligar bomba de combustivel para construir pressao de combustivel
 	 * units: seconds
 	 * offset 1516
 	 */
@@ -3501,7 +3501,7 @@ struct engine_configuration_s {
 	 */
 	uint8_t fan1ExtraIdle;
 	/**
-	 * Band rate for primary TTL
+	 * Taxa de banda para TTL primario
 	 * units: BPs
 	 * offset 1552
 	 */
@@ -3519,7 +3519,7 @@ struct engine_configuration_s {
 	 */
 	float tpsDecelEnleanmentMultiplier;
 	/**
-	 * How many degrees of timing advance will be reduced during the Torque Reduction Time
+	 * Quantos graus de avanco de tempo serao reduzidos durante o Tempo de Reducao de Torque
 	 * units: deg
 	 * offset 1564
 	 */
@@ -3530,7 +3530,7 @@ struct engine_configuration_s {
 	 */
 	float throttlePedalSecondaryUpVoltage;
 	/**
-	 * Pedal in the floor
+	 * Pedal no chao
 	 * units: voltage
 	 * offset 1572
 	 */
@@ -3566,31 +3566,31 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint8_t, 10, 1> mc33_hpfp_i_hold;
 	/**
-	 * How long to deactivate power when hold current is reached before applying power again
+	 * Quanto tempo desativar a energia quando a corrente de manutencao e atingida antes de aplicar energia novamente
 	 * units: us
 	 * offset 1582
 	 */
 	uint8_t mc33_hpfp_i_hold_off;
 	/**
-	 * Maximum amount of time the solenoid can be active before assuming a programming error
+	 * Quantidade maxima de tempo que o solenoide pode estar ativo antes de assumir um erro de programacao
 	 * units: ms
 	 * offset 1583
 	 */
 	uint8_t mc33_hpfp_max_hold;
 	/**
-	 * Enable if DC-motor driver (H-bridge) inverts the signals (eg. RZ7899 on Hellen boards)
+	 * Habilite se o driver de motor DC (ponte H) inverter os sinais (ex: RZ7899 em placas Hellen)
 	offset 1584 bit 0 */
 	bool stepperDcInvertedPins : 1 {};
 	/**
-	 * Allow OpenBLT on Primary CAN
+	 * Permitir OpenBLT no CAN Primário
 	offset 1584 bit 1 */
 	bool canOpenBLT : 1 {};
 	/**
-	 * Allow OpenBLT on Secondary CAN
+	 * Permitir OpenBLT no CAN Secundário
 	offset 1584 bit 2 */
 	bool can2OpenBLT : 1 {};
 	/**
-	 * Select whether to configure injector flow in volumetric flow (default, cc/min) or mass flow (g/s).
+	 * Selecione se deseja configurar o fluxo do injetor em fluxo volumétrico (padrão, cc/min) ou fluxo de massa (g/s).
 	offset 1584 bit 3 */
 	bool injectorFlowAsMassFlow : 1 {};
 	/**
@@ -3600,7 +3600,7 @@ struct engine_configuration_s {
 	offset 1584 bit 5 */
 	bool kLineDoHondaSend : 1 {};
 	/**
-	 * ListenMode is about acknowledging CAN traffic on the protocol level. Different from canWriteEnabled
+	 * ListenMode é sobre reconhecer tráfego CAN no nível do protocolo. Diferente de canWriteEnabled
 	offset 1584 bit 6 */
 	bool can1ListenMode : 1 {};
 	/**
@@ -3687,7 +3687,7 @@ struct engine_configuration_s {
 	 */
 	mc33810maxDwellTimer_e mc33810maxDwellTimer;
 	/**
-	 * Duration of each test pulse
+	 * Duração de cada pulso de teste
 	 * units: ms
 	 * offset 1590
 	 */
@@ -3754,9 +3754,8 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_1607[1] = {};
 	/**
-	 * MAP value above which fuel is cut in case of overboost.
-	 * Set to 0 to disable overboost cut.
-	 * units: kPa (absolute)
+	 * Valor de MAP acima do qual o combustível é cortado em caso de overboost. Defina como 0 para desabilitar o corte de overboost.
+	 * units: kPa (absoluto)
 	 * offset 1608
 	 */
 	float boostCutPressure;
@@ -3800,7 +3799,7 @@ struct engine_configuration_s {
 	 */
 	output_pin_e vvtPins[CAM_INPUTS_COUNT] = {};
 	/**
-	 * This is the IAC position during cranking, some engines start better if given more air during cranking to improve cylinder filling.
+	 * Esta é a posição do IAC durante a partida, alguns motores dão partida melhor se receberem mais ar durante a partida para melhorar o enchimento dos cilindros.
 	 * units: percent
 	 * offset 1668
 	 */
@@ -3843,19 +3842,19 @@ struct engine_configuration_s {
 	 */
 	int alternatorPwmFrequency;
 	/**
-	 * set vvt_mode X
+	 * defina vvt_mode X
 	 * offset 1684
 	 */
 	vvt_mode_e vvtMode[CAMS_PER_BANK] = {};
 	/**
-	 * Additional idle % when fan #2 is active
+	 * Marcha lenta adicional % quando o ventilador #2 está ativo
 	 * units: %
 	 * offset 1686
 	 */
 	uint8_t fan2ExtraIdle;
 	/**
-	 * Delay to allow fuel pressure to build before firing the priming pulse.
-	 * units: sec
+	 * Atraso para permitir que a pressão de combustível se estabilize antes de disparar o pulso de priming.
+	 * units: seg
 	 * offset 1687
 	 */
 	scaled_channel<uint8_t, 100, 1> primingDelay;
@@ -3876,9 +3875,9 @@ struct engine_configuration_s {
 	 */
 	pin_output_mode_e accelerometerCsPinMode;
 	/**
-	 * None = I have a MAP-referenced fuel pressure regulator
-	 * Fixed rail pressure = I have an atmosphere-referenced fuel pressure regulator (returnless, typically)
-	 * Sensed rail pressure = I have a fuel pressure sensor
+	 * Nenhum = regulador de pressão de combustível referenciado ao MAP
+	 * Pressão fixa = regulador de pressão referenciado à atmosfera (sem retorno, tipicamente)
+	 * Pressão sensorizada = sensor de pressão de combustível
 	 * offset 1722
 	 */
 	injector_compensation_mode_e injectorCompensationMode;
@@ -3887,8 +3886,8 @@ struct engine_configuration_s {
 	 */
 	pin_output_mode_e fan2PinMode;
 	/**
-	 * This is the pressure at which your injector flow is known.
-	 * For example if your injectors flow 400cc/min at 3.5 bar, enter 350kpa here.
+	 * Esta é a pressão na qual o fluxo do seu injetor é conhecido.
+	 * Por exemplo, se seus injetores fluem 400cc/min a 3,5 bar, insira 350kpa aqui.
 	 * units: kPa
 	 * offset 1724
 	 */
@@ -3916,18 +3915,18 @@ struct engine_configuration_s {
 	 */
 	pid_s etbWastegatePid;
 	/**
-	 * For micro-stepping, make sure that PWM frequency (etbFreq) is high enough
+	 * Para micro-stepping, certifique-se que a frequência PWM (etbFreq) é alta o suficiente
 	 * offset 1816
 	 */
 	stepper_num_micro_steps_e stepperNumMicroSteps;
 	/**
-	 * Use to limit the current when the stepper motor is idle, not moving (100% = no limit)
+	 * Use para limitar a corrente quando o motor de passo está parado, não se movendo (100% = no limit)
 	 * units: %
 	 * offset 1817
 	 */
 	uint8_t stepperMinDutyCycle;
 	/**
-	 * Use to limit the max.current through the stepper motor (100% = no limit)
+	 * Use para limitar a corrente máxima através do motor de passo (100% = no limit)
 	 * units: %
 	 * offset 1818
 	 */
@@ -3937,13 +3936,13 @@ struct engine_configuration_s {
 	 */
 	spi_device_e sdCardSpiDevice;
 	/**
-	 * per-cylinder ignition and fueling timing correction for uneven engines
+	 * correção de tempo de ignição e injeção por cilindro para motores irregulares
 	 * units: deg
 	 * offset 1820
 	 */
 	angle_t timing_offset_cylinder[MAX_CYLINDER_COUNT] = {};
 	/**
-	 * units: seconds
+	 * units: segundos
 	 * offset 1868
 	 */
 	float idlePidActivationTime;
@@ -3952,7 +3951,7 @@ struct engine_configuration_s {
 	 */
 	pin_mode_e spi1SckMode;
 	/**
-	 * Modes count be used for 3v<>5v integration using pull-ups/pull-downs etc.
+	 * Modos podem ser usados para integração 3v<>5v usando pull-ups/pull-downs etc.
 	 * offset 1873
 	 */
 	pin_mode_e spi1MosiMode;
@@ -3998,13 +3997,13 @@ struct engine_configuration_s {
 	 */
 	Gpio mc33816_driven;
 	/**
-	 * Brake pedal switch
+	 * Interruptor do pedal de freio
 	 * offset 1886
 	 */
 	switch_input_pin_e brakePedalPin;
 	/**
-	 * VVT output PID
-	 * TODO: rename to vvtPid
+	 * PID de saída VVT
+	 * TODO: renomear para vvtPid
 	 * offset 1888
 	 */
 	pid_s auxPid[CAMS_PER_BANK] = {};
@@ -4036,13 +4035,13 @@ struct engine_configuration_s {
 	 */
 	output_pin_e fan2Pin;
 	/**
-	 * Cooling fan turn-on temperature threshold, in Celsius
+	 * Limite de temperatura para ligar o ventilador de resfriamento #2, em Celsius
 	 * units: deg C
 	 * offset 1992
 	 */
 	uint8_t fan2OnTemperature;
 	/**
-	 * Cooling fan turn-off temperature threshold, in Celsius
+	 * Limite de temperatura para desligar o ventilador de resfriamento #2, em Celsius
 	 * units: deg C
 	 * offset 1993
 	 */
@@ -4085,37 +4084,37 @@ struct engine_configuration_s {
 	 */
 	sent_input_pin_e sentInputPins[SENT_INPUT_COUNT] = {};
 	/**
-	 * This sets the RPM above which fuel cut is active.
+	 * Define o RPM acima do qual o corte de combustível está ativo.
 	 * units: rpm
 	 * offset 2010
 	 */
 	int16_t coastingFuelCutRpmHigh;
 	/**
-	 * This sets the RPM below which fuel cut is deactivated, this prevents jerking or issues transitioning to idle
+	 * Define o RPM abaixo do qual o corte de combustível é desativado, isso previne solavancos ou problemas ao transitar para marcha lenta
 	 * units: rpm
 	 * offset 2012
 	 */
 	int16_t coastingFuelCutRpmLow;
 	/**
-	 * Throttle position below which fuel cut is active. With an electronic throttle enabled, this checks against pedal position.
+	 * Posição do acelerador abaixo da qual o corte de combustível está ativo. Com acelerador eletrônico habilitado, isso verifica a posição do pedal em vez da borboleta, e deve ser definido para 1-2%.
 	 * units: %
 	 * offset 2014
 	 */
 	int16_t coastingFuelCutTps;
 	/**
-	 * Fuel cutoff is disabled when the engine is cold.
+	 * O corte de combustível é desabilitado quando o motor está frio.
 	 * units: C
 	 * offset 2016
 	 */
 	int16_t coastingFuelCutClt;
 	/**
-	 * Increases PID reaction for RPM<target by adding extra percent to PID-error
+	 * Aumenta a reação do PID para RPM<alvo adicionando percentual extra ao erro do PID
 	 * units: %
 	 * offset 2018
 	 */
 	int16_t pidExtraForLowRpm;
 	/**
-	 * MAP value above which fuel injection is re-enabled.
+	 * Valor de MAP acima do qual a injeção de combustível é reabilitada.
 	 * units: kPa
 	 * offset 2020
 	 */
@@ -4147,34 +4146,34 @@ struct engine_configuration_s {
 	 */
 	gppwm_note_t scriptSettingName[SCRIPT_SETTING_COUNT] = {};
 	/**
-	 * Heat transfer coefficient at zero flow.
+	 * Coeficiente de transferência de calor em fluxo zero.
 	 * 0 means the air charge is fully heated to the same temperature as CLT.
 	 * 1 means the air charge gains no heat, and enters the cylinder at the temperature measured by IAT.
 	 * offset 2352
 	 */
 	float tChargeAirCoefMin;
 	/**
-	 * Heat transfer coefficient at high flow, as defined by "max air flow".
+	 * Coeficiente de transferência de calor em alto fluxo, conforme definido por "fluxo máximo de ar".
 	 * 0 means the air charge is fully heated to the same temperature as CLT.
 	 * 1 means the air charge gains no heat, and enters the cylinder at the temperature measured by IAT.
 	 * offset 2356
 	 */
 	float tChargeAirCoefMax;
 	/**
-	 * High flow point for heat transfer estimation.
-	 * Set this to perhaps 50-75% of your maximum airflow at wide open throttle.
+	 * Ponto de alto fluxo para estimativa de transferência de calor.
+	 * Defina isso para talvez 50-75% do seu fluxo máximo de ar em WOT.
 	 * units: kg/h
 	 * offset 2360
 	 */
 	float tChargeAirFlowMax;
 	/**
-	 * Maximum allowed rate of increase allowed for the estimated charge temperature
+	 * Taxa máxima permitida de aumento para a temperatura estimada da carga de ar
 	 * units: deg/sec
 	 * offset 2364
 	 */
 	float tChargeAirIncrLimit;
 	/**
-	 * Maximum allowed rate of decrease allowed for the estimated charge temperature
+	 * Taxa máxima permitida de diminuição para a temperatura estimada da carga de ar
 	 * units: deg/sec
 	 * offset 2368
 	 */
@@ -4184,22 +4183,22 @@ struct engine_configuration_s {
 	 */
 	float hip9011Gain;
 	/**
-	 * iTerm min value
+	 * Valor mínimo de iTerm
 	 * offset 2376
 	 */
 	int16_t etb_iTermMin;
 	/**
-	 * iTerm max value
+	 * Valor máximo de iTerm
 	 * offset 2378
 	 */
 	int16_t etb_iTermMax;
 	/**
-	 * See useIdleTimingPidControl
+	 * Veja useIdleTimingPidControl
 	 * offset 2380
 	 */
 	pid_s idleTimingPid;
 	/**
-	 * When entering idle, and the PID settings are aggressive, it's good to make a soft entry upon entering closed loop
+	 * Ao entrar em marcha lenta, e as configurações do PID são agressivas, é bom fazer uma entrada suave ao entrar em malha fechada
 	 * offset 2400
 	 */
 	float idleTimingSoftEntryTime;
@@ -4212,13 +4211,13 @@ struct engine_configuration_s {
 	 */
 	torqueReductionActivationMode_e torqueReductionActivationMode;
 	/**
-	 * A delay in cycles between fuel-enrich. portions
-	 * units: cycles
+	 * Atraso em ciclos entre porções de enriquecimento de combustível
+	 * units: ciclos
 	 * offset 2406
 	 */
 	int16_t tpsAccelFractionPeriod;
 	/**
-	 * A fraction divisor: 1 or less = entire portion at once, or split into diminishing fractions
+	 * Divisor de fração: 1 ou menos = toda a porção de uma vez, ou dividido em frações decrescentes
 	 * units: coef
 	 * offset 2408
 	 */
@@ -4232,7 +4231,7 @@ struct engine_configuration_s {
 	 */
 	spi_device_e mc33816spiDevice;
 	/**
-	 * iTerm min value
+	 * Valor mínimo de iTerm
 	 * offset 2414
 	 */
 	int16_t idlerpmpid_iTermMin;
@@ -4241,7 +4240,7 @@ struct engine_configuration_s {
 	 */
 	spi_device_e tle6240spiDevice;
 	/**
-	 * Stoichiometric ratio for your primary fuel. When Flex Fuel is enabled, this value is used when the Flex Fuel sensor indicates E0.
+	 * Razão estequiométrica para seu combustível primário. Quando Flex Fuel está habilitado, este valor é usado quando o sensor Flex Fuel indica E0.
 	 * E0 = 14.7
 	 * E10 = 14.1
 	 * E85 = 9.9
@@ -4251,18 +4250,18 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint8_t, 10, 1> stoichRatioPrimary;
 	/**
-	 * iTerm max value
+	 * Valor máximo de iTerm
 	 * offset 2418
 	 */
 	int16_t idlerpmpid_iTermMax;
 	/**
-	 * This sets the range of the idle control on the ETB. At 100% idle position, the value specified here sets the base ETB position.
+	 * Define o alcance do controle de marcha lenta no ETB. Em 100% da posição de marcha lenta, o valor especificado aqui define a posição base do ETB.
 	 * units: %
 	 * offset 2420
 	 */
 	float etbIdleThrottleRange;
 	/**
-	 * Select which fuel correction bank this cylinder belongs to. Group cylinders that share the same O2 sensor
+	 * Selecione a qual banco de correção de combustível este cilindro pertence. Agrupe cilindros que compartilham o mesmo sensor O2
 	 * offset 2424
 	 */
 	uint8_t cylinderBankSelect[MAX_CYLINDER_COUNT] = {};
@@ -4272,31 +4271,31 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint8_t, 1, 5> primeValues[PRIME_CURVE_COUNT] = {};
 	/**
-	 * Trigger comparator center point voltage
+	 * Ponto central de tensão do comparador de trigger
 	 * units: V
 	 * offset 2444
 	 */
 	scaled_channel<uint8_t, 50, 1> triggerCompCenterVolt;
 	/**
-	 * Trigger comparator hysteresis voltage (Min)
+	 * Tensão de histerese do comparador de trigger (Mín)
 	 * units: V
 	 * offset 2445
 	 */
 	scaled_channel<uint8_t, 50, 1> triggerCompHystMin;
 	/**
-	 * Trigger comparator hysteresis voltage (Max)
+	 * Tensão de histerese do comparador de trigger (Máx)
 	 * units: V
 	 * offset 2446
 	 */
 	scaled_channel<uint8_t, 50, 1> triggerCompHystMax;
 	/**
-	 * VR-sensor saturation RPM
+	 * RPM de saturação do sensor VR
 	 * units: RPM
 	 * offset 2447
 	 */
 	scaled_channel<uint8_t, 1, 50> triggerCompSensorSatRpm;
 	/**
-	 * units: ratio
+	 * units: razão
 	 * offset 2448
 	 */
 	scaled_channel<uint16_t, 100, 1> tractionControlSlipBins[TRACTION_CONTROL_ETB_DROP_SIZE] = {};
@@ -4328,25 +4327,25 @@ struct engine_configuration_s {
 	 */
 	gppwm_channel gppwm[GPPWM_CHANNELS] = {};
 	/**
-	 * Boost Current
+	 * Corrente de Boost
 	 * units: mA
 	 * offset 2744
 	 */
 	uint16_t mc33_i_boost;
 	/**
-	 * Peak Current
+	 * Corrente de Pico
 	 * units: mA
 	 * offset 2746
 	 */
 	uint16_t mc33_i_peak;
 	/**
-	 * Hold Current
+	 * Corrente de Manutenção
 	 * units: mA
 	 * offset 2748
 	 */
 	uint16_t mc33_i_hold;
 	/**
-	 * Maximum allowed boost phase time. If the injector current doesn't reach the threshold before this time elapses, it is assumed that the injector is missing or has failed open circuit.
+	 * Tempo máximo permitido na fase de boost. Se a corrente do injetor não atingir o limite antes desse tempo, assume-se que o injetor está ausente ou com falha em circuito aberto.
 	 * units: us
 	 * offset 2750
 	 */
@@ -4357,7 +4356,7 @@ struct engine_configuration_s {
 	 */
 	uint16_t mc33_t_peak_off;
 	/**
-	 * Peak phase duration
+	 * Duração da fase de pico
 	 * units: us
 	 * offset 2754
 	 */
@@ -4373,7 +4372,7 @@ struct engine_configuration_s {
 	 */
 	uint16_t mc33_t_hold_off;
 	/**
-	 * Hold phase duration
+	 * Duração da fase de manutenção
 	 * units: us
 	 * offset 2760
 	 */
@@ -4401,30 +4400,30 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_2771[1] = {};
 	/**
-	 * units: ratio
+	 * units: razão
 	 * offset 2772
 	 */
 	float triggerGapOverrideFrom[GAP_TRACKING_LENGTH] = {};
 	/**
-	 * units: ratio
+	 * units: razão
 	 * offset 2844
 	 */
 	float triggerGapOverrideTo[GAP_TRACKING_LENGTH] = {};
 	/**
-	 * Below this RPM, use camshaft information to synchronize the crank's position for full sequential operation. Use this if your cam sensor does weird things at high RPM. Set to 0 to disable, and always use cam to help sync crank.
+	 * Abaixo deste RPM, use a informação do comando para sincronizar a posição do virabrequim para operação totalmente sequencial. Use isto se seu sensor de comando apresentar comportamentos estranhos em altas rotações. Defina como 0 para desabilitar e sempre usar o comando para ajudar a sincronizar o virabrequim.
 	 * units: rpm
 	 * offset 2916
 	 */
 	scaled_channel<uint8_t, 1, 50> maxCamPhaseResolveRpm;
 	/**
-	 * Delay before cutting fuel. Set to 0 to cut immediately with no delay. May cause rumbles and pops out of your exhaust...
-	 * units: sec
+	 * Atraso antes de cortar o combustível. Defina como 0 para cortar imediatamente sem atraso. Pode causar estouros e pipocos no escapamento...
+	 * units: seg
 	 * offset 2917
 	 */
 	scaled_channel<uint8_t, 10, 1> dfcoDelay;
 	/**
-	 * Delay before engaging the AC compressor. Set to 0 to engage immediately with no delay. Use this to prevent bogging at idle when AC engages.
-	 * units: sec
+	 * Atraso antes de acionar o compressor do ar-condicionado. Defina como 0 para acionar imediatamente sem atraso. Use isto para evitar queda de rotação em marcha lenta ao acionar o ar-condicionado.
+	 * units: seg
 	 * offset 2918
 	 */
 	scaled_channel<uint8_t, 10, 1> acDelay;
@@ -4438,13 +4437,13 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint16_t, 1000, 1> fordInjectorSmallPulseBreakPoint;
 	/**
-	 * Threshold in ETB error (target vs. actual) above which the jam timer is started. If the timer reaches the time specified in the jam detection timeout period, the throttle is considered jammed, and engine operation limited.
+	 * Limite de erro do ETB (alvo vs. real) acima do qual o temporizador de travamento é iniciado. Se o temporizador atingir o tempo especificado no período de detecção de travamento, a borboleta é considerada travada e a operação do motor é limitada.
 	 * units: %
 	 * offset 2922
 	 */
 	uint8_t etbJamDetectThreshold;
 	/**
-	 * units: lobes/cam
+	 * units: lóbulo/comando
 	 * offset 2923
 	 */
 	uint8_t hpfpCamLobes;
@@ -4453,14 +4452,14 @@ struct engine_configuration_s {
 	 */
 	hpfp_cam_e hpfpCam;
 	/**
-	 * Low engine speed for A/C. Larger engines can survive lower values
+	 * Baixa rotação do motor para o A/C. Motores maiores podem suportar valores menores
 	 * units: RPM
 	 * offset 2925
 	 */
 	scaled_channel<int8_t, 1, 10> acLowRpmLimit;
 	/**
-	 * If the requested activation time is below this angle, don't bother running the pump
-	 * units: deg
+	 * Se o tempo de ativação solicitado estiver abaixo deste ângulo, não acione a bomba
+	 * units: graus
 	 * offset 2926
 	 */
 	uint8_t hpfpMinAngle;
@@ -4471,14 +4470,14 @@ struct engine_configuration_s {
 	 */
 	uint8_t alignmentFill_at_2927[1] = {};
 	/**
-	 * Size of the pump chamber in cc. Typical Bosch HDP5 has a 9.0mm diameter, typical BMW N* stroke is 4.4mm.
+	 * Tamanho da câmara da bomba em cc. Típica Bosch HDP5 tem 9,0mm de diâmetro, típico BMW N* curso é 4,4mm.
 	 * units: cc
 	 * offset 2928
 	 */
 	scaled_channel<uint16_t, 1000, 1> hpfpPumpVolume;
 	/**
-	 * How long to keep the valve activated (in order to allow the pump to build pressure and keep the valve open on its own)
-	 * units: deg
+	 * Tempo de ativação da válvula (para permitir que a bomba gere pressão e mantenha a válvula aberta sozinha)
+	 * units: graus
 	 * offset 2930
 	 */
 	uint8_t hpfpActivationAngle;
@@ -4492,12 +4491,12 @@ struct engine_configuration_s {
 	 */
 	scaled_channel<uint16_t, 1000, 1> hpfpPidP;
 	/**
-	 * units: %/kPa/lobe
+	 * units: %/kPa/lóbulo
 	 * offset 2934
 	 */
 	scaled_channel<uint16_t, 100000, 1> hpfpPidI;
 	/**
-	 * The fastest rate the target pressure can be reduced by. This is because HPFP have no way to bleed off pressure other than injecting fuel.
+	 * A taxa mais rápida que a pressão alvo pode ser reduzida. Isso porque HPFP não tem como aliviar pressão além de injetar combustível.
 	 * units: kPa/s
 	 * offset 2936
 	 */
@@ -5199,7 +5198,7 @@ struct engine_configuration_s {
 	 */
 	float knockFrequency;
 	/**
-	 * None = I have a MAP-referenced fuel pressure regulator
+	 * Nenhum = I have a MAP-referenced fuel pressure regulator
 	 * Fixed rail pressure = I have an atmosphere-referenced fuel pressure regulator (returnless, typically)
 	 * Sensed rail pressure = I have a fuel pressure sensor
 	 * offset 3768
