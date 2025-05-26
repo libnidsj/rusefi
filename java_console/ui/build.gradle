@@ -22,7 +22,7 @@ dependencies {
 
 shadowJar {
     base {
-        archivesName = "${rootDir}/../console/rusefi_console"
+        archivesName = "${rootDir}/../console/evotech_console"
         archiveClassifier = ''
     }
 

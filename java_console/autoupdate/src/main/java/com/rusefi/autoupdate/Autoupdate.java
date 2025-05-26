@@ -112,8 +112,8 @@ public class Autoupdate {
 */
                 String pathname = "..";
                 log.info("unzipping everything else into " + pathname);
-                // We've already prepared class loader, so now we can unzip rusefi_autoupdate.jar and other files
-                // except already unzipped rusefi_console.jar (see #6777):
+                // We've already prepared class loader, so now we can unzip evotech_autoupdate.jar and other files
+                // except already unzipped evotech_console.jar (see #6777):
                 FileUtil.unzip(autoupdateFile.zipFileName, new File(pathname), isConsoleJar.negate());
                 final String srecFile = findSrecFile();
                 new File(srecFile == null ? FindFileHelper.FIRMWARE_BIN_FILE : srecFile)
@@ -136,9 +136,9 @@ public class Autoupdate {
     private static void unzipFreshConsole(DownloadedAutoupdateFileInfo autoupdateFile) {
         try {
             log.info("unzipFreshConsole " + autoupdateFile.zipFileName + " only " + consoleJarZipEntry);
-            // We cannot unzip rusefi_autoupdate.jar file because we need the old one to prepare class loader below
+            // We cannot unzip evotech_autoupdate.jar file because we need the old one to prepare class loader below
             // (otherwise we get `ZipFile invalid LOC header (bad signature)` exception, see #6777). So now we unzip
-            // only rusefi_console.jar:
+            // only evotech_console.jar:
             FileUtil.unzip(autoupdateFile.zipFileName, new File(".."), isConsoleJar);
         } catch (IOException e) {
             log.error("Error unzipping bundle without autoupdate: " + e);

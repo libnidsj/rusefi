@@ -52,7 +52,7 @@ BRANCH_REF_FILE = $(STAGING_FOLDER)/release.txt
 DELIVER = deliver
 ARTIFACTS = ../artifacts
 
-BUNDLE_FULL_NAME = rusefi_bundle_$(BUNDLE_NAME)
+BUNDLE_FULL_NAME = evotech_bundle_$(BUNDLE_NAME)
 WHITE_LABEL_BUNDLE_NAME = $(WHITE_LABEL)_bundle_$(BUNDLE_NAME)
 
 CONSOLE_FOLDER = $(FOLDER)/console
@@ -62,14 +62,14 @@ UPDATE_FOLDER_SOURCES = \
   $(RUSEFI_CONSOLE_SETTINGS) \
   $(INI_FILE) \
   ../misc/console_launcher/readme.html \
-  ../misc/console_launcher/rusefi_updater.exe
+  ../misc/console_launcher/evotech_updater.exe
 
 FOLDER_SOURCES = \
   ../java_console/bin
 
 # Custom board builds don't include the simulator
 ifneq ($(BUNDLE_SIMULATOR),false)
-  SIMULATOR_EXE = ../simulator/build/rusefi_simulator.exe
+  SIMULATOR_EXE = ../simulator/build/evotech_simulator.exe
 endif
 
 UPDATE_CONSOLE_FOLDER_SOURCES = \
@@ -81,8 +81,8 @@ UPDATE_CONSOLE_FOLDER_SOURCES = \
 # todo: remove BootCommander.exe once https://github.com/rusefi/rusefi/issues/6358 is done
 
 CONSOLE_FOLDER_SOURCES = \
-  ../misc/console_launcher/rusefi_autoupdate.exe \
-  ../misc/console_launcher/rusefi_console.exe \
+  ../misc/console_launcher/evotech_autoupdate.exe \
+  ../misc/console_launcher/evotech_console.exe \
   $(wildcard ../java_console/*.dll) \
   ../firmware/ext/openblt/Host/libopenblt.dll \
   ../firmware/ext/openblt/Host/BootCommander.exe \
@@ -109,7 +109,7 @@ BOOTLOADER_HEX = bootloader/blbuild/openblt_$(PROJECT_BOARD).hex
 ifeq ($(USE_OPENBLT),yes)
   BOOTLOADER_HEX_OUT = $(BOOTLOADER_HEX)
   BOOTLOADER_BIN_OUT = $(FOLDER)/openblt.bin
-  SREC_TARGET = $(FOLDER)/rusefi_update.srec
+  SREC_TARGET = $(FOLDER)/evotech_update.srec
 else
   FIRMWARE_OUTPUTS = $(FOLDER)/$(PROJECT).hex
   BINSRC = $(BUILDDIR)/$(PROJECT).bin
@@ -153,12 +153,12 @@ $(SIMULATOR_EXE): $(CONFIG_FILES) .FORCE
 	$(MAKE) -C ../simulator -r OS="Windows_NT" SUBMAKE=yes
 
 # make sure not to invoke in parallel with SIMULATOR_EXE rule above
-../simulator/build/rusefi_simulator.linux: $(CONFIG_FILES) .FORCE
+../simulator/build/evotech_simulator.linux: $(CONFIG_FILES) .FORCE
 	$(MAKE) -C ../simulator -r OS="Linux" SUBMAKE=yes
 
 # make Windows simulator a prerequisite so that we don't try compiling them concurrently
-# that also means no incremental compilation making that rule less useful. See 'rusefi_simulator.linux' above
-../simulator/build/rusefi_simulator.both: $(CONFIG_FILES) .FORCE | $(SIMULATOR_EXE)
+# that also means no incremental compilation making that rule less useful. See 'evotech_simulator.linux' above
+../simulator/build/evotech_simulator.both: $(CONFIG_FILES) .FORCE | $(SIMULATOR_EXE)
 	$(MAKE) -C ../simulator -r OS="Linux" SUBMAKE=yes
 
 $(BOOTLOADER_HEX) $(BOOTLOADER_BIN): .bootloader-sentinel ;
@@ -213,10 +213,10 @@ else
 endif
 	@touch $@
 
-OBFUSCATED_SREC = $(FOLDER)/rusefi-obfuscated.srec
+OBFUSCATED_SREC = $(FOLDER)/evotech-obfuscated.srec
 
 OBFUSCATED_OUT = \
-  $(FOLDER)/rusefi-obfuscated.bin \
+  $(FOLDER)/evotech-obfuscated.bin \
   $(OBFUSCATED_SREC)
 
 $(OBFUSCATED_OUT): .obfuscated-sentinel
