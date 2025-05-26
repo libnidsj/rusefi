@@ -1,1 +1,1 @@
-java -jar console/evotech_console.jar detect
+java -jar console/rusefi_console.jar detect

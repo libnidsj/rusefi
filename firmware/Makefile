@@ -45,7 +45,7 @@ $(error "../.git not found. We expect source code to be cloned not downloaded as
 endif
 
 # Define project name here
-PROJECT = evotech
+PROJECT = rusefi
 PROJECT_DIR = .
 
 # Configure precompiled header

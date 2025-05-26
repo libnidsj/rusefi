@@ -7,4 +7,4 @@ cd ../java_tools
 ./gradlew :ui:shadowJar
 cd ../firmware
 
-java -jar ../console/evotech_console.jar reboot_dfu
+java -jar ../console/rusefi_console.jar reboot_dfu

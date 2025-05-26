@@ -18,7 +18,7 @@ import static com.rusefi.ui.util.UiUtils.setToolTip;
 
 public class SimulatorHelper {
     private final static ThreadFactory THREAD_FACTORY = new NamedThreadFactory("SimulatorHelper");
-    public static final String BINARY = "evotech_simulator.exe";
+    public static final String BINARY = "rusefi_simulator.exe";
     private static Process process;
     private static final Logging log = getLogging(SimulatorHelper.class);
 

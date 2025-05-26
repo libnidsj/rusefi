@@ -30,7 +30,7 @@
 			"name": "Debug simulator (gdb)",
 			"type": "cppdbg",
 			"request": "launch",
-			            "program": "${workspaceFolder}/simulator/build/evotech_simulator",
+			"program": "${workspaceFolder}/simulator/build/rusefi_simulator",
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}/simulator/",
 			"environment": [],

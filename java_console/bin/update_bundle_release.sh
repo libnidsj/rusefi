@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd console
-java -jar evotech_autoupdate.jar release
+java -jar rusefi_autoupdate.jar release
 echo Release update done.
 
 # https://github.com/rusefi/rusefi/issues/2601

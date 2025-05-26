@@ -1,2 +1,2 @@
 cd ../console
-java -cp evotech_console.jar MassUpdater
+java -cp rusefi_console.jar MassUpdater

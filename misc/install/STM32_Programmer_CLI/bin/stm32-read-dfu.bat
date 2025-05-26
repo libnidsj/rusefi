@@ -1,4 +1,4 @@
-java -jar ../../evotech_console.jar reboot_dfu
+java -jar ../../rusefi_console.jar reboot_dfu
 echo Now sleeping before DFU
 sleep 5
 

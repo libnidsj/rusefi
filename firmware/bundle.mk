@@ -17,7 +17,7 @@ else
 endif
 
 # DFU and DBIN are uploaded as artifacts, so it's easier to have them in the deliver/ directory
-#  than to try uploading them from the evotech.snapshot.<BUNDLE_NAME> directory
+#  than to try uploading them from the rusefi.snapshot.<BUNDLE_NAME> directory
 DFU = $(DELIVER)/$(PROJECT).dfu
 DBIN = $(DELIVER)/$(PROJECT).bin
 DBIN_CRC = $(BUILDDIR)/$(PROJECT)_crc32.bin
@@ -171,7 +171,7 @@ $(BOOTLOADER_HEX) $(BOOTLOADER_BIN): .bootloader-sentinel ;
 
 $(BUILDDIR)/$(PROJECT).map: $(BUILDDIR)/$(PROJECT).elf
 
-$(SREC_TARGET): $(BUILDDIR)/evotech.srec
+$(SREC_TARGET): $(BUILDDIR)/rusefi.srec
 	ln -rfs $< $@
 
 $(FIRMWARE_OUTPUTS): $(FOLDER)/%: $(BUILDDIR)/% | $(FOLDER)
@@ -193,13 +193,13 @@ else
 	CHECKSUM_ADDRESS = 0x0800001C
 endif
 
-$(BUILDDIR)/evotech.srec: $(BUILDDIR)/$(PROJECT).hex
+$(BUILDDIR)/rusefi.srec: $(BUILDDIR)/$(PROJECT).hex
 	# make sure we create the srec from a binary with crc
 	$(H2D) -i $< -c $(CHECKSUM_ADDRESS) -b $(DBIN_CRC)
 	$(CP) -I binary -O srec --change-addresses=$(HEX_BASE_ADDRESS) $(DBIN_CRC) $@
 
 # The DFU is currently not included in the bundle, so these prerequisites are listed as order-only to avoid building it.
-# If you want it, you can build it with `make evotech.snapshot.$BUNDLE_NAME/evotech.dfu`
+# If you want it, you can build it with `make evotech.snapshot.$BUNDLE_NAME/rusefi.dfu`
 $(DFU) $(DBIN): .h2d-sentinel ;
 
 .h2d-sentinel: $(BUILDDIR)/$(PROJECT).hex $(BOOTLOADER_HEX_OUT) $(BINSRC) | $(DELIVER)
@@ -264,7 +264,7 @@ bootloader: $(BOOTLOADER_BIN)
 bin: $(DBIN)
 hex: $(BUILDDIR)/$(PROJECT).hex
 dfu: $(DFU)
-srec: $(BUILDDIR)/evotech.srec
+srec: $(BUILDDIR)/rusefi.srec
 elf: $(BUILDDIR)/$(PROJECT).elf
 map: $(BUILDDIR)/$(PROJECT).map
 list: $(BUILDDIR)/$(PROJECT).list

@@ -245,7 +245,7 @@ jobs:
     - name: Building Windows simulator separately just to make github logs more readable
       working-directory: ./firmware/
       run: |
-        bash bin/compile.sh ${{env.BOARD_META_PATH}} ../simulator/build/evotech_simulator.exe
+        bash bin/compile.sh ${{env.BOARD_META_PATH}} ../simulator/build/rusefi_simulator.exe
 
       # Build the firmware! We have the technology to build _everything_ in one 'make' invocation but choose to do separately for sake of more readable GHA logs
     - name: Build Firmware
@@ -290,35 +290,35 @@ jobs:
       if: ${{ env.upload == 'gha_artifact' }}
       working-directory: ./firmware/build
       run: |
-        arm-none-eabi-objdump -d evotech.elf > evotech.txt
+        arm-none-eabi-objdump -d rusefi.elf > rusefi.txt
 
     - name: Upload github action text artifact
       if: ${{ env.upload == 'gha_artifact' }}
       uses: actions/upload-artifact@v4
       with:
         name: evotech_${{matrix.build-target}}.txt
-        path: ./firmware/build/evotech.txt
+        path: ./firmware/build/rusefi.txt
 
     - name: Upload github action elf artifact
       if: ${{ env.upload == 'gha_artifact' }}
       uses: actions/upload-artifact@v4
       with:
         name: evotech_${{matrix.build-target}}.elf
-        path: ./firmware/build/evotech.elf
+        path: ./firmware/build/rusefi.elf
 
     - name: Upload github action map artifact
       if: ${{ env.upload == 'gha_artifact' }}
       uses: actions/upload-artifact@v4
       with:
         name: evotech_${{matrix.build-target}}.map
-        path: ./firmware/build/evotech.map
+        path: ./firmware/build/rusefi.map
 
     - name: Upload github action bin artifact
       if: ${{ env.upload == 'gha_artifact' }}
       uses: actions/upload-artifact@v4
       with:
         name: evotech_${{matrix.build-target}}.bin
-        path: ./firmware/deliver/evotech*.bin
+        path: ./firmware/deliver/rusefi*.bin
 
     - name: Upload github action hex artifact
       if: ${{ env.upload == 'gha_artifact' }}
@@ -327,14 +327,14 @@ jobs:
         name: evotech_${{matrix.build-target}}.hex
 # we have a bit of a mess - this file from 'build' folder is only legit for not-BLT builds
 # todo: we should produce .hex in both OpenBLT and non-OpenBLT case same as we do for .bin and .elf
-        path: ./firmware/build/evotech*.hex
+        path: ./firmware/build/rusefi*.hex
 
     - name: Upload github action dfu artifact
       if: ${{ env.upload == 'gha_artifact' }}
       uses: actions/upload-artifact@v4
       with:
         name: evotech_${{matrix.build-target}}.dfu
-        path: ./firmware/deliver/evotech*.dfu
+        path: ./firmware/deliver/rusefi*.dfu
 
     - name: Upload bundle artifact
       uses: actions/upload-artifact@v4
