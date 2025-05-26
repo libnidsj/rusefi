@@ -1,1 +1,0 @@
-evotech_config_trigger.txt
