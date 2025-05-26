@@ -354,7 +354,7 @@ ClosedLoopFuelResult fuelStftClosedLoopCorrection() {
 		auto rpm = Sensor::get(SensorType::Rpm);
 		float load = getFuelingLoad();
 
-		if (!(rpm.Valid && tps.Valid && !cisnan(load))) {
+		if (!(rpm.Valid && tps.Valid && !isnan(load))) {
 			continue;
 		}
 
@@ -362,7 +362,7 @@ ClosedLoopFuelResult fuelStftClosedLoopCorrection() {
 
 		auto& cell = banks[i].cells[binIdx];
 
-		result.banks[i] = cell.getCorrection(sensor);
+		result.banks[i] = cell.getAdjustment();
 	}
 
 	return result;
