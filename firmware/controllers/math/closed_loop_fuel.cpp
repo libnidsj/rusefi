@@ -4,8 +4,6 @@
 #include "deadband.h"
 #include "tunerstudio.h"
 #include "engine_math.h"
-#include "efi_gpio.h"
-#include "event_queue.h"
 #include "efitime.h"
 #include "ignition_controller.h"
 
@@ -354,13 +352,13 @@ ClosedLoopFuelResult fuelStftClosedLoopCorrection() {
 
 		auto tps = Sensor::get(SensorType::Tps1);
 		auto rpm = Sensor::get(SensorType::Rpm);
-		auto load = getEngineLoadT();
+		float load = getFuelingLoad();
 
-		if (!(rpm.Valid && tps.Valid && load.Valid)) {
+		if (!(rpm.Valid && tps.Valid && !cisnan(load))) {
 			continue;
 		}
 
-		auto binIdx = computeStftBin(rpm.Value, load.Value, config->stft);
+		auto binIdx = computeStftBin(rpm.Value, load, engineConfiguration->stft);
 
 		auto& cell = banks[i].cells[binIdx];
 
