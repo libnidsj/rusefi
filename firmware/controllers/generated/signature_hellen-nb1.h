@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 2336581025
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.26.hellen-nb1.2336581025"
+#define SIGNATURE_HASH 1831929938
+#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.hellen-nb1.1831929938"

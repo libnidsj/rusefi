@@ -500,9 +500,6 @@ float getConfigValueByName(const char *name) {
 // wwLearningRate
 		case 1193560623:
 			return engineConfiguration->wwLearningRate;
-// wwSmoothIntensity
-		case -788112908:
-			return engineConfiguration->wwSmoothIntensity;
 // wwMinCoolantTemp
 		case -694128867:
 			return engineConfiguration->wwMinCoolantTemp;
@@ -512,24 +509,6 @@ float getConfigValueByName(const char *name) {
 // wwMinMapForLearning
 		case 913889548:
 			return engineConfiguration->wwMinMapForLearning;
-// wwMaxLambdaDeviation
-		case 716616829:
-			return engineConfiguration->wwMaxLambdaDeviation;
-// wwMinLambda
-		case 1626597464:
-			return engineConfiguration->wwMinLambda;
-// wwMaxLambda
-		case 11247834:
-			return engineConfiguration->wwMaxLambda;
-// wwMinQualityScore
-		case 2065200220:
-			return engineConfiguration->wwMinQualityScore;
-// wwMinSamplesForConvergence
-		case -1744230686:
-			return engineConfiguration->wwMinSamplesForConvergence;
-// wwMinConfidenceForConvergence
-		case 1342632411:
-			return engineConfiguration->wwMinConfidenceForConvergence;
 // fordInjectorSmallPulseSlope
 		case -1465119085:
 			return engineConfiguration->fordInjectorSmallPulseSlope;
@@ -2999,11 +2978,6 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->wwLearningRate = value;
 		return 1;
 	}
-		case -788112908:
-	{
-		engineConfiguration->wwSmoothIntensity = value;
-		return 1;
-	}
 		case -694128867:
 	{
 		engineConfiguration->wwMinCoolantTemp = value;
@@ -3017,36 +2991,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case 913889548:
 	{
 		engineConfiguration->wwMinMapForLearning = value;
-		return 1;
-	}
-		case 716616829:
-	{
-		engineConfiguration->wwMaxLambdaDeviation = value;
-		return 1;
-	}
-		case 1626597464:
-	{
-		engineConfiguration->wwMinLambda = value;
-		return 1;
-	}
-		case 11247834:
-	{
-		engineConfiguration->wwMaxLambda = value;
-		return 1;
-	}
-		case 2065200220:
-	{
-		engineConfiguration->wwMinQualityScore = value;
-		return 1;
-	}
-		case -1744230686:
-	{
-		engineConfiguration->wwMinSamplesForConvergence = (int)value;
-		return 1;
-	}
-		case 1342632411:
-	{
-		engineConfiguration->wwMinConfidenceForConvergence = (int)value;
 		return 1;
 	}
 		case -1465119085:
