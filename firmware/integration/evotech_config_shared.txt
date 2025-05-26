@@ -48,8 +48,8 @@
 #define GAUGE_NAME_VERSION "firmware"
 #define GAUGE_NAME_UPTIME "Tempo ligado"
 ! WARNING! THIS GAUGE NAME IS PART of REO integration API
-#define GAUGE_NAME_TRG_ERR "Erro de sincronismo do trigger"
-#define GAUGE_NAME_TRG_GAP "Sincronia: Última razão do trigger"
+#define GAUGE_NAME_TRG_ERR "Erro sincronismo Trigger"
+#define GAUGE_NAME_TRG_GAP "Trigger: Última razão"
 
 #define GAUGE_NAME_CAN_READ_OK "CAN: Rx"
 #define GAUGE_NAME_CAN_WRITE_OK "CAN: Tx OK"
