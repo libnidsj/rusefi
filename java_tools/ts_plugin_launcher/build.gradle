@@ -11,7 +11,7 @@ dependencies {
   implementation global_libs.commons_logging
 }
 
-def jarName = 'evotech_ts_plugin_launcher'
+def jarName = 'rusefi_ts_plugin_launcher'
 def jarDir = 'jar'
 def localPath = '.efianalytics/TunerStudio/plugins'
 def userHome = System.properties['user.home']

@@ -141,7 +141,7 @@ public class StartupFrame {
         connectButton.addActionListener(e -> connectButtonAction(comboSpeeds));
 
         final Optional<JPanel> newReleaseNotification = newReleaseAnnounce(
-            "evotech_autoupdate.exe",
+            "rusefi_autoupdate.exe",
             "left",
             () -> realHardwarePanel.getPreferredSize().width
         );

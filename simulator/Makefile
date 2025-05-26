@@ -140,9 +140,9 @@ endif
 
 # Define project name here
 ifeq ($(OS),Windows_NT)
-  PROJECT = evotech_simulator.exe
+  PROJECT = rusefi_simulator.exe
 else
-  PROJECT = evotech_simulator
+  PROJECT = rusefi_simulator
 endif
 PROJECT_DIR = ../firmware
 

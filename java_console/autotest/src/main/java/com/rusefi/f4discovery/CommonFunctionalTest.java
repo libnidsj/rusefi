@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * rusEFI firmware simulator functional test suite
  * <p/>
- * java -cp evotech_console.jar com.rusefi.AutoTest
+ * java -cp rusefi_console.jar com.rusefi.AutoTest
  *
  * @author Andrey Belomutskiy
  * 3/5/14

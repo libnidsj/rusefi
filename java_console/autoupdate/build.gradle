@@ -20,7 +20,7 @@ evaluationDependsOn(':core_io')
 
 shadowJar {
   base {
-    archivesName = "${rootDir}/../console/evotech_autoupdate"
+    archivesName = "${rootDir}/../console/rusefi_autoupdate"
     archiveClassifier = ''
   }
 
