@@ -493,9 +493,6 @@ Minimum duration for valid transient
 ### wwLearningRate
 Learning rate for adaptive corrections
 
-### wwSmoothIntensity
-Intensity of table smoothing (0=none, 1=max)
-
 ### wwMinCoolantTemp
 Minimum coolant temperature for learning
 
@@ -504,24 +501,6 @@ Maximum coolant temperature for learning
 
 ### wwMinMapForLearning
 Minimum MAP pressure for learning
-
-### wwMaxLambdaDeviation
-Maximum lambda deviation from target for learning
-
-### wwMinLambda
-Minimum lambda value considered valid
-
-### wwMaxLambda
-Maximum lambda value considered valid
-
-### wwMinQualityScore
-Minimum quality score for learning (0.0-1.0)
-
-### wwMinSamplesForConvergence
-Minimum samples required for cell convergence
-
-### wwMinConfidenceForConvergence
-Minimum confidence % for cell convergence
 
 ### fordInjectorSmallPulseSlope
 
