@@ -461,6 +461,75 @@ float getConfigValueByName(const char *name) {
 // tcuInputSpeedSensorTeeth
 		case -2116746650:
 			return engineConfiguration->tcuInputSpeedSensorTeeth;
+// wwEnableAdaptiveLearning
+		case 1498590712:
+			return engineConfiguration->wwEnableAdaptiveLearning;
+// wwTpsThreshold
+		case -762793481:
+			return engineConfiguration->wwTpsThreshold;
+// wwMapThreshold
+		case -1621962210:
+			return engineConfiguration->wwMapThreshold;
+// wwTransientDetectionWindowMs
+		case 785276994:
+			return engineConfiguration->wwTransientDetectionWindowMs;
+// wwTransientTimeoutMs
+		case -645422222:
+			return engineConfiguration->wwTransientTimeoutMs;
+// wwTpsThresholdLight
+		case -794348913:
+			return engineConfiguration->wwTpsThresholdLight;
+// wwMapThresholdLight
+		case 733905686:
+			return engineConfiguration->wwMapThresholdLight;
+// wwTpsThresholdHeavy
+		case -799242412:
+			return engineConfiguration->wwTpsThresholdHeavy;
+// wwMapThresholdHeavy
+		case 729012187:
+			return engineConfiguration->wwMapThresholdHeavy;
+// wwEnableTransientFiltering
+		case -783673834:
+			return engineConfiguration->wwEnableTransientFiltering;
+// wwTransientFilterSamples
+		case 2012739174:
+			return engineConfiguration->wwTransientFilterSamples;
+// wwMinTransientDuration
+		case -1020893515:
+			return engineConfiguration->wwMinTransientDuration;
+// wwLearningRate
+		case 1193560623:
+			return engineConfiguration->wwLearningRate;
+// wwSmoothIntensity
+		case -788112908:
+			return engineConfiguration->wwSmoothIntensity;
+// wwMinCoolantTemp
+		case -694128867:
+			return engineConfiguration->wwMinCoolantTemp;
+// wwMaxCoolantTemp
+		case 1160366303:
+			return engineConfiguration->wwMaxCoolantTemp;
+// wwMinMapForLearning
+		case 913889548:
+			return engineConfiguration->wwMinMapForLearning;
+// wwMaxLambdaDeviation
+		case 716616829:
+			return engineConfiguration->wwMaxLambdaDeviation;
+// wwMinLambda
+		case 1626597464:
+			return engineConfiguration->wwMinLambda;
+// wwMaxLambda
+		case 11247834:
+			return engineConfiguration->wwMaxLambda;
+// wwMinQualityScore
+		case 2065200220:
+			return engineConfiguration->wwMinQualityScore;
+// wwMinSamplesForConvergence
+		case -1744230686:
+			return engineConfiguration->wwMinSamplesForConvergence;
+// wwMinConfidenceForConvergence
+		case 1342632411:
+			return engineConfiguration->wwMinConfidenceForConvergence;
 // fordInjectorSmallPulseSlope
 		case -1465119085:
 			return engineConfiguration->fordInjectorSmallPulseSlope;
@@ -2863,6 +2932,121 @@ bool setConfigValueByName(const char *name, float value) {
 		case -2116746650:
 	{
 		engineConfiguration->tcuInputSpeedSensorTeeth = (int)value;
+		return 1;
+	}
+		case 1498590712:
+	{
+		engineConfiguration->wwEnableAdaptiveLearning = (int)value;
+		return 1;
+	}
+		case -762793481:
+	{
+		engineConfiguration->wwTpsThreshold = value;
+		return 1;
+	}
+		case -1621962210:
+	{
+		engineConfiguration->wwMapThreshold = value;
+		return 1;
+	}
+		case 785276994:
+	{
+		engineConfiguration->wwTransientDetectionWindowMs = (int)value;
+		return 1;
+	}
+		case -645422222:
+	{
+		engineConfiguration->wwTransientTimeoutMs = (int)value;
+		return 1;
+	}
+		case -794348913:
+	{
+		engineConfiguration->wwTpsThresholdLight = value;
+		return 1;
+	}
+		case 733905686:
+	{
+		engineConfiguration->wwMapThresholdLight = value;
+		return 1;
+	}
+		case -799242412:
+	{
+		engineConfiguration->wwTpsThresholdHeavy = value;
+		return 1;
+	}
+		case 729012187:
+	{
+		engineConfiguration->wwMapThresholdHeavy = value;
+		return 1;
+	}
+		case -783673834:
+	{
+		engineConfiguration->wwEnableTransientFiltering = (int)value;
+		return 1;
+	}
+		case 2012739174:
+	{
+		engineConfiguration->wwTransientFilterSamples = (int)value;
+		return 1;
+	}
+		case -1020893515:
+	{
+		engineConfiguration->wwMinTransientDuration = value;
+		return 1;
+	}
+		case 1193560623:
+	{
+		engineConfiguration->wwLearningRate = value;
+		return 1;
+	}
+		case -788112908:
+	{
+		engineConfiguration->wwSmoothIntensity = value;
+		return 1;
+	}
+		case -694128867:
+	{
+		engineConfiguration->wwMinCoolantTemp = value;
+		return 1;
+	}
+		case 1160366303:
+	{
+		engineConfiguration->wwMaxCoolantTemp = value;
+		return 1;
+	}
+		case 913889548:
+	{
+		engineConfiguration->wwMinMapForLearning = value;
+		return 1;
+	}
+		case 716616829:
+	{
+		engineConfiguration->wwMaxLambdaDeviation = value;
+		return 1;
+	}
+		case 1626597464:
+	{
+		engineConfiguration->wwMinLambda = value;
+		return 1;
+	}
+		case 11247834:
+	{
+		engineConfiguration->wwMaxLambda = value;
+		return 1;
+	}
+		case 2065200220:
+	{
+		engineConfiguration->wwMinQualityScore = value;
+		return 1;
+	}
+		case -1744230686:
+	{
+		engineConfiguration->wwMinSamplesForConvergence = (int)value;
+		return 1;
+	}
+		case 1342632411:
+	{
+		engineConfiguration->wwMinConfidenceForConvergence = (int)value;
 		return 1;
 	}
 		case -1465119085:

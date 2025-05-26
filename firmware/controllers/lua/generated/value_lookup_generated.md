@@ -454,6 +454,75 @@ Ratio between the wheels and your transmission output.
 ### tcuInputSpeedSensorTeeth
 null
 
+### wwEnableAdaptiveLearning
+Enable adaptive learning for wall wetting parameters
+
+### wwTpsThreshold
+TPS rate threshold for transient detection
+
+### wwMapThreshold
+MAP rate threshold for transient detection
+
+### wwTransientDetectionWindowMs
+Time window for transient detection
+
+### wwTransientTimeoutMs
+Minimum time between transient detections
+
+### wwTpsThresholdLight
+Light TPS threshold for gentle transients
+
+### wwMapThresholdLight
+Light MAP threshold for gentle transients
+
+### wwTpsThresholdHeavy
+Heavy TPS threshold for aggressive transients
+
+### wwMapThresholdHeavy
+Heavy MAP threshold for aggressive transients
+
+### wwEnableTransientFiltering
+Enable filtering to reduce false transient detection
+
+### wwTransientFilterSamples
+Number of samples for transient filtering
+
+### wwMinTransientDuration
+Minimum duration for valid transient
+
+### wwLearningRate
+Learning rate for adaptive corrections
+
+### wwSmoothIntensity
+Intensity of table smoothing (0=none, 1=max)
+
+### wwMinCoolantTemp
+Minimum coolant temperature for learning
+
+### wwMaxCoolantTemp
+Maximum coolant temperature for learning
+
+### wwMinMapForLearning
+Minimum MAP pressure for learning
+
+### wwMaxLambdaDeviation
+Maximum lambda deviation from target for learning
+
+### wwMinLambda
+Minimum lambda value considered valid
+
+### wwMaxLambda
+Maximum lambda value considered valid
+
+### wwMinQualityScore
+Minimum quality score for learning (0.0-1.0)
+
+### wwMinSamplesForConvergence
+Minimum samples required for cell convergence
+
+### wwMinConfidenceForConvergence
+Minimum confidence % for cell convergence
+
 ### fordInjectorSmallPulseSlope
 
 
