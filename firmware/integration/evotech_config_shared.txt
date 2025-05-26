@@ -169,7 +169,7 @@
 #define GAUGE_NAME_FUEL_RUNNING "Combustível: em funcionamento"
 #define GAUGE_NAME_FUEL_LAST_INJECTION "Combustível: último pulso"
 #define GAUGE_NAME_FUEL_LAST_INJECTION_STAGE_2 "Combustível: último pulso 2"
-#define GAUGE_NAME_FUEL_BASE "Combustível: massa base por ciclo"
+#define GAUGE_NAME_FUEL_BASE "Combustível: massa base"
 #define GAUGE_NAME_FUEL_TRIM "Combustível: ajuste fino"
 #define GAUGE_NAME_FUEL_TRIM_2 "Combustível: ajuste fino 2"
 #define GAUGE_NAME_FUEL_WALL_AMOUNT "Combustível: quantidade na parede"
