@@ -75,7 +75,7 @@
 #define GAUGE_NAME_DESIRED_GEAR "TCU: Marcha desejada"
 #define GAUGE_NAME_CURRENT_GEAR "TCU: Marcha atual"
 #define GAUGE_NAME_ISS "TCU: Velocidade do eixo de entrada"
-#define GAUGE_NAME_TC_RATIO "TCU: Relação do conversor de torque"
+#define GAUGE_NAME_TC_RATIO "TCU: Relação do conversor"
 
 #define GAUGE_NAME_VVS "Velocidade do veículo"
 #define GAUGE_NAME_GEAR_RATIO "Relação de marchas"
