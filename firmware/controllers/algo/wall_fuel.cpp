@@ -100,39 +100,7 @@ float WallFuel::getWallFuel() const {
 	return wallFuel;
 }
 
-// Implementação da função auxiliar para calcular média ponderada
-float WallFuelController::calculateWeightedAverage(int startIdx, int endIdx, float targetLambda) {
-    float soma = 0;
-    float somaPesos = 0;
-    int numSamples = endIdx - startIdx;
-    
-    if (numSamples <= 0) {
-        return targetLambda; // Valor padrão se não houver amostras
-    }
-    
-    for (int k = startIdx; k < endIdx; k++) {
-        // *** MELHORIA: Peso temporal + peso por qualidade ***
-        // Peso temporal: amostras mais recentes têm peso maior
-        float pesoTemporal = (float)(k - startIdx + 1) / numSamples;
-        
-        // Peso por qualidade: valores mais próximos do target têm peso maior
-        float desvio = fabsf(lambdaBuffer[k] - targetLambda);
-        float pesoQualidade = 1.0f / (1.0f + desvio * 2.0f); // Penaliza mais desvios grandes
-        
-        // Peso combinado com ênfase na qualidade
-        float peso = pesoTemporal * 0.3f + pesoQualidade * 0.7f;
-        
-        soma += lambdaBuffer[k] * peso;
-        somaPesos += peso;
-    }
-    
-    // Verifica se temos amostras suficientes
-    if (somaPesos > 0) {
-        return soma / somaPesos;
-    } else {
-        return targetLambda; // Valor padrão se não houver amostras válidas
-    }
-}
+
 
 void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, float targetLambda, 
                                         bool isTransient, TransientDirection direction, float clt) {
@@ -460,8 +428,8 @@ void WallFuelController::onFastCallback() {
 WallFuelController::WallFuelController() : 
 	bufferIdx(0), bufferMaxSize(200), monitoring(false), pendingWwSave(false),
 	currentTransientDirection(TransientDirection::NONE), lastTransientDirection(TransientDirection::NONE),
-	lastImmediateError(0.0f), lastProlongedError(0.0f),
-	globalMonitoring(false), monitoringDirection(TransientDirection::NONE) {
+	globalMonitoring(false), monitoringDirection(TransientDirection::NONE),
+	lastImmediateError(0.0f), lastProlongedError(0.0f) {
 	
 	// Inicializar timers
 	m_transientCooldownTimer.reset();
