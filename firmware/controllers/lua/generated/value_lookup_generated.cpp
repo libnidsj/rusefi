@@ -470,33 +470,6 @@ float getConfigValueByName(const char *name) {
 // wwMapThreshold
 		case -1621962210:
 			return engineConfiguration->wwMapThreshold;
-// wwTransientDetectionWindowMs
-		case 785276994:
-			return engineConfiguration->wwTransientDetectionWindowMs;
-// wwTransientTimeoutMs
-		case -645422222:
-			return engineConfiguration->wwTransientTimeoutMs;
-// wwTpsThresholdLight
-		case -794348913:
-			return engineConfiguration->wwTpsThresholdLight;
-// wwMapThresholdLight
-		case 733905686:
-			return engineConfiguration->wwMapThresholdLight;
-// wwTpsThresholdHeavy
-		case -799242412:
-			return engineConfiguration->wwTpsThresholdHeavy;
-// wwMapThresholdHeavy
-		case 729012187:
-			return engineConfiguration->wwMapThresholdHeavy;
-// wwEnableTransientFiltering
-		case -783673834:
-			return engineConfiguration->wwEnableTransientFiltering;
-// wwTransientFilterSamples
-		case 2012739174:
-			return engineConfiguration->wwTransientFilterSamples;
-// wwMinTransientDuration
-		case -1020893515:
-			return engineConfiguration->wwMinTransientDuration;
 // wwBetaLearningRate
 		case 479387595:
 			return engineConfiguration->wwBetaLearningRate;
@@ -2908,51 +2881,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1621962210:
 	{
 		engineConfiguration->wwMapThreshold = value;
-		return 1;
-	}
-		case 785276994:
-	{
-		engineConfiguration->wwTransientDetectionWindowMs = (int)value;
-		return 1;
-	}
-		case -645422222:
-	{
-		engineConfiguration->wwTransientTimeoutMs = (int)value;
-		return 1;
-	}
-		case -794348913:
-	{
-		engineConfiguration->wwTpsThresholdLight = value;
-		return 1;
-	}
-		case 733905686:
-	{
-		engineConfiguration->wwMapThresholdLight = value;
-		return 1;
-	}
-		case -799242412:
-	{
-		engineConfiguration->wwTpsThresholdHeavy = value;
-		return 1;
-	}
-		case 729012187:
-	{
-		engineConfiguration->wwMapThresholdHeavy = value;
-		return 1;
-	}
-		case -783673834:
-	{
-		engineConfiguration->wwEnableTransientFiltering = (int)value;
-		return 1;
-	}
-		case 2012739174:
-	{
-		engineConfiguration->wwTransientFilterSamples = (int)value;
-		return 1;
-	}
-		case -1020893515:
-	{
-		engineConfiguration->wwMinTransientDuration = value;
 		return 1;
 	}
 		case 479387595:
