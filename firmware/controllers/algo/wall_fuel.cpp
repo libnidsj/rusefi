@@ -139,10 +139,7 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 	lastTransientDirection = direction;
 	
 	if (isTransient) {
-		// *** CORREÇÃO: Permitir múltiplas execuções do aprendizado ***
-		// Sempre reiniciar o monitoramento quando detectamos um novo transiente
-		
-		// Calcular tamanho ótimo do buffer (simplificado)
+		// Calcular tamanho ótimo do buffer
 		float tau = computeTau();
 		bufferMaxSize = calculateOptimalBufferSize(tau, rpm);
 		
@@ -161,8 +158,8 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 	
 	if (monitoring) {
 		if (bufferIdx < bufferMaxSize) {
-			// Simplified validation
-			bool sampleValid = true;
+			// Validação simplificada
+			bool sampleValid = (lambda >= 0.5f && lambda <= 1.5f);
 			
 			if (sampleValid) {
 				lambdaBuffer[bufferIdx] = lambda;
@@ -173,18 +170,16 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 		} else {
 			// Buffer cheio - processar aprendizado
 			
-			// *** NOVA IMPLEMENTAÇÃO: Separação adequada de janelas Beta vs Tau ***
-			// Beta: Janela curta (0-20% do buffer) para capturar efeitos imediatos
+			// *** SEPARAÇÃO ADEQUADA DE JANELAS BETA VS TAU ***
 			int betaWindow = bufferMaxSize * 0.2f;        // 20% para efeito beta (imediato)
-			if (betaWindow < 10) betaWindow = 10;         // Mínimo 10 amostras conforme solicitado
+			if (betaWindow < 10) betaWindow = 10;         // Mínimo 10 amostras
 			
-			// Tau: Janela longa (50-100% do buffer) para capturar evaporação
 			int tauWindowStart = bufferMaxSize * 0.5f;    // 50% início da janela tau
 			int tauWindowEnd = bufferMaxSize;             // 100% fim da janela tau
 			
 			// *** CÁLCULO DE ERROS ESPECÍFICOS PARA BETA E TAU ***
 			
-			// Beta: Erro imediato (atraso fixo) - média simples das primeiras amostras
+			// Beta: Erro imediato - média simples das primeiras amostras
 			float lambdaImmediate = 0.0f;
 			int validBetaSamples = 0;
 			for (int k = 0; k < betaWindow && k < bufferIdx; k++) {
@@ -197,7 +192,7 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 				lambdaImmediate = targetLambda; // Fallback
 			}
 			
-			// Tau: Erro filtrado (low-pass) - média ponderada das amostras tardias
+			// Tau: Erro filtrado - média ponderada das amostras tardias
 			float lambdaFiltered = 0.0f;
 			float totalWeight = 0.0f;
 			int validTauSamples = 0;
@@ -218,74 +213,69 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			float betaError = lambdaImmediate - targetLambda;     // Erro imediato (beta)
 			float tauError = lambdaFiltered - targetLambda;       // Erro prolongado (tau)
 			
-			// Salvar para diagnóstico (incluindo valores intermediários)
+			// Salvar para diagnóstico
 			lastImmediateError = betaError;
 			lastProlongedError = tauError;
 			
-			// Diagnóstico adicional: salvar valores de lambda calculados
-			// (podem ser acessados via debugger ou logging se necessário)
-			float debugLambdaImmediate = lambdaImmediate;
-			float debugLambdaFiltered = lambdaFiltered;
-			int debugBetaSamples = validBetaSamples;
-			int debugTauSamples = validTauSamples;
-			
-			// Evitar warnings de variáveis não utilizadas
-			(void)debugLambdaImmediate;
-			(void)debugLambdaFiltered;
-			(void)debugBetaSamples;
-			(void)debugTauSamples;
-			
-			// Parâmetros de aprendizado - SIMPLIFICADO sem sistema de confiança
-			float maxStep = 0.06f;   // Reduzido controlado para evitar oscilações
+			// *** CORREÇÃO: LÓGICA DE AJUSTE SIMPLIFICADA E CORRETA ***
+			float maxStep = 0.03f;   // Reduzido para evitar oscilações
 			
 			// Usar taxas de aprendizado diretas da configuração
 			float betaLearnRate = engineConfiguration->wwBetaLearningRate;
 			float tauLearnRate = engineConfiguration->wwTauLearningRate;
 			
-			// *** NOVA LÓGICA: Ajustes baseados nos erros específicos de Beta e Tau ***
+			// *** NOVA LÓGICA: Ajustes baseados na física do wall wetting ***
 			float deltaBeta = 0.0f;
 			float deltaTau = 0.0f;
 			
+			// Lógica corrigida baseada na física:
+			// - Se lambda está baixo (rico), precisamos de menos combustível na parede
+			// - Se lambda está alto (pobre), precisamos de mais combustível na parede
+			
 			if (direction == TransientDirection::POSITIVE) {
 				// ACELERAÇÃO: Esperamos lambda diminuir (ficar rico)
-				// Se betaError > 0: lambda imediato está acima do target (pobre) → AUMENTAR beta
-				// Se tauError > 0: lambda prolongado está acima do target (pobre) → DIMINUIR tau
-				deltaBeta = betaLearnRate * betaError * 1.5f;      // Ajuste agressivo para beta
-				deltaTau = -tauLearnRate * tauError * 0.8f;        // Ajuste moderado para tau (sinal negativo)
+				// Se betaError > 0: lambda imediato está alto (pobre) → AUMENTAR beta (mais combustível na parede)
+				// Se tauError > 0: lambda prolongado está alto (pobre) → AUMENTAR tau (evaporação mais lenta)
+				deltaBeta = betaLearnRate * betaError;      // Ajuste proporcional
+				deltaTau = tauLearnRate * tauError;         // Ajuste proporcional
 				
 			} else if (direction == TransientDirection::NEGATIVE) {
 				// DESACELERAÇÃO: Esperamos lambda aumentar (ficar pobre)
-				// Se betaError < 0: lambda imediato está abaixo do target (rico) → DIMINUIR beta
-				// Se tauError < 0: lambda prolongado está abaixo do target (rico) → AUMENTAR tau
-				deltaBeta = betaLearnRate * betaError * 0.8f;      // Ajuste moderado para beta
-				deltaTau = -tauLearnRate * tauError * 1.3f;        // Ajuste agressivo para tau
+				// Se betaError < 0: lambda imediato está baixo (rico) → DIMINUIR beta (menos combustível na parede)
+				// Se tauError < 0: lambda prolongado está baixo (rico) → DIMINUIR tau (evaporação mais rápida)
+				deltaBeta = betaLearnRate * betaError;      // Ajuste proporcional
+				deltaTau = tauLearnRate * tauError;         // Ajuste proporcional
 				
 			} else {
-				// TRANSIENTE NEUTRO: Ajuste balanceado baseado nos erros específicos
-				deltaBeta = betaLearnRate * betaError;
-				deltaTau = -tauLearnRate * tauError;  // Manter sinal negativo para tau
+				// TRANSIENTE NEUTRO: Ajuste balanceado
+				deltaBeta = betaLearnRate * betaError * 0.5f;
+				deltaTau = tauLearnRate * tauError * 0.5f;
 			}
 			
 			// Aplicar limites
 			deltaBeta = clampF(-maxStep, deltaBeta, maxStep);
 			deltaTau = clampF(-maxStep, deltaTau, maxStep);
 			
-			// Atualizar tabelas de correção
+			// *** CORREÇÃO: PERSISTÊNCIA CORRETA PARA SCALED_CHANNEL ***
+			// Ler valores atuais (scaled_channel converte automaticamente)
 			float currentBetaValue = config->wwBetaCorrection[i][j];
 			float currentTauValue = config->wwTauCorrection[i][j];
 			
+			// Calcular novos valores
 			float newBetaValue = currentBetaValue * (1.0f + deltaBeta);
 			float newTauValue = currentTauValue * (1.0f + deltaTau);
 			
-			newBetaValue = clampF(0.0f, newBetaValue, 2.55f);
-			newTauValue = clampF(0.0f, newTauValue, 2.55f);
+			// Aplicar limites físicos
+			newBetaValue = clampF(0.5f, newBetaValue, 2.0f);  // Faixa razoável para correção
+			newTauValue = clampF(0.5f, newTauValue, 2.0f);    // Faixa razoável para correção
 			
-			// Converter de volta para valor inteiro para armazenamento
-			config->wwBetaCorrection[i][j] = (newBetaValue);
-			config->wwTauCorrection[i][j] = (newTauValue);
+			// *** CORREÇÃO: Atribuição correta para scaled_channel ***
+			// O scaled_channel automaticamente converte float para uint8_t com escala
+			config->wwBetaCorrection[i][j] = newBetaValue;
+			config->wwTauCorrection[i][j] = newTauValue;
 			
-			// Optional smoothing (simplified)
-			float smoothIntensity = 0.1f; // Default 10% smoothing
+			// Suavização opcional (simplificada)
+			float smoothIntensity = 0.05f; // Reduzido para ser mais conservador
 			smoothCorrectionTable(config->wwBetaCorrection, i, j, smoothIntensity);
 			smoothCorrectionTable(config->wwTauCorrection, i, j, smoothIntensity);
 			
@@ -468,17 +458,22 @@ TransientInfo WallFuelController::detectTransientWithBuffer(float tps, float map
 		return result;
 	}
 	
-	// Calcular derivadas usando diferentes janelas de tempo
-	float tpsDerivativeShort = m_transientBuffer.calculateTpsDerivative(5);   // 25ms
-	float mapDerivativeShort = m_transientBuffer.calculateMapDerivative(5);   // 25ms
-	float tpsDerivativeMedium = m_transientBuffer.calculateTpsDerivative(10); // 50ms
-	float mapDerivativeMedium = m_transientBuffer.calculateMapDerivative(10); // 50ms
-	float tpsDerivativeLong = m_transientBuffer.calculateTpsDerivative(20);   // 100ms
-	float mapDerivativeLong = m_transientBuffer.calculateMapDerivative(20);   // 100ms
+	// *** CORREÇÃO: Calcular derivadas com conversão correta para unidades por segundo ***
+	// Callback é chamado a cada ~5ms, então 1 amostra = 5ms
+	const float CALLBACK_PERIOD_MS = 5.0f;
+	const float MS_TO_SECONDS = 1000.0f;
 	
-	// Thresholds da configuração
-	float tpsThreshold = engineConfiguration->wwTpsThreshold;
-	float mapThreshold = engineConfiguration->wwMapThreshold;
+	// Calcular derivadas em unidades corretas (%/s e kPa/s)
+	float tpsDerivativeShort = m_transientBuffer.calculateTpsDerivative(5) * (MS_TO_SECONDS / (5 * CALLBACK_PERIOD_MS));   // %/s
+	float mapDerivativeShort = m_transientBuffer.calculateMapDerivative(5) * (MS_TO_SECONDS / (5 * CALLBACK_PERIOD_MS));   // kPa/s
+	float tpsDerivativeMedium = m_transientBuffer.calculateTpsDerivative(10) * (MS_TO_SECONDS / (10 * CALLBACK_PERIOD_MS)); // %/s
+	float mapDerivativeMedium = m_transientBuffer.calculateMapDerivative(10) * (MS_TO_SECONDS / (10 * CALLBACK_PERIOD_MS)); // kPa/s
+	float tpsDerivativeLong = m_transientBuffer.calculateTpsDerivative(20) * (MS_TO_SECONDS / (20 * CALLBACK_PERIOD_MS));   // %/s
+	float mapDerivativeLong = m_transientBuffer.calculateMapDerivative(20) * (MS_TO_SECONDS / (20 * CALLBACK_PERIOD_MS));   // kPa/s
+	
+	// Thresholds da configuração (já em unidades corretas)
+	float tpsThreshold = engineConfiguration->wwTpsThreshold;  // %/s
+	float mapThreshold = engineConfiguration->wwMapThreshold;  // kPa/s
 	
 	// *** LÓGICA DE DETECÇÃO MELHORADA ***
 	// Usar múltiplas janelas para detectar transientes de diferentes velocidades
@@ -564,7 +559,7 @@ int WallFuelController::calculateOptimalBufferSize(float tau, float rpm) {
     return optimalSamples;
 }
 
-// Implementação da função de suavização de tabelas de correção
+// *** CORREÇÃO: Implementação correta da função de suavização para scaled_channel ***
 void WallFuelController::smoothCorrectionTable(scaled_channel<uint8_t, 100, 1> table[WW_CORRECTION_MAP_BINS][WW_CORRECTION_RPM_BINS], int centerI, int centerJ, float intensity) {
     // Aplicar suavização simples nas células adjacentes
     // intensity: 0.0 = sem suavização, 1.0 = suavização máxima
@@ -580,7 +575,8 @@ void WallFuelController::smoothCorrectionTable(scaled_channel<uint8_t, 100, 1> t
     
     intensity = clampF(0.0f, intensity, 1.0f);
     
-    uint8_t centerValue = table[centerI][centerJ]; // Corrected: [i][j] = [MAP][RPM]
+    // *** CORREÇÃO: Trabalhar com valores float para scaled_channel ***
+    float centerValue = table[centerI][centerJ]; // scaled_channel converte automaticamente
     
     // Aplicar suavização para células adjacentes
     for (int di = -1; di <= 1; di++) {
@@ -592,7 +588,7 @@ void WallFuelController::smoothCorrectionTable(scaled_channel<uint8_t, 100, 1> t
             
             // Verificar limites
             if (ni >= 0 && ni < WW_CORRECTION_MAP_BINS && nj >= 0 && nj < WW_CORRECTION_RPM_BINS) {
-                uint8_t neighborValue = table[ni][nj]; // Corrected: [MAP][RPM]
+                float neighborValue = table[ni][nj]; // scaled_channel converte automaticamente
                 
                 // Aplicar suavização ponderada baseada na distância
                 float weight = intensity;
@@ -601,8 +597,12 @@ void WallFuelController::smoothCorrectionTable(scaled_channel<uint8_t, 100, 1> t
                 }
                 
                 // Interpolação linear entre valor atual e valor central
-                uint8_t newValue = (uint8_t)(neighborValue * (1.0f - weight) + centerValue * weight);
-                table[ni][nj] = newValue; // Corrected: [MAP][RPM]
+                float newValue = neighborValue * (1.0f - weight) + centerValue * weight;
+                
+                // *** CORREÇÃO: Aplicar limites físicos antes de atribuir ***
+                newValue = clampF(0.5f, newValue, 2.0f);
+                
+                table[ni][nj] = newValue; // scaled_channel converte automaticamente para uint8_t
             }
         }
     }
