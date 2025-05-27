@@ -849,15 +849,6 @@ float getOutputValueByName(const char *name) {
 // ltitFactor
 		case 1877730337:
 			return engine->outputChannels.ltitFactor;
-// ltitAcTrim
-		case 1685033762:
-			return engine->outputChannels.ltitAcTrim;
-// ltitFan1Trim
-		case 795119972:
-			return engine->outputChannels.ltitFan1Trim;
-// ltitFan2Trim
-		case 796305893:
-			return engine->outputChannels.ltitFan2Trim;
 // wwTau
 		case 279682973:
 			return engine->outputChannels.wwTau;

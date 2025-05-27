@@ -2045,15 +2045,6 @@ float getConfigValueByName(const char *name) {
 // maxOilPressure
 		case -2079066360:
 			return engineConfiguration->maxOilPressure;
-// ltitAcTrim
-		case 1685033762:
-			return config->ltitAcTrim;
-// ltitFan1Trim
-		case 795119972:
-			return config->ltitFan1Trim;
-// ltitFan2Trim
-		case 796305893:
-			return config->ltitFan2Trim;
 // ltftEnabled
 		case -518141238:
 			return config->ltftEnabled;
@@ -2081,18 +2072,6 @@ float getConfigValueByName(const char *name) {
 // ltftStftRejectThreshold
 		case 1940059402:
 			return config->ltftStftRejectThreshold;
-// ltftRegionalWindow
-		case 907872520:
-			return config->ltftRegionalWindow;
-// ltftRegionalIntensity
-		case 1888214935:
-			return config->ltftRegionalIntensity;
-// ltftHoleThreshold
-		case 750420468:
-			return config->ltftHoleThreshold;
-// ltftSmoothingIntensity
-		case -1343905218:
-			return config->ltftSmoothingIntensity;
 // ltftIgnitionOnDelay
 		case 1063583180:
 			return config->ltftIgnitionOnDelay;
@@ -5556,21 +5535,6 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->maxOilPressure = (int)value;
 		return 1;
 	}
-		case 1685033762:
-	{
-		config->ltitAcTrim = (int)value;
-		return 1;
-	}
-		case 795119972:
-	{
-		config->ltitFan1Trim = (int)value;
-		return 1;
-	}
-		case 796305893:
-	{
-		config->ltitFan2Trim = (int)value;
-		return 1;
-	}
 		case -518141238:
 	{
 		config->ltftEnabled = (int)value;
@@ -5614,26 +5578,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case 1940059402:
 	{
 		config->ltftStftRejectThreshold = (int)value;
-		return 1;
-	}
-		case 907872520:
-	{
-		config->ltftRegionalWindow = (int)value;
-		return 1;
-	}
-		case 1888214935:
-	{
-		config->ltftRegionalIntensity = (int)value;
-		return 1;
-	}
-		case 750420468:
-	{
-		config->ltftHoleThreshold = (int)value;
-		return 1;
-	}
-		case -1343905218:
-	{
-		config->ltftSmoothingIntensity = (int)value;
 		return 1;
 	}
 		case 1063583180:
