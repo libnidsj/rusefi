@@ -11,7 +11,7 @@ getTarget ()
 	ONLY=$(echo "$COMMIT_MESSAGE" | grep -Po '(?<=only:)[^\s]*')
 	
 	# Filter to include only evoTech12 and evoTech12plus targets
-	if [[ "$BUNDLE_NAME" == "evotech12" || "$BUNDLE_NAME" == "evotech12plus" ]]; then
+	if [[ "$BUNDLE_NAME" == "evoTech12" || "$BUNDLE_NAME" == "evoTech12plus" ]]; then
 		if [[ ( "$EVENT_NAME" == 'workflow_dispatch' \
 							|| "$EVENT_NAME" == 'schedule' \
 							|| "$EVENT_NAME" == 'pull_request' \
