@@ -137,20 +137,6 @@ float WallFuelController::calculateWeightedAverage(int startIdx, int endIdx, flo
 void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, float targetLambda, 
                                         bool isTransient, TransientDirection direction, float clt) {
 
-	// *** NOVA ABORDAGEM: Separação de erros Beta e Tau com janelas específicas ***
-	// 
-	// Beta (efeito imediato): 
-	//   - Janela curta (0-20% do buffer, mín. 10 amostras)
-	//   - Captura efeitos imediatos de combustível batendo na parede
-	//   - Erro calculado como média simples das primeiras amostras
-	//
-	// Tau (efeito de evaporação):
-	//   - Janela longa (50-100% do buffer)  
-	//   - Captura efeitos prolongados de evaporação
-	//   - Erro calculado como média ponderada (low-pass) das amostras tardias
-	//
-	// Esta separação permite ajustes mais precisos e independentes dos parâmetros.
-
 	// *** VERIFICAR CONDIÇÕES DE HABILITAÇÃO ***
 	if (!engineConfiguration->complexWallModel) {
 		monitoring = false;
@@ -185,12 +171,24 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 	lastTransientDirection = direction;
 	
 	if (isTransient) {
-		monitoring = true;
-		bufferIdx = 0;
+		// *** CORREÇÃO: Permitir múltiplas execuções do aprendizado ***
+		// Sempre reiniciar o monitoramento quando detectamos um novo transiente
 		
 		// Calcular tamanho ótimo do buffer (simplificado)
-		float tau = computeTauWithDirection(direction);
+		float tau = computeTau();
 		bufferMaxSize = calculateOptimalBufferSize(tau, rpm);
+		
+		// Sempre reiniciar o monitoramento para novos transientes
+		monitoring = true;
+		bufferIdx = 0;
+		m_monitoringTimeoutTimer.reset(); // Reset timeout timer
+	}
+	
+	// *** TIMEOUT DO MONITORING PARA EVITAR TRAVAMENTO ***
+	if (monitoring && m_monitoringTimeoutTimer.hasElapsedMs(2000)) { // 2 segundos timeout
+		monitoring = false; // Forçar saída do monitoring se demorar muito
+		globalMonitoring = false; // Também desligar monitoramento global
+		bufferIdx = 0;
 	}
 	
 	if (monitoring) {
@@ -324,6 +322,7 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			smoothCorrectionTable(config->wwTauCorrection, i, j, smoothIntensity);
 			
 			monitoring = false;
+			globalMonitoring = false; // *** DESLIGAR MONITORAMENTO GLOBAL ***
 			pendingWwSave = true;
 		}
 	}
@@ -361,34 +360,8 @@ float WallFuelController::computeTau() const {
 		tauBase *= interpolate3d(config->wwTauMapRpmValues, config->wwMapBins, map, config->wwRpmBins, rpm);
 		
 		// *** CORREÇÃO: Usar apenas a tabela de correção geral (tabelas antigas removidas) ***
-		tauCorr = interpolate3d(config->wwTauCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm) * 0.01f;
+		tauCorr = interpolate3d(config->wwTauCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm);
 	}
-	float tau = tauBase * tauCorr;
-	return tau;
-}
-
-float WallFuelController::computeTauWithDirection(TransientDirection direction) const {
-	// Note: direction parameter reserved for future directional tau adjustments
-	(void)direction; // Suppress unused parameter warning
-	
-	if (!engineConfiguration->complexWallModel) {
-		return engineConfiguration->wwaeTau;
-	}
-	
-	float clt = Sensor::get(SensorType::Clt).value_or(90);
-	float tauClt = interpolate2d(clt, config->wwCltBins, config->wwTauCltValues);
-	float tauBase = tauClt;
-	float tauCorr = 1.0f;
-	float map = Sensor::get(SensorType::Map).value_or(60);
-	float rpm = Sensor::getOrZero(SensorType::Rpm);
-	
-	if (Sensor::hasSensor(SensorType::Map)) {
-		tauBase *= interpolate3d(config->wwTauMapRpmValues, config->wwMapBins, map, config->wwRpmBins, rpm);
-		
-		// Usar a tabela de correção geral
-		tauCorr = interpolate3d(config->wwTauCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm) * 0.01f;
-	}
-	
 	float tau = tauBase * tauCorr;
 	return tau;
 }
@@ -407,34 +380,8 @@ float WallFuelController::computeBeta() const {
 		betaBase *= interpolate3d(config->wwBetaMapRpmValues, config->wwMapBins, map, config->wwRpmBins, rpm);
 		
 		// Usar a tabela de correção geral
-		betaCorr = interpolate3d(config->wwBetaCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm) * 0.01f;
+		betaCorr = interpolate3d(config->wwBetaCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm);
 	}
-	float beta = betaBase * betaCorr;
-	return clampF(0, beta, 1);
-}
-
-float WallFuelController::computeBetaWithDirection(TransientDirection direction) const {
-	// Note: direction parameter reserved for future directional beta adjustments
-	(void)direction; // Suppress unused parameter warning
-	
-	if (!engineConfiguration->complexWallModel) {
-		return engineConfiguration->wwaeBeta;
-	}
-	
-	float clt = Sensor::get(SensorType::Clt).value_or(90);
-	float betaClt = interpolate2d(clt, config->wwCltBins, config->wwBetaCltValues);
-	float betaBase = betaClt;
-	float betaCorr = 1.0f;
-	float map = Sensor::get(SensorType::Map).value_or(60);
-	float rpm = Sensor::getOrZero(SensorType::Rpm);
-	
-	if (Sensor::hasSensor(SensorType::Map)) {
-		betaBase *= interpolate3d(config->wwBetaMapRpmValues, config->wwMapBins, map, config->wwRpmBins, rpm);
-		
-		// Usar a tabela de correção geral
-		betaCorr = interpolate3d(config->wwBetaCorrection, config->wwCorrectionMapBins, map, config->wwCorrectionRpmBins, rpm) * 0.01f;
-	}
-	
 	float beta = betaBase * betaCorr;
 	return clampF(0, beta, 1);
 }
@@ -454,9 +401,9 @@ void WallFuelController::onFastCallback() {
 	float tps = Sensor::getOrZero(SensorType::Tps1);
 	float map = Sensor::getOrZero(SensorType::Map);
 	
-	// Enhanced transient detection
-	TransientInfo transient = detectTransientEnhanced(tps, map, rpm);
-	bool isTransient = transient.isValid && isTransientValid(transient);
+	// *** DETECÇÃO DE TRANSIENTE COM BUFFER CIRCULAR ***
+	TransientInfo transient = detectTransientWithBuffer(tps, map);
+	bool isTransient = transient.isValid;
 	
 	// Update current transient info
 	if (isTransient) {
@@ -469,10 +416,10 @@ void WallFuelController::onFastCallback() {
 		}
 	}
 	
-	// Calcular tau e beta - usando direção se configurado
+	// Calcular tau e beta
 	float tau, beta;
-	tau = computeTauWithDirection(m_currentTransient.direction);
-	beta = computeBetaWithDirection(m_currentTransient.direction);
+	tau = computeTau();
+	beta = computeBeta();
 	
 	if (tau < 0.01f || beta < 0.01f) {
 		m_enable = false;
@@ -488,33 +435,43 @@ void WallFuelController::onFastCallback() {
 	m_beta = beta;
 	m_enable = true;
 	
-	// Processar o aprendizado se tivermos um transiente e uso de correções direcionais
-	// Usar validação robusta de sensores
+	// *** CORREÇÃO: Processar aprendizado durante TODO o período de monitoramento ***
 	float lambdaValue = Sensor::getOrZero(SensorType::Lambda1);
 	float targetLambda = engine->fuelComputer.targetLambda;
 	float clt = Sensor::getOrZero(SensorType::Clt);
 	
+	// *** GERENCIAMENTO DO ESTADO GLOBAL DE MONITORAMENTO ***
 	if (isTransient) {
-		adaptiveLearning(rpm, map, lambdaValue, targetLambda, isTransient, m_currentTransient.direction, clt);
+		// Novo transiente detectado - iniciar monitoramento global
+		globalMonitoring = true;
+		monitoringDirection = m_currentTransient.direction;
+		lastTransientDirection = m_currentTransient.direction;
+	}
+	
+	// Chamar adaptiveLearning sempre que estivermos em monitoramento global
+	if (globalMonitoring) {
+		adaptiveLearning(rpm, map, lambdaValue, targetLambda, isTransient, monitoringDirection, clt);
+		
+		// O globalMonitoring será desligado dentro da função adaptiveLearning
+		// quando o buffer estiver cheio e o processamento for concluído
 	}
 }
 
 WallFuelController::WallFuelController() : 
-	m_filterBufferIdx(0), m_filterBufferFilled(false),
 	bufferIdx(0), bufferMaxSize(200), monitoring(false), pendingWwSave(false),
 	currentTransientDirection(TransientDirection::NONE), lastTransientDirection(TransientDirection::NONE),
-	lastImmediateError(0.0f), lastProlongedError(0.0f) {
+	lastImmediateError(0.0f), lastProlongedError(0.0f),
+	globalMonitoring(false), monitoringDirection(TransientDirection::NONE) {
+	
+	// Inicializar timers
+	m_transientCooldownTimer.reset();
+	m_monitoringTimeoutTimer.reset();
 	
 	// Inicializar buffers
 	for (int i = 0; i < WW_BUFFER_MAX; i++) {
 		lambdaBuffer[i] = 1.0f;  // Valor neutro em vez de zero
 		rpmBuffer[i] = 0.0f;
 		mapBuffer[i] = 0.0f;
-	}
-	
-	// Initialize transient filter buffer
-	for (int i = 0; i < 10; i++) {
-		m_transientFilterBuffer[i] = 0.0f;
 	}
 	
 	// Inicializar status simplificado de aprendizado de todas as células
@@ -524,6 +481,83 @@ WallFuelController::WallFuelController() :
 			tauLearningStatus[i][j] = SimpleLearningStatus();
 		}
 	}
+}
+
+// *** NOVA IMPLEMENTAÇÃO: DETECÇÃO DE TRANSIENTE COM BUFFER CIRCULAR ***
+TransientInfo WallFuelController::detectTransientWithBuffer(float tps, float map) {
+	TransientInfo result;
+	
+	// Adicionar amostra atual ao buffer circular
+	m_transientBuffer.addSample(tps, map);
+	
+	// Verificar se temos amostras suficientes
+	if (!m_transientBuffer.hasEnoughSamples()) {
+		return result; // Retorna transiente inválido se não temos dados suficientes
+	}
+	
+	// Verificar cooldown para evitar detecções muito frequentes
+	if (!m_transientCooldownTimer.hasElapsedMs(50)) { // 50ms cooldown mínimo
+		return result;
+	}
+	
+	// Calcular derivadas usando diferentes janelas de tempo
+	float tpsDerivativeShort = m_transientBuffer.calculateTpsDerivative(5);   // 25ms
+	float mapDerivativeShort = m_transientBuffer.calculateMapDerivative(5);   // 25ms
+	float tpsDerivativeMedium = m_transientBuffer.calculateTpsDerivative(10); // 50ms
+	float mapDerivativeMedium = m_transientBuffer.calculateMapDerivative(10); // 50ms
+	float tpsDerivativeLong = m_transientBuffer.calculateTpsDerivative(20);   // 100ms
+	float mapDerivativeLong = m_transientBuffer.calculateMapDerivative(20);   // 100ms
+	
+	// Thresholds da configuração
+	float tpsThreshold = engineConfiguration->wwTpsThreshold;
+	float mapThreshold = engineConfiguration->wwMapThreshold;
+	
+	// *** LÓGICA DE DETECÇÃO MELHORADA ***
+	// Usar múltiplas janelas para detectar transientes de diferentes velocidades
+	
+	// Transiente rápido (janela curta)
+	bool fastPositive = (tpsDerivativeShort > tpsThreshold * 2.0f) || (mapDerivativeShort > mapThreshold * 2.0f);
+	bool fastNegative = (tpsDerivativeShort < -tpsThreshold * 2.0f) || (mapDerivativeShort < -mapThreshold * 2.0f);
+	
+	// Transiente médio (janela média)
+	bool mediumPositive = (tpsDerivativeMedium > tpsThreshold) || (mapDerivativeMedium > mapThreshold);
+	bool mediumNegative = (tpsDerivativeMedium < -tpsThreshold) || (mapDerivativeMedium < -mapThreshold);
+	
+	// Transiente lento (janela longa) - mais sensível
+	bool slowPositive = (tpsDerivativeLong > tpsThreshold * 0.5f) || (mapDerivativeLong > mapThreshold * 0.5f);
+	bool slowNegative = (tpsDerivativeLong < -tpsThreshold * 0.5f) || (mapDerivativeLong < -mapThreshold * 0.5f);
+	
+	// Combinar detecções - qualquer janela pode detectar um transiente
+	bool isPositive = fastPositive || mediumPositive || slowPositive;
+	bool isNegative = fastNegative || mediumNegative || slowNegative;
+	
+	// Evitar detecção simultânea de positivo e negativo
+	if (isPositive && isNegative) {
+		// Se ambos são detectados, usar a janela média como desempate
+		if (fabsf(tpsDerivativeMedium) > fabsf(mapDerivativeMedium)) {
+			isPositive = tpsDerivativeMedium > 0;
+			isNegative = tpsDerivativeMedium < 0;
+		} else {
+			isPositive = mapDerivativeMedium > 0;
+			isNegative = mapDerivativeMedium < 0;
+		}
+	}
+	
+	if (isPositive) {
+		result.direction = TransientDirection::POSITIVE;
+		result.isValid = true;
+		result.tpsRate = tpsDerivativeMedium; // Usar janela média para reportar
+		result.mapRate = mapDerivativeMedium;
+		m_transientCooldownTimer.reset(); // Reset cooldown
+	} else if (isNegative) {
+		result.direction = TransientDirection::NEGATIVE;
+		result.isValid = true;
+		result.tpsRate = tpsDerivativeMedium; // Usar janela média para reportar
+		result.mapRate = mapDerivativeMedium;
+		m_transientCooldownTimer.reset(); // Reset cooldown
+	}
+	
+	return result;
 }
 
 // Função para calcular tamanho ótimo do buffer baseado na nova estratégia de janelas
@@ -604,168 +638,4 @@ void WallFuelController::smoothCorrectionTable(scaled_channel<uint8_t, 100, 1> t
             }
         }
     }
-}
-
-// Enhanced Transient Detection Implementation
-TransientInfo WallFuelController::detectTransientEnhanced(float tps, float map, float rpm) {
-	// Note: rpm parameter reserved for future RPM-dependent transient detection
-	(void)rpm; // Suppress unused parameter warning
-	
-	TransientInfo result;
-	
-	// Get configurable parameters with fallback defaults
-	float tpsThreshold = engineConfiguration->wwTpsThreshold > 0 ? engineConfiguration->wwTpsThreshold : 3.0f;
-	float mapThreshold = engineConfiguration->wwMapThreshold > 0 ? engineConfiguration->wwMapThreshold : 15.0f;
-	uint16_t windowMs = engineConfiguration->wwTransientDetectionWindowMs > 0 ? engineConfiguration->wwTransientDetectionWindowMs : 200;
-	
-	// Calculate window size in samples
-	constexpr float callbackPeriod = FAST_CALLBACK_PERIOD_MS; // in ms
-	int windowSamples = (int)(windowMs / callbackPeriod);
-	windowSamples = clampF(10, windowSamples, 100); // Reasonable limits
-	
-	// Static buffers for rate calculation
-	static float tpsDetectionBuffer[100] = {0};
-	static float mapDetectionBuffer[100] = {0};
-	static int detectionBufIdx = 0;
-	static bool detectionBufferFilled = false;
-	
-	// Store current values
-	tpsDetectionBuffer[detectionBufIdx] = tps;
-	mapDetectionBuffer[detectionBufIdx] = map;
-	
-	// Calculate rates if buffer has enough data
-	if (detectionBufferFilled || detectionBufIdx >= windowSamples) {
-		int oldestIdx = (detectionBufIdx - windowSamples + 100) % 100;
-		float tpsDelta = tps - tpsDetectionBuffer[oldestIdx];
-		float mapDelta = map - mapDetectionBuffer[oldestIdx];
-		float timeWindow = windowSamples * callbackPeriod / 1000.0f; // Convert to seconds
-		
-		result.tpsRate = tpsDelta / timeWindow; // %/s
-		result.mapRate = mapDelta / timeWindow; // kPa/s
-		
-		// Determine direction and intensity
-		bool isPositive = result.tpsRate > tpsThreshold || result.mapRate > mapThreshold;
-		bool isNegative = result.tpsRate < -tpsThreshold || result.mapRate < -mapThreshold;
-		
-		if (isPositive) {
-			result.direction = TransientDirection::POSITIVE;
-			result.intensity = classifyTransientIntensity(result.tpsRate, result.mapRate);
-			result.isValid = true;
-		} else if (isNegative) {
-			result.direction = TransientDirection::NEGATIVE;
-			result.intensity = classifyTransientIntensity(-result.tpsRate, -result.mapRate);
-			result.isValid = true;
-		}
-		
-		// Apply filtering if enabled
-		if (engineConfiguration->wwEnableTransientFiltering && result.isValid) {
-			float combinedRate = sqrtf(result.tpsRate * result.tpsRate + result.mapRate * result.mapRate);
-			result.isValid = applyTransientFiltering(combinedRate);
-		}
-	}
-	
-	// Update buffer index
-	detectionBufIdx = (detectionBufIdx + 1) % 100;
-	if (detectionBufIdx == 0) detectionBufferFilled = true;
-	
-	return result;
-}
-
-bool WallFuelController::isTransientValid(const TransientInfo& transient) {
-	if (!transient.isValid) return false;
-	
-	// CORREÇÃO: Verificação de timeout simplificada e mais robusta
-	// Usar timeout apenas se configurado, caso contrário aceitar todos os transientes válidos
-	uint16_t timeoutMs = engineConfiguration->wwTransientTimeoutMs;
-	if (timeoutMs > 0) {
-		if (!m_transientTimer.hasElapsedMs(timeoutMs)) {
-			return false; // Ainda dentro do período de timeout
-		}
-	}
-	
-	// CORREÇÃO: Remover verificação de duração mínima que estava causando problemas
-	// A duração é calculada durante o transiente, não antes dele começar
-	// Esta verificação estava rejeitando transientes válidos prematuramente
-	
-	// Reset timer for next transient
-	m_transientTimer.reset();
-	return true;
-}
-
-TransientIntensity WallFuelController::classifyTransientIntensity(float tpsRate, float mapRate) {
-	// Get configurable thresholds with fallback defaults
-	float lightTps = engineConfiguration->wwTpsThresholdLight > 0 ? engineConfiguration->wwTpsThresholdLight : 2.0f;
-	float lightMap = engineConfiguration->wwMapThresholdLight > 0 ? engineConfiguration->wwMapThresholdLight : 8.0f;
-	float heavyTps = engineConfiguration->wwTpsThresholdHeavy > 0 ? engineConfiguration->wwTpsThresholdHeavy : 15.0f;
-	float heavyMap = engineConfiguration->wwMapThresholdHeavy > 0 ? engineConfiguration->wwMapThresholdHeavy : 60.0f;
-	
-	// Use absolute values for classification
-	float absTpsRate = fabsf(tpsRate);
-	float absMapRate = fabsf(mapRate);
-	
-	// Heavy transient: either TPS or MAP exceeds heavy threshold
-	if (absTpsRate > heavyTps || absMapRate > heavyMap) {
-		return TransientIntensity::HEAVY;
-	}
-	
-	// Light transient: both TPS and MAP are below normal but above light threshold
-	if (absTpsRate <= lightTps && absMapRate <= lightMap) {
-		return TransientIntensity::LIGHT;
-	}
-	
-	// Normal transient: everything else
-	return TransientIntensity::NORMAL;
-}
-
-bool WallFuelController::applyTransientFiltering(float rate) {
-	if (!engineConfiguration->wwEnableTransientFiltering) {
-		return true; // No filtering
-	}
-	
-	uint8_t filterSamples = engineConfiguration->wwTransientFilterSamples > 0 ? 
-							engineConfiguration->wwTransientFilterSamples : 3;
-	filterSamples = clampF(1, filterSamples, 10);
-	
-	// Store rate in filter buffer
-	m_transientFilterBuffer[m_filterBufferIdx] = rate;
-	m_filterBufferIdx = (m_filterBufferIdx + 1) % 10;
-	
-	if (m_filterBufferIdx == 0) {
-		m_filterBufferFilled = true;
-	}
-	
-	// Need enough samples for filtering
-	if (!m_filterBufferFilled && m_filterBufferIdx < filterSamples) {
-		return false;
-	}
-	
-	// Check if enough recent samples exceed threshold
-	int validSamples = 0;
-	int samplesToCheck = m_filterBufferFilled ? filterSamples : m_filterBufferIdx;
-	
-	for (int i = 0; i < samplesToCheck; i++) {
-		int idx = (m_filterBufferIdx - 1 - i + 10) % 10;
-		if (m_transientFilterBuffer[idx] > 0) { // Any positive rate
-			validSamples++;
-		}
-	}
-	
-	// Require at least 60% of samples to be valid
-	return (float)validSamples / samplesToCheck >= 0.6f;
-}
-
-void WallFuelController::updateTransientDuration() {
-	if (m_currentTransient.direction != TransientDirection::NONE) {
-		if (!m_transientDurationTimer.hasElapsedMs(0)) {
-			// Timer was just started
-			m_transientDurationTimer.reset();
-			m_currentTransient.duration = 0;
-		} else {
-			// Update duration (convert from microseconds to milliseconds)
-			m_currentTransient.duration = m_transientDurationTimer.getElapsedUs() / 1000.0f;
-		}
-	} else {
-		// No active transient, reset timer
-		m_transientDurationTimer.reset();
-	}
 }

@@ -235,22 +235,12 @@ void setDefaultWallWetting() {
 	engineConfiguration->complexWallModel = true;
 	engineConfiguration->wwEnableAdaptiveLearning = true;
 	
-	// Enhanced Transient Detection defaults
-	engineConfiguration->wwTpsThreshold = 3.0f;        // %/s - More sensitive than old 8.0
-	engineConfiguration->wwMapThreshold = 15.0f;       // kPa/s - More sensitive than old 40.0
-	engineConfiguration->wwTransientDetectionWindowMs = 200;  // ms - Shorter than old 250ms
-	engineConfiguration->wwTransientTimeoutMs = 500;   // ms - Shorter than old 1000ms
+	// *** DETECÇÃO DE TRANSIENTE SIMPLIFICADA ***
+	// Thresholds muito mais sensíveis para detectar transientes pequenos
+	engineConfiguration->wwTpsThreshold = 0.5f;        // %/callback - Muito sensível para TPS
+	engineConfiguration->wwMapThreshold = 2.0f;        // kPa/callback - Muito sensível para MAP
 	
-	// Advanced thresholds for different intensities
-	engineConfiguration->wwTpsThresholdLight = 1.5f;   // %/s - For gentle transients
-	engineConfiguration->wwMapThresholdLight = 8.0f;   // kPa/s - For gentle transients
-	engineConfiguration->wwTpsThresholdHeavy = 12.0f;  // %/s - For aggressive transients
-	engineConfiguration->wwMapThresholdHeavy = 50.0f;  // kPa/s - For aggressive transients
-	
-	// Filtering defaults
-	engineConfiguration->wwEnableTransientFiltering = true;
-	engineConfiguration->wwTransientFilterSamples = 3;
-	engineConfiguration->wwMinTransientDuration = 50.0f; // ms
+	// Parâmetros simplificados - apenas os essenciais
 	
 	// Learning parameters
 	engineConfiguration->wwBetaLearningRate = 0.05f;       // 5% learning rate
