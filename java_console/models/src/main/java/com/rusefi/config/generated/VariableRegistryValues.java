@@ -487,7 +487,7 @@ public class VariableRegistryValues {
 	public static final int ETB_COUNT = 2;
 	public static final int ETB_HW_MAX_FREQUENCY = 3000;
 	public static final int FLASH_DATA_VERSION = 250520;
-	public static final String FRONTEND_TITLE_BAR_NAME = "rusEFI";
+	public static final String FRONTEND_TITLE_BAR_NAME = "evoTech";
 	public static final int fuel_cyl_trim_s_size = 16;
 	public static final int FUEL_LEVEL_TABLE_COUNT = 8;
 	public static final int FUEL_LOAD_COUNT = 16;
@@ -1249,7 +1249,7 @@ public class VariableRegistryValues {
 	public static final String PROTOCOL_INJ_STAGE2_SHORT_PREFIX = "j";
 	public static final String PROTOCOL_MSG = "msg";
 	public static final String PROTOCOL_OUTPIN = "outpin";
-	public static final String PROTOCOL_SIGNATURE_PREFIX = "rusEFI ";
+	public static final String PROTOCOL_SIGNATURE_PREFIX = "evoTech ";
 	public static final String PROTOCOL_TEST_RESPONSE_TAG = "ts_p_alive";
 	public static final String PROTOCOL_VERSION_TAG = "rusEfiVersion";
 	public static final int RANGE_INPUT_COUNT = 6;
@@ -1565,7 +1565,7 @@ public class VariableRegistryValues {
 	public static final int TS_RESPONSE_UNDERRUN = 0x80;
 	public static final int TS_RESPONSE_UNRECOGNIZED_COMMAND = 0x83;
 	public static final char TS_SET_LOGGER_SWITCH = 'l';
-	public static final String TS_SIGNATURE = "rusEFI motrolink_release.2025.05.27.f407-discovery.3180493084";
+	public static final String TS_SIGNATURE = "evoTech motrolink_release.2025.05.27.f407-discovery.2284844391";
 	public static final char TS_SIMULATE_CAN = '>';
 	public static final char TS_SINGLE_WRITE_COMMAND = 'W';
 	public static final char TS_TEST_COMMAND = 't';

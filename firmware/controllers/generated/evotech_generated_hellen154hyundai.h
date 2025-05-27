@@ -523,7 +523,7 @@
 #define ETB_COUNT 2
 #define ETB_HW_MAX_FREQUENCY 3000
 #define FLASH_DATA_VERSION 250520
-#define FRONTEND_TITLE_BAR_NAME "rusEFI"
+#define FRONTEND_TITLE_BAR_NAME "evoTech"
 #define fuel_cyl_trim_s_size 16
 #define FUEL_LEVEL_TABLE_COUNT 8
 #define FUEL_LOAD_COUNT 16
@@ -1329,7 +1329,7 @@
 #define PROTOCOL_INJ_STAGE2_SHORT_PREFIX "j"
 #define PROTOCOL_MSG "msg"
 #define PROTOCOL_OUTPIN "outpin"
-#define PROTOCOL_SIGNATURE_PREFIX "rusEFI "
+#define PROTOCOL_SIGNATURE_PREFIX "evoTech "
 #define PROTOCOL_TEST_RESPONSE_TAG "ts_p_alive"
 #define PROTOCOL_VERSION_TAG "rusEfiVersion"
 #define RANGE_INPUT_COUNT 6
@@ -1384,7 +1384,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 4098908020
+#define SIGNATURE_HASH 3253588751
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -1880,7 +1880,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.05.27.hellen154hyundai.4098908020"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.hellen154hyundai.3253588751"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'
