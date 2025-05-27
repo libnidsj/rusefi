@@ -458,37 +458,10 @@ null
 Enable adaptive learning for wall wetting parameters
 
 ### wwTpsThreshold
-TPS rate threshold for transient detection
+TPS change threshold for transient detection (per callback)
 
 ### wwMapThreshold
-MAP rate threshold for transient detection
-
-### wwTransientDetectionWindowMs
-Time window for transient detection
-
-### wwTransientTimeoutMs
-Minimum time between transient detections
-
-### wwTpsThresholdLight
-Light TPS threshold for gentle transients
-
-### wwMapThresholdLight
-Light MAP threshold for gentle transients
-
-### wwTpsThresholdHeavy
-Heavy TPS threshold for aggressive transients
-
-### wwMapThresholdHeavy
-Heavy MAP threshold for aggressive transients
-
-### wwEnableTransientFiltering
-Enable filtering to reduce false transient detection
-
-### wwTransientFilterSamples
-Number of samples for transient filtering
-
-### wwMinTransientDuration
-Minimum duration for valid transient
+MAP change threshold for transient detection (per callback)
 
 ### wwBetaLearningRate
 Learning rate for adaptive corrections
