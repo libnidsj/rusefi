@@ -497,9 +497,12 @@ float getConfigValueByName(const char *name) {
 // wwMinTransientDuration
 		case -1020893515:
 			return engineConfiguration->wwMinTransientDuration;
-// wwLearningRate
-		case 1193560623:
-			return engineConfiguration->wwLearningRate;
+// wwBetaLearningRate
+		case 479387595:
+			return engineConfiguration->wwBetaLearningRate;
+// wwTauLearningRate
+		case -401535303:
+			return engineConfiguration->wwTauLearningRate;
 // wwMinCoolantTemp
 		case -694128867:
 			return engineConfiguration->wwMinCoolantTemp;
@@ -2973,9 +2976,14 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->wwMinTransientDuration = value;
 		return 1;
 	}
-		case 1193560623:
+		case 479387595:
 	{
-		engineConfiguration->wwLearningRate = value;
+		engineConfiguration->wwBetaLearningRate = value;
+		return 1;
+	}
+		case -401535303:
+	{
+		engineConfiguration->wwTauLearningRate = value;
 		return 1;
 	}
 		case -694128867:

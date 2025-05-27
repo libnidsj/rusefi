@@ -490,7 +490,10 @@ Number of samples for transient filtering
 ### wwMinTransientDuration
 Minimum duration for valid transient
 
-### wwLearningRate
+### wwBetaLearningRate
+Learning rate for adaptive corrections
+
+### wwTauLearningRate
 Learning rate for adaptive corrections
 
 ### wwMinCoolantTemp

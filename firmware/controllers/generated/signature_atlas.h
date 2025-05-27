@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 858032781
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.atlas.858032781"
+#define SIGNATURE_HASH 51536006
+#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.atlas.51536006"
