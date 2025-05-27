@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 2968561779
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.subaru_eg33_f7.2968561779"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.subaru_eg33_f7.2968561779"

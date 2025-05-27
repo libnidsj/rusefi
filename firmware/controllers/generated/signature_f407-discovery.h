@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 2813164917
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.f407-discovery.2813164917"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.f407-discovery.2813164917"

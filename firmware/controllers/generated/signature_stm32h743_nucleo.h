@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 1192604872
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.stm32h743_nucleo.1192604872"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.stm32h743_nucleo.1192604872"

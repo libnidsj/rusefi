@@ -1880,7 +1880,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.hellen154hyundai.4000275229"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.hellen154hyundai.4000275229"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'

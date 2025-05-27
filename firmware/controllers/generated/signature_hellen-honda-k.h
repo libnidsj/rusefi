@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 321701566
-#define TS_SIGNATURE "evoTech MotroLink.2025.05.27.hellen-honda-k.321701566"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.hellen-honda-k.321701566"
