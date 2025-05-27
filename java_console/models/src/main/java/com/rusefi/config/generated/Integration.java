@@ -63,7 +63,7 @@ public class Integration {
 	public static final int DEFAULT_SELT_STIM_RPM = 1200;
 	public static final int DEFAULT_SELT_STIM_VVT0 = 23;
 	public static final int ENGINE_SNIFFER_UNIT_US = 10;
-	public static final String FRONTEND_TITLE_BAR_NAME = "evoTech";
+	public static final String FRONTEND_TITLE_BAR_NAME = "rusEFI";
 	public static final String LOG_DELIMITER = "`";
 	public static final int MLQ_FIELD_HEADER_SIZE = 89;
 	public static final int MLQ_HEADER_SIZE = 24;
