@@ -79,7 +79,7 @@ public class Integration {
 	public static final String PROTOCOL_INJ_STAGE2_SHORT_PREFIX = "j";
 	public static final String PROTOCOL_MSG = "msg";
 	public static final String PROTOCOL_OUTPIN = "outpin";
-	public static final String PROTOCOL_SIGNATURE_PREFIX = "evoTech ";
+	public static final String PROTOCOL_SIGNATURE_PREFIX = "rusEFI ";
 	public static final String PROTOCOL_TEST_RESPONSE_TAG = "ts_p_alive";
 	public static final String PROTOCOL_VERSION_TAG = "rusEfiVersion";
 	public static final int REBOOT_COMMAND = 0xbb;

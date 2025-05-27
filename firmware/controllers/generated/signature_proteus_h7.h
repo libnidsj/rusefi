@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 103885426
-#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.proteus_h7.103885426"
+#define SIGNATURE_HASH 401379241
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.proteus_h7.401379241"

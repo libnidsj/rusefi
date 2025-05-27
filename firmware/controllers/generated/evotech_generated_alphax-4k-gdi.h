@@ -1326,7 +1326,7 @@
 #define PROTOCOL_INJ_STAGE2_SHORT_PREFIX "j"
 #define PROTOCOL_MSG "msg"
 #define PROTOCOL_OUTPIN "outpin"
-#define PROTOCOL_SIGNATURE_PREFIX "evoTech "
+#define PROTOCOL_SIGNATURE_PREFIX "rusEFI "
 #define PROTOCOL_TEST_RESPONSE_TAG "ts_p_alive"
 #define PROTOCOL_VERSION_TAG "rusEfiVersion"
 #define RANGE_INPUT_COUNT 6
@@ -1381,7 +1381,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 3981975130
+#define SIGNATURE_HASH 4236622721
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -1877,7 +1877,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.alphax-4k-gdi.3981975130"
+#define TS_SIGNATURE "evoTech motrolink_release.2025.05.27.alphax-4k-gdi.4236622721"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'

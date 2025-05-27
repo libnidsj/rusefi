@@ -1249,7 +1249,7 @@ public class VariableRegistryValues {
 	public static final String PROTOCOL_INJ_STAGE2_SHORT_PREFIX = "j";
 	public static final String PROTOCOL_MSG = "msg";
 	public static final String PROTOCOL_OUTPIN = "outpin";
-	public static final String PROTOCOL_SIGNATURE_PREFIX = "evoTech ";
+	public static final String PROTOCOL_SIGNATURE_PREFIX = "rusEFI ";
 	public static final String PROTOCOL_TEST_RESPONSE_TAG = "ts_p_alive";
 	public static final String PROTOCOL_VERSION_TAG = "rusEfiVersion";
 	public static final int RANGE_INPUT_COUNT = 6;
@@ -1565,7 +1565,7 @@ public class VariableRegistryValues {
 	public static final int TS_RESPONSE_UNDERRUN = 0x80;
 	public static final int TS_RESPONSE_UNRECOGNIZED_COMMAND = 0x83;
 	public static final char TS_SET_LOGGER_SWITCH = 'l';
-	public static final String TS_SIGNATURE = "evoTech motrolink_release.2025.05.27.f407-discovery.2284844391";
+	public static final String TS_SIGNATURE = "evoTech motrolink_release.2025.05.27.f407-discovery.2582794428";
 	public static final char TS_SIMULATE_CAN = '>';
 	public static final char TS_SINGLE_WRITE_COMMAND = 'W';
 	public static final char TS_TEST_COMMAND = 't';
