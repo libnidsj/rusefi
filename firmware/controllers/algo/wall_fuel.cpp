@@ -261,41 +261,39 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			lastImmediateError = betaError;
 			lastProlongedError = tauError;
 			
-			// *** CORREÇÃO CONCEITUAL CRÍTICA: LÓGICA DE AJUSTE INVERTIDA ***
-			float maxStep = 0.08f;   // Reduzido para evitar oscilações
+			// *** CORREÇÃO CONCEITUAL CRÍTICA: LÓGICA DE AJUSTE CORRIGIDA ***
+			float maxStep = 0.08f;
+			float deltaBeta = 0.0f;
+			float deltaTau = 0.0f;
 			
 			// Usar taxas de aprendizado diretas da configuração
 			float betaLearnRate = engineConfiguration->wwBetaLearningRate;
 			float tauLearnRate = engineConfiguration->wwTauLearningRate;
 			
-			// *** CORREÇÃO FÍSICA: Ajustes baseados na física correta do wall wetting ***
-			float deltaBeta = 0.0f;
-			float deltaTau = 0.0f;
-			
-			// *** LÓGICA CORRIGIDA - FÍSICA CORRETA ***
-			// Princípio: Se lambda está alto (pobre), precisamos REDUZIR o combustível que vai para a parede
-			//           Se lambda está baixo (rico), precisamos AUMENTAR o combustível que vai para a parede
-			//
-			// IMPORTANTE: A correção deve ser OPOSTA ao erro para compensá-lo
-			
+			// *** VERSÃO CORRIGIDA COM FÍSICA 100% CONSISTENTE ***
 			if (direction == TransientDirection::POSITIVE) {
-				// ACELERAÇÃO: Esperamos lambda diminuir (ficar rico)
-				// Se betaError > 0: lambda imediato está alto (pobre) → DIMINUIR beta (menos combustível na parede)
-				// Se tauError > 0: lambda prolongado está alto (pobre) → DIMINUIR tau (evaporação mais rápida)
-				deltaBeta = -betaLearnRate * betaError;     // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
-				deltaTau = -tauLearnRate * tauError;        // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
-				
-			} else if (direction == TransientDirection::NEGATIVE) {
-				// DESACELERAÇÃO: Esperamos lambda aumentar (ficar pobre)
-				// Se betaError < 0: lambda imediato está baixo (rico) → AUMENTAR beta (mais combustível na parede)
-				// Se tauError < 0: lambda prolongado está baixo (rico) → AUMENTAR tau (evaporação mais lenta)
-				deltaBeta = -betaLearnRate * betaError;     // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
-				deltaTau = -tauLearnRate * tauError;        // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
-				
+				// ACELERAÇÃO (Combustível está ENTRANDO no filme):
+				if (betaError > 0) { // POBRE (precisa de MAIS combustível)
+					deltaBeta = betaLearnRate * fabsf(betaError);  // ↑ Beta (deposita mais)
+					deltaTau = tauLearnRate * fabsf(tauError) * 0.3f; // ↑ Tau (evapora menos)
+				} else { // RICO (precisa de MENOS combustível)
+					deltaBeta = -betaLearnRate * fabsf(betaError); // ↓ Beta (deposita menos)
+					deltaTau = -tauLearnRate * fabsf(tauError) * 0.3f; // ↓ Tau (evapora mais)
+				}
+			} 
+			else if (direction == TransientDirection::NEGATIVE) {
+				// DESACELERAÇÃO (Combustível está SAINDO do filme):
+				// INVERTE A LÓGICA porque a dinâmica é inversa
+				if (tauError > 0) { // POBRE (está EVAPORANDO DEMAIS)
+					deltaTau = -tauLearnRate * fabsf(tauError);  // ↓ Tau (aumenta evaporação)
+					deltaBeta = -betaLearnRate * fabsf(betaError) * 0.3f; // ↓ Beta (secundário)
+				} else { // RICO (NÃO está evaporando suficiente)
+					deltaTau = tauLearnRate * fabsf(tauError); // ↑ Tau (reduz evaporação)
+					deltaBeta = betaLearnRate * fabsf(betaError) * 0.3f; // ↑ Beta (secundário)
+				}
 			} else {
-				// TRANSIENTE NEUTRO: Ajuste balanceado
-				deltaBeta = -betaLearnRate * betaError * 0.5f;  // *** SINAL NEGATIVO ***
-				deltaTau = -tauLearnRate * tauError * 0.5f;     // *** SINAL NEGATIVO ***
+				// *** REMOVIDO: Não existe transiente neutro ***
+				return; // Sair se direção inválida
 			}
 			
 			// Aplicar limites
@@ -325,17 +323,14 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			bool tauOscillating = false;
 			
 			// Detectar oscilação real: apenas se o erro ainda é grande após várias tentativas
-			// Removida a condição de parada após 10 iterações para permitir aprendizado contínuo
 			if (betaStatus.sampleCount > 5) {
 				// Oscilação = erro persistentemente grande (sem melhoria)
 				bool largeError = fabsf(betaError) > 0.05f;  // Erro significativo
-				// Remover a condição "manyAttempts" para permitir aprendizado contínuo
 				betaOscillating = largeError && (betaStatus.confidence < 50); // Baixa confiança indica oscilação
 			}
 			
 			if (tauStatus.sampleCount > 5) {
 				bool largeError = fabsf(tauError) > 0.05f;
-				// Remover a condição "manyAttempts" para permitir aprendizado contínuo
 				tauOscillating = largeError && (tauStatus.confidence < 50); // Baixa confiança indica oscilação
 			}
 			
@@ -347,8 +342,7 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 				deltaTau *= 0.6f;   // Redução mais agressiva para oscilações reais
 			}
 			
-			// *** CORREÇÃO: Ajuste direto em vez de multiplicação exponencial ***
-			// Agora os deltas são aplicados diretamente aos multiplicadores
+			// *** CORREÇÃO: Ajuste direto aos multiplicadores ***
 			float newBetaValue = currentBetaValue + deltaBeta;
 			float newTauValue = currentTauValue + deltaTau;
 			
@@ -483,6 +477,10 @@ void WallFuelController::onFastCallback() {
 	if (isTransient) {
 		m_currentTransient = transient;
 		currentTransientDirection = transient.direction;
+		bufferIdx = 0;
+		if(globalMonitoring) {
+			globalMonitoring = false;
+		}
 	} else {
 		// Reset if no valid transient
 		if (m_currentTransient.direction != TransientDirection::NONE) {
@@ -534,11 +532,12 @@ void WallFuelController::onFastCallback() {
 			globalMonitoring = true;
 			monitoringDirection = m_currentTransient.direction;
 			lastTransientDirection = m_currentTransient.direction;
-		} else {
-			monitoring = false;
-			globalMonitoring = false;
-			bufferIdx = 0;  // Reset buffer
-		}
+		} 
+		//else {
+		//	monitoring = false;
+		//	globalMonitoring = false;
+		//	bufferIdx = 0;  // Reset buffer
+		//}
 	}
 	
 	// Chamar adaptiveLearning sempre que estivermos em monitoramento global
