@@ -134,7 +134,7 @@ void LongTermIdleTrim::update(float rpm, float clt, bool acActive, bool fan1Acti
         return;
     }
     
-    // Check minimum update interval
+    // Check minimum update interval (fixed slowCallback period: 50ms)
     if (!m_updateTimer.hasElapsedSec(1.0f)) {
         return;
     }
@@ -143,8 +143,11 @@ void LongTermIdleTrim::update(float rpm, float clt, bool acActive, bool fan1Acti
     // Use proper bin finding with getBin function for CLT only
     auto cltBin = priv::getBin(clt, config->cltIdleCorrBins);
     
-    // Apply correction with multiple cells for better interpolation
-    float correction = idleIntegral * engineConfiguration->ltitCorrectionRate * 0.01f;
+    // Apply correction rate in %/s (percentage per second)
+    // Using fixed slowCallback delta time (50ms = 0.05s) for consistent behavior
+    const float deltaTime = 0.05f; // SLOW_CALLBACK_PERIOD_MS / 1000.0f
+    float correctionPerSecond = idleIntegral * engineConfiguration->ltitCorrectionRate * 0.01f; // Convert % to decimal
+    float correction = correctionPerSecond * deltaTime; // Apply time-based correction
     float alpha = engineConfiguration->ltitEmaAlpha / 255.0f;
     
     // Primary cell (largest weight)
