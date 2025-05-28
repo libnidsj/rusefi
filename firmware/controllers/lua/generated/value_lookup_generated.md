@@ -70,6 +70,9 @@ Valor maximo de correcao multiplicativa LTIT
 ### ltitSmoothingIntensity
 Intensidade de suavizacao regional da tabela LTIT (0=sem suavizacao)
 
+### ltitIntegratorThreshold
+Threshold minimo do integrador PID para correcao LTIT
+
 ### launchFuelAdderPercent
 
 
@@ -468,6 +471,9 @@ Learning rate for adaptive corrections
 
 ### wwTauLearningRate
 Learning rate for adaptive corrections
+
+### wwBetaBuffer
+Initial learning size
 
 ### wwMinCoolantTemp
 Minimum coolant temperature for learning

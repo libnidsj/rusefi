@@ -77,6 +77,9 @@ float getConfigValueByName(const char *name) {
 // ltitSmoothingIntensity
 		case 341519713:
 			return engineConfiguration->ltitSmoothingIntensity;
+// ltitIntegratorThreshold
+		case -2065042706:
+			return engineConfiguration->ltitIntegratorThreshold;
 // launchFuelAdderPercent
 		case -904771683:
 			return engineConfiguration->launchFuelAdderPercent;
@@ -476,6 +479,9 @@ float getConfigValueByName(const char *name) {
 // wwTauLearningRate
 		case -401535303:
 			return engineConfiguration->wwTauLearningRate;
+// wwBetaBuffer
+		case -1094878327:
+			return engineConfiguration->wwBetaBuffer;
 // wwMinCoolantTemp
 		case -694128867:
 			return engineConfiguration->wwMinCoolantTemp;
@@ -2228,6 +2234,11 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->ltitSmoothingIntensity = (int)value;
 		return 1;
 	}
+		case -2065042706:
+	{
+		engineConfiguration->ltitIntegratorThreshold = value;
+		return 1;
+	}
 		case -904771683:
 	{
 		engineConfiguration->launchFuelAdderPercent = (int)value;
@@ -2891,6 +2902,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case -401535303:
 	{
 		engineConfiguration->wwTauLearningRate = value;
+		return 1;
+	}
+		case -1094878327:
+	{
+		engineConfiguration->wwBetaBuffer = (int)value;
 		return 1;
 	}
 		case -694128867:

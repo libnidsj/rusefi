@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 2792654090
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.05.28.subaru_eg33_f7.2792654090"
+#define SIGNATURE_HASH 3409941768
+#define TS_SIGNATURE "rusEFI motrolink_release.2025.05.28.subaru_eg33_f7.3409941768"
