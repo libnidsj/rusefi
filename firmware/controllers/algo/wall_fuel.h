@@ -133,6 +133,17 @@ struct TransientDetectionBuffer {
 		
 		return (endValue - startValue) / samples; // Delta por amostra
 	}
+	
+	// *** NOVO: Método para obter amostra MAP de N posições atrás ***
+	float getMapSample(int samplesBack) const {
+		if (!hasEnoughSamples() || samplesBack < 0) return 0.0f;
+		
+		int maxSamples = bufferFilled ? TRANSIENT_DETECTION_BUFFER_SIZE : currentIndex;
+		if (samplesBack >= maxSamples) samplesBack = maxSamples - 1;
+		
+		int targetIdx = (currentIndex - samplesBack - 1 + TRANSIENT_DETECTION_BUFFER_SIZE) % TRANSIENT_DETECTION_BUFFER_SIZE;
+		return mapValues[targetIdx];
+	}
 };
 
 // Simplified lightweight learning status for memory optimization
@@ -226,6 +237,10 @@ private:
 	// Simplified diagnostics
 	float lastImmediateError;
 	float lastProlongedError;
+	
+	// *** CORREÇÃO FUNDAMENTAL: Armazenar condições iniciais do transiente ***
+	int transientInitialMapIdx;     // Índice MAP das condições iniciais (para correção de Beta)
+	int transientInitialRpmIdx;     // Índice RPM das condições iniciais (para correção de Beta)
 	
 	// Constantes básicas para validação (outras vêm da configuração)
 	static constexpr float MIN_LAMBDA = 0.5f;

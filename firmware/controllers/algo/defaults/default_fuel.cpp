@@ -235,10 +235,10 @@ void setDefaultWallWetting() {
 	engineConfiguration->complexWallModel = true;
 	engineConfiguration->wwEnableAdaptiveLearning = true;
 	
-	// *** DETECÇÃO DE TRANSIENTE SIMPLIFICADA ***
-	// Thresholds muito mais sensíveis para detectar transientes pequenos
-	engineConfiguration->wwTpsThreshold = 0.5f;        // %/callback - Muito sensível para TPS
-	engineConfiguration->wwMapThreshold = 2.0f;        // kPa/callback - Muito sensível para MAP
+	// *** CORREÇÃO: DETECÇÃO DE TRANSIENTE COM UNIDADES CORRETAS ***
+	// Thresholds em unidades por segundo (não por callback)
+	engineConfiguration->wwTpsThreshold = 10.0f;       // %/s - Threshold realista para TPS
+	engineConfiguration->wwMapThreshold = 40.0f;       // kPa/s - Threshold realista para MAP
 	
 	// Parâmetros simplificados - apenas os essenciais
 	

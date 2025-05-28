@@ -126,19 +126,48 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 		return;
 	}
 
+	// *** CORREÇÃO FUNDAMENTAL: CÉLULAS SEPARADAS PARA BETA E TAU ***
+	// Célula atual (condições finais - para TAU)
 	auto rpmBin = priv::getBin(rpm, config->wwCorrectionRpmBins);
 	auto mapBin = priv::getBin(map, config->wwCorrectionMapBins);
-	int j = rpmBin.Idx;
-	int i = mapBin.Idx;
+	int j_final = rpmBin.Idx;
+	int i_final = mapBin.Idx;
 	
-	// Validar índices
-	if (i >= WW_CORRECTION_MAP_BINS || j >= WW_CORRECTION_RPM_BINS) {
+	// Validar índices finais
+	if (i_final >= WW_CORRECTION_MAP_BINS || j_final >= WW_CORRECTION_RPM_BINS) {
 		return;
 	}
 	
 	lastTransientDirection = direction;
 	
-	if (isTransient) {
+	if (isTransient) {		
+		// *** ARMAZENAR CONDIÇÕES INICIAIS DO TRANSIENTE ***
+		// Usar valores do buffer para estimar condições antes do transiente
+		if (m_transientBuffer.hasEnoughSamples()) {
+			// Pegar valores de algumas amostras atrás (antes do transiente)
+			float initialMap = m_transientBuffer.getMapSample(5);  // 5 amostras atrás (~25ms)
+			float initialRpm = rpm; // RPM muda mais lentamente, usar atual
+			
+			// Calcular índices das condições iniciais (para BETA)
+			auto initialRpmBin = priv::getBin(initialRpm, config->wwCorrectionRpmBins);
+			auto initialMapBin = priv::getBin(initialMap, config->wwCorrectionMapBins);
+			
+			// Armazenar para uso posterior
+			transientInitialMapIdx = initialMapBin.Idx;
+			transientInitialRpmIdx = initialRpmBin.Idx;
+			
+			// Validar índices iniciais
+			if (transientInitialMapIdx >= WW_CORRECTION_MAP_BINS || transientInitialRpmIdx >= WW_CORRECTION_RPM_BINS) {
+				// Se índices inválidos, usar os finais como fallback
+				transientInitialMapIdx = i_final;
+				transientInitialRpmIdx = j_final;
+			}
+		} else {
+			// Fallback: usar condições atuais se não temos histórico
+			transientInitialMapIdx = i_final;
+			transientInitialRpmIdx = j_final;
+		}
+		
 		// Calcular tamanho ótimo do buffer
 		float tau = computeTau();
 		bufferMaxSize = calculateOptimalBufferSize(tau, rpm);
@@ -170,12 +199,27 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 		} else {
 			// Buffer cheio - processar aprendizado
 			
-			// *** SEPARAÇÃO ADEQUADA DE JANELAS BETA VS TAU ***
-			int betaWindow = bufferMaxSize * 0.2f;        // 20% para efeito beta (imediato)
-			if (betaWindow < 10) betaWindow = 10;         // Mínimo 10 amostras
+			// *** CORREÇÃO: JANELAS BASEADAS NA FÍSICA EM VEZ DE PERCENTUAIS ARBITRÁRIOS ***
+			float cycleTimeSeconds = 60.0f / rpm;  // Tempo por ciclo (4-stroke)
+			float callbackPeriodSeconds = 0.005f;  // ~5ms por callback
+			int samplesPerCycle = (int)(cycleTimeSeconds / callbackPeriodSeconds);
 			
-			int tauWindowStart = bufferMaxSize * 0.5f;    // 50% início da janela tau
-			int tauWindowEnd = bufferMaxSize;             // 100% fim da janela tau
+			// Beta window: 2 ciclos para efeitos imediatos de impacto na parede
+			int betaWindow = samplesPerCycle * 2;
+			if (betaWindow < 10) betaWindow = 10;         // Mínimo absoluto
+			if (betaWindow > bufferIdx) betaWindow = bufferIdx; // Não exceder buffer
+			
+			// Tau window: baseado na constante de tempo tau
+			float tau = computeTau();
+			int tauCycles = (int)(3.0f * tau / cycleTimeSeconds);  // 3x tau para capturar evaporação
+			int tauWindowStart = samplesPerCycle * 2;  // Começar após efeitos beta
+			int tauWindowEnd = tauWindowStart + (tauCycles * samplesPerCycle);
+			if (tauWindowEnd > bufferIdx) tauWindowEnd = bufferIdx;
+			if (tauWindowStart >= tauWindowEnd) {
+				// Fallback se janela tau inválida
+				tauWindowStart = bufferIdx / 2;
+				tauWindowEnd = bufferIdx;
+			}
 			
 			// *** CÁLCULO DE ERROS ESPECÍFICOS PARA BETA E TAU ***
 			
@@ -217,67 +261,139 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			lastImmediateError = betaError;
 			lastProlongedError = tauError;
 			
-			// *** CORREÇÃO: LÓGICA DE AJUSTE SIMPLIFICADA E CORRETA ***
+			// *** CORREÇÃO CONCEITUAL CRÍTICA: LÓGICA DE AJUSTE INVERTIDA ***
 			float maxStep = 0.03f;   // Reduzido para evitar oscilações
 			
 			// Usar taxas de aprendizado diretas da configuração
 			float betaLearnRate = engineConfiguration->wwBetaLearningRate;
 			float tauLearnRate = engineConfiguration->wwTauLearningRate;
 			
-			// *** NOVA LÓGICA: Ajustes baseados na física do wall wetting ***
+			// *** CORREÇÃO FÍSICA: Ajustes baseados na física correta do wall wetting ***
 			float deltaBeta = 0.0f;
 			float deltaTau = 0.0f;
 			
-			// Lógica corrigida baseada na física:
-			// - Se lambda está baixo (rico), precisamos de menos combustível na parede
-			// - Se lambda está alto (pobre), precisamos de mais combustível na parede
+			// *** LÓGICA CORRIGIDA - FÍSICA CORRETA ***
+			// Princípio: Se lambda está alto (pobre), precisamos REDUZIR o combustível que vai para a parede
+			//           Se lambda está baixo (rico), precisamos AUMENTAR o combustível que vai para a parede
+			//
+			// IMPORTANTE: A correção deve ser OPOSTA ao erro para compensá-lo
 			
 			if (direction == TransientDirection::POSITIVE) {
 				// ACELERAÇÃO: Esperamos lambda diminuir (ficar rico)
-				// Se betaError > 0: lambda imediato está alto (pobre) → AUMENTAR beta (mais combustível na parede)
-				// Se tauError > 0: lambda prolongado está alto (pobre) → AUMENTAR tau (evaporação mais lenta)
-				deltaBeta = betaLearnRate * betaError;      // Ajuste proporcional
-				deltaTau = tauLearnRate * tauError;         // Ajuste proporcional
+				// Se betaError > 0: lambda imediato está alto (pobre) → DIMINUIR beta (menos combustível na parede)
+				// Se tauError > 0: lambda prolongado está alto (pobre) → DIMINUIR tau (evaporação mais rápida)
+				deltaBeta = -betaLearnRate * betaError;     // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
+				deltaTau = -tauLearnRate * tauError;        // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
 				
 			} else if (direction == TransientDirection::NEGATIVE) {
 				// DESACELERAÇÃO: Esperamos lambda aumentar (ficar pobre)
-				// Se betaError < 0: lambda imediato está baixo (rico) → DIMINUIR beta (menos combustível na parede)
-				// Se tauError < 0: lambda prolongado está baixo (rico) → DIMINUIR tau (evaporação mais rápida)
-				deltaBeta = betaLearnRate * betaError;      // Ajuste proporcional
-				deltaTau = tauLearnRate * tauError;         // Ajuste proporcional
+				// Se betaError < 0: lambda imediato está baixo (rico) → AUMENTAR beta (mais combustível na parede)
+				// Se tauError < 0: lambda prolongado está baixo (rico) → AUMENTAR tau (evaporação mais lenta)
+				deltaBeta = -betaLearnRate * betaError;     // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
+				deltaTau = -tauLearnRate * tauError;        // *** SINAL NEGATIVO - CORREÇÃO CRÍTICA ***
 				
 			} else {
 				// TRANSIENTE NEUTRO: Ajuste balanceado
-				deltaBeta = betaLearnRate * betaError * 0.5f;
-				deltaTau = tauLearnRate * tauError * 0.5f;
+				deltaBeta = -betaLearnRate * betaError * 0.5f;  // *** SINAL NEGATIVO ***
+				deltaTau = -tauLearnRate * tauError * 0.5f;     // *** SINAL NEGATIVO ***
 			}
 			
 			// Aplicar limites
 			deltaBeta = clampF(-maxStep, deltaBeta, maxStep);
 			deltaTau = clampF(-maxStep, deltaTau, maxStep);
 			
-			// *** CORREÇÃO: PERSISTÊNCIA CORRETA PARA SCALED_CHANNEL ***
-			// Ler valores atuais (scaled_channel converte automaticamente)
-			float currentBetaValue = config->wwBetaCorrection[i][j];
-			float currentTauValue = config->wwTauCorrection[i][j];
+			// *** CORREÇÃO FUNDAMENTAL: APLICAR CORREÇÕES NAS CÉLULAS CORRETAS ***
 			
-			// Calcular novos valores
-			float newBetaValue = currentBetaValue * (1.0f + deltaBeta);
-			float newTauValue = currentTauValue * (1.0f + deltaTau);
+			// BETA: Aplicar na célula das condições INICIAIS (onde o combustível foi injetado)
+			int i_beta = transientInitialMapIdx;
+			int j_beta = transientInitialRpmIdx;
 			
-			// Aplicar limites físicos
-			newBetaValue = clampF(0.5f, newBetaValue, 2.0f);  // Faixa razoável para correção
-			newTauValue = clampF(0.5f, newTauValue, 2.0f);    // Faixa razoável para correção
+			// TAU: Aplicar na célula das condições FINAIS (onde a evaporação acontece)
+			int i_tau = i_final;
+			int j_tau = j_final;
 			
-			// *** CORREÇÃO: Atribuição correta para scaled_channel ***
-			// O scaled_channel automaticamente converte float para uint8_t com escala
-			config->wwBetaCorrection[i][j] = newBetaValue;
-			config->wwTauCorrection[i][j] = newTauValue;
+			// Ler valores atuais das células corretas
+			float currentBetaValue = config->wwBetaCorrection[i_beta][j_beta];
+			float currentTauValue = config->wwTauCorrection[i_tau][j_tau];
 			
-			// Suavização opcional (simplificada)
+			// *** VALIDAÇÃO DE CONVERGÊNCIA CORRIGIDA PARA EVITAR OSCILAÇÕES ***
+			SimpleLearningStatus& betaStatus = betaLearningStatus[i_beta][j_beta];
+			SimpleLearningStatus& tauStatus = tauLearningStatus[i_tau][j_tau];
+			
+			// *** CORREÇÃO: Detecção de oscilação baseada em histórico real ***
+			bool betaOscillating = false;
+			bool tauOscillating = false;
+			
+			// Detectar oscilação real: apenas se o erro ainda é grande após várias tentativas
+			// Removida a condição de parada após 10 iterações para permitir aprendizado contínuo
+			if (betaStatus.sampleCount > 5) {
+				// Oscilação = erro persistentemente grande (sem melhoria)
+				bool largeError = fabsf(betaError) > 0.05f;  // Erro significativo
+				// Remover a condição "manyAttempts" para permitir aprendizado contínuo
+				betaOscillating = largeError && (betaStatus.confidence < 50); // Baixa confiança indica oscilação
+			}
+			
+			if (tauStatus.sampleCount > 5) {
+				bool largeError = fabsf(tauError) > 0.05f;
+				// Remover a condição "manyAttempts" para permitir aprendizado contínuo
+				tauOscillating = largeError && (tauStatus.confidence < 50); // Baixa confiança indica oscilação
+			}
+			
+			// Reduzir taxa de aprendizado se detectar oscilação real
+			if (betaOscillating) {
+				deltaBeta *= 0.3f;  // Redução mais agressiva para oscilações reais
+			}
+			if (tauOscillating) {
+				deltaTau *= 0.3f;   // Redução mais agressiva para oscilações reais
+			}
+			
+			// *** CORREÇÃO: Ajuste direto em vez de multiplicação exponencial ***
+			// Agora os deltas são aplicados diretamente aos multiplicadores
+			float newBetaValue = currentBetaValue + deltaBeta;
+			float newTauValue = currentTauValue + deltaTau;
+			
+			// Aplicar limites físicos para multiplicadores
+			newBetaValue = clampF(0.5f, newBetaValue, 2.0f);  // Faixa razoável para multiplicador
+			newTauValue = clampF(0.5f, newTauValue, 2.0f);    // Faixa razoável para multiplicador
+			
+			// *** VALIDAÇÃO: Só aplicar se a mudança for significativa ***
+			bool significantBetaChange = fabsf(deltaBeta) > 0.001f;
+			bool significantTauChange = fabsf(deltaTau) > 0.001f;
+			
+			if (significantBetaChange) {
+				config->wwBetaCorrection[i_beta][j_beta] = newBetaValue;
+				betaStatus.sampleCount++;
+				
+				// *** CORREÇÃO: Confiança baseada na qualidade do erro ***
+				float errorQuality = 1.0f / (1.0f + fabsf(betaError) * 10.0f);  // 0-1, melhor com erro menor
+				float confidenceChange = errorQuality * 20.0f - 5.0f;  // +15 se perfeito, -5 se erro grande
+				betaStatus.confidence = (uint8_t)clampF(0, betaStatus.confidence + confidenceChange, 255);
+			}
+			
+			if (significantTauChange) {
+				config->wwTauCorrection[i_tau][j_tau] = newTauValue;
+				tauStatus.sampleCount++;
+				
+				// *** CORREÇÃO: Confiança baseada na qualidade do erro ***
+				float errorQuality = 1.0f / (1.0f + fabsf(tauError) * 10.0f);
+				float confidenceChange = errorQuality * 20.0f - 5.0f;
+				tauStatus.confidence = (uint8_t)clampF(0, tauStatus.confidence + confidenceChange, 255);
+			}
+			
+			// *** CORREÇÃO: Critério de convergência mais realista ***
+			// Convergido = erro pequeno + confiança razoável + estabilidade
+			bool betaSmallError = fabsf(betaError) < 0.08f;  // Mais realista (8% lambda)
+			bool betaStable = betaStatus.sampleCount >= 3 && betaStatus.confidence > 100;
+			betaStatus.isConverged = betaSmallError && betaStable && !betaOscillating;
+			
+			bool tauSmallError = fabsf(tauError) < 0.08f;
+			bool tauStable = tauStatus.sampleCount >= 3 && tauStatus.confidence > 100;
+			tauStatus.isConverged = tauSmallError && tauStable && !tauOscillating;
+			
+			// Suavização opcional (simplificada) - aplicar nas células corretas
 			float smoothIntensity = 0.05f; // Reduzido para ser mais conservador
-			smoothCorrectionTable(config->wwBetaCorrection, i, j, smoothIntensity);
-			smoothCorrectionTable(config->wwTauCorrection, i, j, smoothIntensity);
+			smoothCorrectionTable(config->wwBetaCorrection, i_beta, j_beta, smoothIntensity);
+			smoothCorrectionTable(config->wwTauCorrection, i_tau, j_tau, smoothIntensity);
 			
 			monitoring = false;
 			globalMonitoring = false; // *** DESLIGAR MONITORAMENTO GLOBAL ***
@@ -384,7 +500,17 @@ void WallFuelController::onFastCallback() {
 		return;
 	}
 	
-	float alpha = expf_taylor(-120 / (rpm * tau));
+	// *** CORREÇÃO CRÍTICA: FÓRMULA CORRETA DO ALPHA ***
+	// Alpha = exp(-dt/tau) onde dt é o tempo entre ciclos de combustão
+	// Para motor 4-tempos: dt = 120/rpm segundos por ciclo de combustão
+	float cycleTimeSeconds = 120.0f / rpm;  // Tempo entre ciclos de combustão (4-stroke)
+	float alpha = expf_taylor(-cycleTimeSeconds / tau);
+	
+	// Validação física: alpha deve estar entre 0 e 1
+	alpha = clampF(0.0f, alpha, 1.0f);
+	
+	// Constraint física: beta não pode ser maior que alpha
+	// (não pode depositar mais combustível do que permanece na parede)
 	if (beta > alpha) {
 		beta = alpha;
 	}
@@ -400,18 +526,24 @@ void WallFuelController::onFastCallback() {
 	
 	// *** GERENCIAMENTO DO ESTADO GLOBAL DE MONITORAMENTO ***
 	if (isTransient) {
-		// Novo transiente detectado - iniciar monitoramento global
-		globalMonitoring = true;
-		monitoringDirection = m_currentTransient.direction;
-		lastTransientDirection = m_currentTransient.direction;
+		// *** CORREÇÃO: Só iniciar novo monitoramento se não estivermos invalidando ***
+		// A invalidação já foi tratada dentro de adaptiveLearning()
+		// Aqui só iniciamos se globalMonitoring estiver false (não há invalidação)
+		if (!globalMonitoring) {
+			// Novo transiente detectado - iniciar monitoramento global
+			globalMonitoring = true;
+			monitoringDirection = m_currentTransient.direction;
+			lastTransientDirection = m_currentTransient.direction;
+		} else {
+			monitoring = false;
+			globalMonitoring = false;
+			bufferIdx = 0;  // Reset buffer
+		}
 	}
 	
 	// Chamar adaptiveLearning sempre que estivermos em monitoramento global
 	if (globalMonitoring) {
 		adaptiveLearning(rpm, map, lambdaValue, targetLambda, isTransient, monitoringDirection, clt);
-		
-		// O globalMonitoring será desligado dentro da função adaptiveLearning
-		// quando o buffer estiver cheio e o processamento for concluído
 	}
 }
 
@@ -419,7 +551,8 @@ WallFuelController::WallFuelController() :
 	bufferIdx(0), bufferMaxSize(200), monitoring(false), pendingWwSave(false),
 	currentTransientDirection(TransientDirection::NONE), lastTransientDirection(TransientDirection::NONE),
 	globalMonitoring(false), monitoringDirection(TransientDirection::NONE),
-	lastImmediateError(0.0f), lastProlongedError(0.0f) {
+	lastImmediateError(0.0f), lastProlongedError(0.0f),
+	transientInitialMapIdx(0), transientInitialRpmIdx(0) {
 	
 	// Inicializar timers
 	m_transientCooldownTimer.reset();
