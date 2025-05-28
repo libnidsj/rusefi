@@ -223,8 +223,34 @@ void LongTermIdleTrim::smoothLtitTable(float intensity) {
     // Normalize intensity to 0.0-1.0 range
     float normalizedIntensity = intensity / 100.0f;
     
-    // Apply smoothing using the template function from table_helper.h
-    smoothTable<float, LTIT_TABLE_SIZE>(ltitTableHelper, normalizedIntensity);
+    // Apply 1D smoothing for the temperature-based curve
+    float temp[LTIT_TABLE_SIZE];
+    
+    for (int i = 0; i < LTIT_TABLE_SIZE; i++) {
+        float sum = ltitTableHelper[i];
+        int count = 1;
+        
+        // Add values from adjacent cells if they exist
+        if (i > 0) { 
+            sum += ltitTableHelper[i-1]; 
+            count++; 
+        }
+        if (i < LTIT_TABLE_SIZE-1) { 
+            sum += ltitTableHelper[i+1]; 
+            count++; 
+        }
+        
+        // Calculate the average of the cell and its neighbors
+        float avg = sum / count;
+        
+        // Apply weighted average based on intensity
+        temp[i] = ltitTableHelper[i] * (1.0f - normalizedIntensity) + avg * normalizedIntensity;
+    }
+    
+    // Copy back the smoothed values
+    for (int i = 0; i < LTIT_TABLE_SIZE; i++) {
+        ltitTableHelper[i] = temp[i];
+    }
     
     // Mark for saving
     m_pendingSave = true;
