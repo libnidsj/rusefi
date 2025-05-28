@@ -202,17 +202,18 @@ void WallFuelController::adaptiveLearning(float rpm, float map, float lambda, fl
 			// *** CORREÇÃO: JANELAS BASEADAS NA FÍSICA EM VEZ DE PERCENTUAIS ARBITRÁRIOS ***
 			float cycleTimeSeconds = 60.0f / rpm;  // Tempo por ciclo (4-stroke)
 			float callbackPeriodSeconds = 0.005f;  // ~5ms por callback
+			int betaSamples = engineConfiguration->wwBetaBuffer;
 			int samplesPerCycle = (int)(cycleTimeSeconds / callbackPeriodSeconds);
 			
 			// Beta window: 2 ciclos para efeitos imediatos de impacto na parede
-			int betaWindow = samplesPerCycle * 2;
+			int betaWindow = betaSamples * samplesPerCycle;
 			if (betaWindow < 10) betaWindow = 10;         // Mínimo absoluto
 			if (betaWindow > bufferIdx) betaWindow = bufferIdx; // Não exceder buffer
 			
 			// Tau window: baseado na constante de tempo tau
 			float tau = computeTau();
 			int tauCycles = (int)(3.0f * tau / cycleTimeSeconds);  // 3x tau para capturar evaporação
-			int tauWindowStart = samplesPerCycle * 2;  // Começar após efeitos beta
+			int tauWindowStart = samplesPerCycle * betaSamples;  // Começar após efeitos beta
 			int tauWindowEnd = tauWindowStart + (tauCycles * samplesPerCycle);
 			if (tauWindowEnd > bufferIdx) tauWindowEnd = bufferIdx;
 			if (tauWindowStart >= tauWindowEnd) {
