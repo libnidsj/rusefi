@@ -304,8 +304,8 @@ bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionCondit
 	}
 	
 	// 4. Parâmetros RLS devem ter convergido
-	float betaChange = fabsf(physicalRLS.getBetaCorrection() - 1.0f);
-	float tauChange = fabsf(physicalRLS.getTauCorrection() - 1.0f);
+	// float betaChange = fabsf(physicalRLS.getBetaCorrection() - 1.0f);
+	// float tauChange = fabsf(physicalRLS.getTauCorrection() - 1.0f);
 	
 	// if (betaChange < 0.05f && tauChange < 0.05f) {
 	//	return false; // Mudança muito pequena
@@ -393,7 +393,7 @@ void SynchronizedWallWettingAdapter::applySmoothingCorrection(int centerMapIdx, 
 			float smoothedBetaCorrection = 1.0f + smoothFactor * (betaCorrection - 1.0f);
 			
 			// Aplicar correção suavizada
-			config->wwBetaCorrection[adjMapIdx][adjRpmIdx] *= smoothedBetaCorrection;
+			config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = config->wwBetaCorrection[adjMapIdx][adjRpmIdx] * smoothedBetaCorrection;
 			config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = 
 				clampF(0.5f, config->wwBetaCorrection[adjMapIdx][adjRpmIdx], 2.0f);
 			
@@ -401,7 +401,7 @@ void SynchronizedWallWettingAdapter::applySmoothingCorrection(int centerMapIdx, 
 			float smoothedTauCorrection = 1.0f + smoothFactor * (tauCorrection - 1.0f);
 			
 			// Aplicar correção suavizada
-			config->wwTauCorrection[adjMapIdx][adjRpmIdx] *= smoothedTauCorrection;
+			config->wwTauCorrection[adjMapIdx][adjRpmIdx] = config->wwTauCorrection[adjMapIdx][adjRpmIdx] * smoothedTauCorrection;
 			config->wwTauCorrection[adjMapIdx][adjRpmIdx] = 
 				clampF(0.5f, config->wwTauCorrection[adjMapIdx][adjRpmIdx], 2.0f);
 		}
