@@ -18,6 +18,7 @@
 #include "wall_fuel.h"
 #include "engine_math.h"
 #include "efitime.h"
+#include "fuel_math.h"
 #include <rusefi/interpolation.h>
 
 // *** MODELO FÍSICO AQUINO - SEM ALTERAÇÕES ***
@@ -200,7 +201,7 @@ void SynchronizedWallWettingAdapter::onFuelInjection(float rpm, float map, float
 }
 
 void SynchronizedWallWettingAdapter::onLambdaObservation(float lambdaError, float currentRpm, float currentMap) {
-	if (!engineConfiguration->wwAdaptiveLearningEnabled) {
+	if (!engineConfiguration->wwEnableAdaptiveLearning) {
 		return;
 	}
 	
@@ -304,13 +305,13 @@ void SynchronizedWallWettingAdapter::applyPhysicalCorrection(const InjectionCond
 	
 	// BETA: Aplicar na célula da injeção (condições físicas do impacto)
 	float betaCorrection = physicalRLS.getBetaCorrection();
-	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] *= betaCorrection;
+	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] * betaCorrection;
 	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
 	
 	// TAU: Aplicar na célula da injeção (simplificação - na prática poderia usar célula térmica atual)
 	float tauCorrection = physicalRLS.getTauCorrection();
-	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] *= tauCorrection;
+	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] * tauCorrection;
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
 }
@@ -358,7 +359,7 @@ void WallFuelController::onFastCallback() {
 	m_enable = true;
 	
 	// *** INTEGRAÇÃO COM SISTEMA SINCRONIZADO ***
-	if (engineConfiguration->wwAdaptiveLearningEnabled) {
+	if (engineConfiguration->wwEnableAdaptiveLearning) {
 		float tps = Sensor::getOrZero(SensorType::Tps1);
 		float map = Sensor::getOrZero(SensorType::Map);
 		float clt = Sensor::getOrZero(SensorType::Clt);
@@ -500,6 +501,6 @@ float WallFuelController::getLastInjectedMass() const {
 	// Implementação simplificada - retornar estimativa baseada no último pulso
 	// Em implementação real seria capturado do sistema de injeção
 	float baseFuel = engine->fuelComputer.running.baseFuel;
-	float correction = engine->fuelComputer.running.fuelCorrection;
+	float correction = engine->fuelComputer.totalFuelCorrection;
 	return baseFuel * correction * getNumberOfInjections(engineConfiguration->injectionMode) / 1000.0f; // Convert mg to g
 }
