@@ -333,12 +333,6 @@ void SynchronizedWallWettingAdapter::applyPhysicalCorrection(const InjectionCond
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
 	
-	// DEBUG: Log das correções aplicadas
-	efiPrintf("WW: APPLIED beta[%d][%d]: %.3f->%.3f (corr=%.3f) tau: %.3f->%.3f (corr=%.3f)", 
-			 mapBin.Idx, rpmBin.Idx, 
-			 oldBeta, config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx], betaCorrection,
-			 oldTau, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], tauCorrection);
-	
 	// *** APLICAR SUAVIZAÇÃO NAS CÉLULAS ADJACENTES ***
 	applySmoothingCorrection(mapBin.Idx, rpmBin.Idx, betaCorrection, tauCorrection);
 }

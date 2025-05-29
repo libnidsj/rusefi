@@ -119,7 +119,7 @@ private:
 	cyclic_buffer<InjectionConditions, 100> injectionQueue;  // Fila de injeções aguardando observação
 	
 	// Thresholds baseados no artigo
-	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.02f;  // 2% - mais sensível para detectar excursões A/F
+	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.10f;  // 2% - mais sensível para detectar excursões A/F
 	static constexpr int MIN_SAMPLES_FOR_CORRECTION = 10;   // Mínimo para convergência  
 	
 	// Função auxiliar para obter massa atual do filme
