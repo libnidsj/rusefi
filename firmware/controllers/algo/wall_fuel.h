@@ -119,7 +119,7 @@ private:
 	cyclic_buffer<InjectionConditions, 100> injectionQueue;  // Fila de injeções aguardando observação
 	
 	// Thresholds baseados no artigo
-	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.02f;  // 2% - foco em excursões A/F
+	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.05f;  // 5% - foco em excursões A/F
 	static constexpr int MIN_SAMPLES_FOR_CORRECTION = 10;   // Mínimo para convergência  
 	
 	// Função auxiliar para obter massa atual do filme
@@ -138,6 +138,10 @@ public:
 	// Aplicação física das correções
 	bool shouldApplyCorrection(const InjectionConditions& injection);
 	void applyPhysicalCorrection(const InjectionConditions& injection);
+	
+	// *** SUAVIZAÇÃO PARA EVITAR BURACOS NO MAPA ***
+	void applySmoothingCorrection(int centerMapIdx, int centerRpmIdx, 
+								  float betaCorrection, float tauCorrection);
 	
 	// Reset para novo ciclo
 	void reset() {

@@ -178,14 +178,34 @@ void SynchronizedWallWettingAdapter::onFuelInjection(float rpm, float map, float
 	injection.timestamp = getTimeNowUs();
 	injection.valid = true;
 	
-	// *** CÁLCULO MELHORADO DO ATRASO BASEADO NO ARTIGO (Eq. 24) ***
-	// Considera: tempo de injeção + queima + transporte dos gases
+	// *** CÁLCULO ROBUSTO DO ATRASO BASEADO NA FÍSICA DO MOTOR ***
+	// Modelo físico completo considerando todos os fatores relevantes
 	float cycleTime = 60.0f / rpm; // segundos por ciclo
 	
-	// Modelo empírico melhorado baseado no artigo:
-	// - Componente fixa: tempo de queima (~0.5 ciclo)
-	// - Componente variável: transporte dos gases (inversamente proporcional ao RPM)
-	float transportDelay = 0.5f * cycleTime + 120.0f / rpm; // Modelo empírico melhorado
+	// COMPONENTE 1: Atraso de admissão + compressão (função do RPM)
+	// Em baixo RPM: mais tempo para admissão/compressão
+	// Em alto RPM: processo mais rápido mas turbulência aumenta
+	float admissionDelay = cycleTime * (0.4f + 20.0f / rpm); // 0.4-0.6 ciclos típico
+	
+	// COMPONENTE 2: Atraso de combustão (função de MAP e RPM)
+	// MAP alto = combustão mais rápida (mais pressão)
+	// RPM alto = combustão mais rápida (mais turbulência)
+	float combustionDelay = cycleTime * (0.15f + 5.0f / sqrtf(map * rpm / 1000.0f));
+	
+	// COMPONENTE 3: Atraso de escape (função do RPM e geometria)
+	// Baseado na velocidade dos gases e volume do escape
+	// Fórmula empírica: tempo = volume_escape / velocidade_gases
+	float exhaustDelay = engineConfiguration->wwLambdaDelayFactor * (80.0f + 1500.0f / rpm) / 1000.0f; // 80-200ms típico
+	
+	// COMPONENTE 4: Atraso do sensor lambda (constante)
+	float sensorDelay = 0.020f; // 20ms
+	
+	// MODELO ROBUSTO FINAL: soma ponderada com limites físicos
+	float transportDelay = admissionDelay + combustionDelay + exhaustDelay + sensorDelay;
+	
+	// Aplicar limites físicos realistas para robustez
+	transportDelay = clampF(0.050f, transportDelay, 0.500f); // 50ms-500ms
+	
 	uint32_t delayUs = (uint32_t)(transportDelay * 1e6f);
 	
 	// Adicionar na fila com timestamp futuro
@@ -220,7 +240,7 @@ void SynchronizedWallWettingAdapter::onLambdaObservation(float lambdaError, floa
 		if (currentTime >= inj.observationTime) {
 			// Janela de tempo válida (±100ms para compensar variações)
 			uint32_t timeDiff = currentTime - inj.observationTime;
-			if (timeDiff < 100000) { // 100ms
+			if (timeDiff < 200000) { // 100ms
 				matchingInjection = &inj;
 				break;
 			}
@@ -287,9 +307,9 @@ bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionCondit
 	float betaChange = fabsf(physicalRLS.getBetaCorrection() - 1.0f);
 	float tauChange = fabsf(physicalRLS.getTauCorrection() - 1.0f);
 	
-	if (betaChange < 0.05f && tauChange < 0.05f) {
-		return false; // Mudança muito pequena
-	}
+	// if (betaChange < 0.05f && tauChange < 0.05f) {
+	//	return false; // Mudança muito pequena
+	//}
 	
 	return true;
 }
@@ -314,6 +334,78 @@ void SynchronizedWallWettingAdapter::applyPhysicalCorrection(const InjectionCond
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] * tauCorrection;
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
+	
+	// *** APLICAR SUAVIZAÇÃO NAS CÉLULAS ADJACENTES ***
+	applySmoothingCorrection(mapBin.Idx, rpmBin.Idx, betaCorrection, tauCorrection);
+}
+
+void SynchronizedWallWettingAdapter::applySmoothingCorrection(int centerMapIdx, int centerRpmIdx, 
+															 float betaCorrection, float tauCorrection) {
+	// *** FUNÇÃO DE SUAVIZAÇÃO PARA EVITAR BURACOS NO MAPA ***
+	// Aplica correções graduais nas células adjacentes com fatores de diminuição
+	// baseados na distância física da célula central
+	
+	// Fatores de suavização baseados na distância
+	// Distância 1: 60% da correção
+	// Distância 2: 30% da correção  
+	// Distância 3+: 10% da correção
+	const float SMOOTH_FACTOR_DIST1 = 0.60f;  // Células imediatamente adjacentes
+	const float SMOOTH_FACTOR_DIST2 = 0.30f;  // Células a distância 2
+	const float SMOOTH_FACTOR_DIST3 = 0.10f;  // Células a distância 3+
+	
+	// Raio máximo de suavização (2 células em cada direção)
+	const int MAX_SMOOTH_RADIUS = 2;
+	
+	// Iterar sobre todas as células dentro do raio de suavização
+	for (int mapOffset = -MAX_SMOOTH_RADIUS; mapOffset <= MAX_SMOOTH_RADIUS; mapOffset++) {
+		for (int rpmOffset = -MAX_SMOOTH_RADIUS; rpmOffset <= MAX_SMOOTH_RADIUS; rpmOffset++) {
+			// Pular a célula central (já foi corrigida)
+			if (mapOffset == 0 && rpmOffset == 0) {
+				continue;
+			}
+			
+			// Calcular índices da célula adjacente
+			int adjMapIdx = centerMapIdx + mapOffset;
+			int adjRpmIdx = centerRpmIdx + rpmOffset;
+			
+			// Verificar limites da tabela
+			if (adjMapIdx < 0 || adjMapIdx >= WW_CORRECTION_MAP_BINS ||
+				adjRpmIdx < 0 || adjRpmIdx >= WW_CORRECTION_RPM_BINS) {
+				continue;
+			}
+			
+			// Calcular distância Manhattan (mais apropriada para tabelas discretas)
+			int distance = abs(mapOffset) + abs(rpmOffset);
+			
+			// Determinar fator de suavização baseado na distância
+			float smoothFactor;
+			if (distance == 1) {
+				smoothFactor = SMOOTH_FACTOR_DIST1;
+			} else if (distance == 2) {
+				smoothFactor = SMOOTH_FACTOR_DIST2;
+			} else {
+				smoothFactor = SMOOTH_FACTOR_DIST3;
+			}
+			
+			// *** APLICAR CORREÇÃO SUAVIZADA PARA BETA ***
+			// Calcular correção suavizada: 1.0 + smoothFactor * (correction - 1.0)
+			// Isso garante que a correção seja gradualmente reduzida com a distância
+			float smoothedBetaCorrection = 1.0f + smoothFactor * (betaCorrection - 1.0f);
+			
+			// Aplicar correção suavizada
+			config->wwBetaCorrection[adjMapIdx][adjRpmIdx] *= smoothedBetaCorrection;
+			config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = 
+				clampF(0.5f, config->wwBetaCorrection[adjMapIdx][adjRpmIdx], 2.0f);
+			
+			// *** APLICAR CORREÇÃO SUAVIZADA PARA TAU ***
+			float smoothedTauCorrection = 1.0f + smoothFactor * (tauCorrection - 1.0f);
+			
+			// Aplicar correção suavizada
+			config->wwTauCorrection[adjMapIdx][adjRpmIdx] *= smoothedTauCorrection;
+			config->wwTauCorrection[adjMapIdx][adjRpmIdx] = 
+				clampF(0.5f, config->wwTauCorrection[adjMapIdx][adjRpmIdx], 2.0f);
+		}
+	}
 }
 
 // *** CONTROLADOR PRINCIPAL - MODIFICAÇÕES MÍNIMAS ***
