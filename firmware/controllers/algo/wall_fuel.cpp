@@ -321,14 +321,14 @@ void SynchronizedWallWettingAdapter::applyPhysicalCorrection(const InjectionCond
 	
 	// BETA: Aplicar na célula da injeção (condições físicas do impacto)
 	float betaCorrection = physicalRLS.getBetaCorrection();
-	float oldBeta = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx];
+	// float oldBeta = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx];
 	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] * betaCorrection;
 	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
 	
 	// TAU: Aplicar na célula da injeção (simplificação - na prática poderia usar célula térmica atual)
 	float tauCorrection = physicalRLS.getTauCorrection();
-	float oldTau = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx];
+	// float oldTau = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx];
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] * tauCorrection;
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
