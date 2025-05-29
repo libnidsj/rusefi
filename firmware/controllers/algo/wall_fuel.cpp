@@ -267,11 +267,11 @@ void SynchronizedWallWettingAdapter::onLambdaObservation(float lambdaError, floa
 }
 
 bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionConditions& injection) {
-	// *** CRITÉRIOS MAIS RIGOROSOS PARA APLICAR CORREÇÃO ***
+	// *** CRITÉRIOS MENOS RESTRITIVOS PARA PERMITIR MAIS CORREÇÕES ***
 	
-	// 1. Erro deve ser consistente
+	// 1. Erro deve ser consistente (reduzido de 3% para 1.5%)
 	float avgError = physicalRLS.getAverageError();
-	if (fabsf(avgError) < 0.03f) { // 3% threshold
+	if (fabsf(avgError) < 0.015f) { // 1.5% threshold (era 3%)
 		return false;
 	}
 	
@@ -280,7 +280,7 @@ bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionCondit
 		return false;
 	}
 	
-	// *** 3. VALIDAÇÃO DE TRANSIENTE BASEADA NO ARTIGO (Eq. 5) ***
+	// *** 3. VALIDAÇÃO DE TRANSIENTE MAIS PERMISSIVA ***
 	// Verificar se houve variação significativa de pressão no coletor
 	float mapVariation = 0.0f;
 	float minMap = injection.map;
@@ -297,19 +297,15 @@ bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionCondit
 	}
 	mapVariation = maxMap - minMap;
 	
-	// Threshold baseado no artigo: mínimo 5 kPa de variação para ser transiente real
-	const float MAP_VARIATION_THRESHOLD = 5.0f; // kPa
+	// Threshold reduzido: mínimo 2 kPa de variação (era 5 kPa)
+	const float MAP_VARIATION_THRESHOLD = 2.0f; // kPa (mais permissivo)
 	if (mapVariation < MAP_VARIATION_THRESHOLD) {
 		return false; // Não é transiente real
 	}
 	
-	// 4. Parâmetros RLS devem ter convergido
-	// float betaChange = fabsf(physicalRLS.getBetaCorrection() - 1.0f);
-	// float tauChange = fabsf(physicalRLS.getTauCorrection() - 1.0f);
-	
-	// if (betaChange < 0.05f && tauChange < 0.05f) {
-	//	return false; // Mudança muito pequena
-	//}
+	// DEBUG: Log para verificar critérios
+	efiPrintf("WW: shouldApply avgErr=%.3f mapVar=%.1f samples=%d", 
+			 avgError, mapVariation, physicalRLS.getSampleCount());
 	
 	return true;
 }
@@ -325,15 +321,23 @@ void SynchronizedWallWettingAdapter::applyPhysicalCorrection(const InjectionCond
 	
 	// BETA: Aplicar na célula da injeção (condições físicas do impacto)
 	float betaCorrection = physicalRLS.getBetaCorrection();
+	float oldBeta = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx];
 	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] * betaCorrection;
 	config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
 	
 	// TAU: Aplicar na célula da injeção (simplificação - na prática poderia usar célula térmica atual)
 	float tauCorrection = physicalRLS.getTauCorrection();
+	float oldTau = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx];
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] * tauCorrection;
 	config->wwTauCorrection[mapBin.Idx][rpmBin.Idx] = 
 		clampF(0.5f, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], 2.0f);
+	
+	// DEBUG: Log das correções aplicadas
+	efiPrintf("WW: APPLIED beta[%d][%d]: %.3f->%.3f (corr=%.3f) tau: %.3f->%.3f (corr=%.3f)", 
+			 mapBin.Idx, rpmBin.Idx, 
+			 oldBeta, config->wwBetaCorrection[mapBin.Idx][rpmBin.Idx], betaCorrection,
+			 oldTau, config->wwTauCorrection[mapBin.Idx][rpmBin.Idx], tauCorrection);
 	
 	// *** APLICAR SUAVIZAÇÃO NAS CÉLULAS ADJACENTES ***
 	applySmoothingCorrection(mapBin.Idx, rpmBin.Idx, betaCorrection, tauCorrection);
@@ -450,9 +454,8 @@ void WallFuelController::onFastCallback() {
 	m_beta = beta;
 	m_enable = true;
 	
-	// *** INTEGRAÇÃO COM SISTEMA SINCRONIZADO ***
+	// *** SISTEMA ADAPTATIVO CORRIGIDO ***
 	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		// float tps = Sensor::getOrZero(SensorType::Tps1);
 		float map = Sensor::getOrZero(SensorType::Map);
 		float clt = Sensor::getOrZero(SensorType::Clt);
 		
@@ -462,16 +465,26 @@ void WallFuelController::onFastCallback() {
 			return;
 		}
 		
-		// Notificar injeção (será chamado no momento da injeção real)
-		float injectedMass = getLastInjectedMass(); // Implementar esta função
-		synchronizedAdapter.onFuelInjection(rpm, map, clt, injectedMass);
-		
-		// Processar observações lambda
+		// *** CORREÇÃO CRÍTICA: SEPARAR LÓGICA DE INJEÇÃO E OBSERVAÇÃO ***
+		// Processar observações lambda (sempre que há dados válidos)
 		float lambda = Sensor::getOrZero(SensorType::Lambda1);
 		float targetLambda = engine->fuelComputer.targetLambda;
-		float lambdaError = lambda - targetLambda;
 		
-		synchronizedAdapter.onLambdaObservation(lambdaError, rpm, map);
+		// Verificar se temos dados válidos de lambda
+		if (lambda > 0.5f && lambda < 1.5f && targetLambda > 0.5f && targetLambda < 1.5f) {
+			float lambdaError = lambda - targetLambda;
+			
+			// DEBUG: Log para verificar se está funcionando
+			if (fabsf(lambdaError) > 0.01f) { // Log apenas erros > 1%
+				efiPrintf("WW: lambda=%.3f target=%.3f error=%.3f samples=%d", 
+						 lambda, targetLambda, lambdaError, synchronizedAdapter.getSampleCount());
+			}
+			
+			synchronizedAdapter.onLambdaObservation(lambdaError, rpm, map);
+		}
+		
+		// *** NOTA: onFuelInjection será chamado separadamente quando houver injeção real ***
+		// Esta função deve ser integrada no sistema de injeção, não aqui no onFastCallback
 	}
 }
 
@@ -538,6 +551,28 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 		// *** SALVAMENTO AUTOMÁTICO RESTAURADO ***
 		setNeedToWriteConfiguration();
     }
+}
+
+// *** NOVA FUNÇÃO PARA INTEGRAÇÃO COM SISTEMA DE INJEÇÃO ***
+void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderIndex) {
+	if (!engineConfiguration->wwEnableAdaptiveLearning || !m_enable) {
+		return;
+	}
+	
+	float rpm = Sensor::getOrZero(SensorType::Rpm);
+	float map = Sensor::getOrZero(SensorType::Map);
+	float clt = Sensor::getOrZero(SensorType::Clt);
+	
+	// Verificar condições mínimas
+	if (rpm < 100 || clt < engineConfiguration->wwMinCoolantTemp) {
+		return;
+	}
+	
+	// DEBUG: Log injeções para verificar se está sendo chamado
+	efiPrintf("WW: Injection cyl=%d mass=%.3f rpm=%.0f map=%.1f", 
+			 cylinderIndex, injectedMass, rpm, map);
+	
+	synchronizedAdapter.onFuelInjection(rpm, map, clt, injectedMass);
 }
 
 // *** IMPLEMENTAÇÕES DAS FUNÇÕES AUXILIARES NECESSÁRIAS ***

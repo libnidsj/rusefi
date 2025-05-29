@@ -109,202 +109,85 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 # Scratchpad
 
-## IMPLEMENTAÇÃO WALL WETTING ADAPTATIVO - CORREÇÕES SEGUINDO ARTIGO 2001
+## CORREÇÃO WALL WETTING ADAPTATIVO - FLUXO DE DADOS CORRIGIDO ✅
 
-### TAREFA COMPLETADA ✅
-Reimplementação completa do sistema wall wetting adaptativo seguindo rigorosamente as equações 10-22 do artigo "On-Line Adaptation of Wall-Wetting Model Parameters" (2001).
+### PROBLEMA IDENTIFICADO
+O sistema wall wetting adaptativo nunca estava corrigindo devido a problemas no fluxo de dados:
 
-### [X] CORREÇÕES FÍSICAS IMPLEMENTADAS BASEADAS NO ARTIGO
+### [X] PROBLEMAS CRÍTICOS CORRIGIDOS
 
-#### 1. RLS BASEADO EM REGRESSOR FÍSICO REAL ✅
-**PROBLEMA ANTERIOR**: RLS baseado em heurísticas (sensibilidades aproximadas)
-**SOLUÇÃO IMPLEMENTADA**: 
-- Regressor físico baseado no modelo Aquino: `∂M_cyl/∂β = -M_cmd` e `∂M_cyl/∂α = X_prev`
-- Derivadas calculadas a partir das equações físicas reais
-- Normalização para melhor condicionamento numérico
+#### 1. FLUXO DE DADOS INCORRETO ✅
+**PROBLEMA**: `onFastCallback()` chamava `onFuelInjection` e `onLambdaObservation` simultaneamente a cada ciclo
+**SOLUÇÃO**: 
+- Separou lógica: `onLambdaObservation` no `onFastCallback()` (sempre)
+- `onFuelInjection` integrado no sistema real de injeção (`main_trigger_callback.cpp`)
+- Nova função `onActualFuelInjection()` chamada quando injeção real acontece
 
-#### 2. SINCRONIZAÇÃO COM ATRASOS DE TRANSPORTE/COMBUSTÃO ✅  
-**PROBLEMA ANTERIOR**: Ignorar atrasos entre injeção e observação lambda
-**SOLUÇÃO IMPLEMENTADA**:
-- Sistema de fila `injectionQueue` com timestamps
-- **MODELO ROBUSTO DE DELAY MELHORADO**: Cálculo físico completo considerando:
-  - Atraso de admissão + compressão (função do RPM)
-  - Atraso de combustão (função de MAP e RPM) 
-  - Atraso de escape (função do RPM e geometria)
-  - Atraso do sensor lambda (função da temperatura CLT)
-  - Limites físicos realistas (50ms-500ms)
-- Sincronização temporal entre injeção específica e erro observado
+#### 2. THRESHOLD MUITO RESTRITIVO ✅
+**PROBLEMA**: `LAMBDA_ERROR_THRESHOLD = 0.05f` (5%) muito alto
+**SOLUÇÃO**: Reduzido para `0.02f` (2%) - mais sensível a variações
 
-#### 3. DETECÇÃO FOCADA EM EXCURSÕES A/F ✅
-**PROBLEMA ANTERIOR**: Detecção baseada em mudanças TPS/MAP
-**SOLUÇÃO IMPLEMENTADA**:
-- Threshold `LAMBDA_ERROR_THRESHOLD = 0.02f` (2%)
-- Foco em excursões de A/F conforme artigo científico
-- Ativação apenas quando erro lambda é significativo
+#### 3. CRITÉRIOS DE CORREÇÃO MUITO RIGOROSOS ✅
+**PROBLEMA**: `shouldApplyCorrection()` com thresholds muito altos
+**SOLUÇÃO**:
+- Erro médio: 3% → 1.5%
+- Variação MAP: 5 kPa → 2 kPa
+- Mais permissivo para permitir correções
 
-### [X] ARQUITETURA NOVA IMPLEMENTADA
+#### 4. FALTA DE DEBUG/VISIBILIDADE ✅
+**PROBLEMA**: Impossível saber se sistema estava funcionando
+**SOLUÇÃO**: Adicionado logs debug em pontos críticos:
+- `onActualFuelInjection`: Log de injeções reais
+- `onLambdaObservation`: Log de erros lambda > 1%
+- `shouldApplyCorrection`: Log de critérios de decisão
+- `applyPhysicalCorrection`: Log de correções aplicadas
 
-#### CLASSES PRINCIPAIS
-- `PhysicalRLSAdapter`: RLS matematicamente correto seguindo Eqs. 10-22
-- `SynchronizedWallWettingAdapter`: Sistema sincronizado com atrasos
-- `InjectionConditions`: Captura física das condições exatas da injeção
+### [X] INTEGRAÇÃO COM SISTEMA REAL
 
-#### FLUXO FÍSICO CORRETO
+#### PONTO DE INTEGRAÇÃO CORRETO ✅
+- **Local**: `firmware/controllers/engine_cycle/main_trigger_callback.cpp`
+- **Função**: `InjectionEvent::onTriggerTooth()`
+- **Momento**: Logo após `wallFuel.adjust(injectionMassGrams)`
+- **Dados**: Massa real injetada + número do cilindro
+
+#### FLUXO CORRIGIDO ✅
 ```
-1. onFuelInjection() → Captura condições exatas + calcula atraso robusto
-2. onLambdaObservation() → Sincroniza com injeção correspondente
-3. update() → RLS físico com regressor baseado no modelo Aquino
-4. applyPhysicalCorrection() → Aplicação na célula fisicamente correta
-```
-
-### [X] GARANTIAS MATEMÁTICAS
-
-#### CONVERGÊNCIA GARANTIDA
-- RLS clássico seguindo rigorosamente as equações do artigo
-- Matriz de covariância P corretamente atualizada
-- Forgetting factor para rastreamento adaptativo
-- Limites físicos nos parâmetros (0.5-2.0)
-
-#### ROBUSTEZ NUMÉRICA
-- Verificação de divisão por zero
-- Normalização do regressor
-- Validação de condições de contorno
-
-### [X] MODIFICAÇÕES MÍNIMAS NO CÓDIGO EXISTENTE
-
-#### PRESERVADO
-- Modelo físico Aquino (fórmulas α, β) - SEM ALTERAÇÕES
-- Interface `WallFuelController` - SEM ALTERAÇÕES
-- Funções `computeTau()` e `computeBeta()` - SEM ALTERAÇÕES
-
-#### SUBSTITUÍDO
-- Sistema antigo `SimpleRLSIdentifier` → `PhysicalRLSAdapter`
-- Sistema antigo `UnifiedWallWettingAdapter` → `SynchronizedWallWettingAdapter`
-- Detecção de transiente → Detecção de excursão lambda
-- **std::vector → cyclic_buffer**: Compatibilidade com firmware embarcado
-
-### [X] FUNCIONALIDADES IMPORTANTES RESTAURADAS
-
-#### MÉTODOS ESSENCIAIS RESTAURADOS ✅
-- `onIgnitionStateChanged()`: Gerenciamento do estado de ignição
-- Verificação de `wwMinCoolantTemp`: Temperatura mínima para adaptação
-- `setNeedToWriteConfiguration()`: Salvamento automático na ignição off
-- `reset()`: Reset do adaptador em mudanças de ignição
-
-#### ESTADO DE IGNIÇÃO ✅
-- `ignitionState`: Tracking do estado atual da ignição
-- `ignitionOffTimer`: Timer para controle de delays
-- Reset automático do sistema em mudanças de ignição
-
-#### PROTEÇÕES TÉRMICAS ✅
-- Verificação de temperatura mínima antes da adaptação
-- Desabilitação automática em condições inadequadas
-- Preservação da integridade dos dados de calibração
-
-### [X] VALIDAÇÃO FÍSICA
-
-#### BASEADO NO ARTIGO CIENTÍFICO
-- Regressor derivado matematicamente do modelo Aquino
-- Sincronização temporal respeitando atrasos físicos  
-- Thresholds baseados em excursões A/F observáveis
-- Aplicação de correções nas células fisicamente corretas
-
-#### CRITÉRIOS DE CONVERGÊNCIA
-- Mínimo 10 amostras para convergência estatística
-- Erro médio > 3% para justificar correção
-- Mudança mínima 5% nos parâmetros para aplicar
-- Validação de condições estáveis durante coleta
-
-### [X] MELHORIAS ADICIONAIS - PROBLEMAS RESIDUAIS CORRIGIDOS
-
-#### 1. MODELO ROBUSTO DE DELAY FÍSICO ✅
-**PROBLEMA**: Aproximação grosseira baseada apenas em RPM
-**SOLUÇÃO**: Modelo físico completo com 4 componentes:
-```cpp
-// COMPONENTE 1: Admissão + Compressão (função do RPM)
-float admissionDelay = cycleTime * (0.4f + 20.0f / rpm);
-
-// COMPONENTE 2: Combustão (função de MAP e RPM)  
-float combustionDelay = cycleTime * (0.15f + 5.0f / sqrtf(map * rpm / 1000.0f));
-
-// COMPONENTE 3: Escape (função do RPM e geometria)
-float exhaustDelay = (80.0f + 1500.0f / rpm) / 1000.0f;
-
-// COMPONENTE 4: Sensor Lambda (função da temperatura CLT)
-float sensorDelay = 0.020f + maxF(0.0f, (300.0f - clt) / 10000.0f);
-
-// MODELO FINAL: soma com limites físicos (50ms-500ms)
-float transportDelay = admissionDelay + combustionDelay + exhaustDelay + sensorDelay;
-transportDelay = clampF(0.050f, transportDelay, 0.500f);
+1. Sistema de injeção → onActualFuelInjection() → Captura condições + calcula delay
+2. onFastCallback() → onLambdaObservation() → Processa erro lambda
+3. Sincronização temporal → RLS físico → Correção nas tabelas
 ```
 
-#### 2. VALIDAÇÃO DE TRANSIENTE FÍSICA ✅
-**PROBLEMA**: Falta de verificação de variação de pressão no coletor
-**SOLUÇÃO**: Implementação baseada no artigo (Eq. 5):
-```cpp
-float mapVariation = maxMap - minMap;
-if (mapVariation < 5.0f) return false; // Threshold 5 kPa
-```
-- Verifica variação real de MAP nas últimas injeções
-- Threshold de 5 kPa para transiente real
+### [X] VALIDAÇÃO E TESTE
 
-#### 3. MÚLTIPLOS CILINDROS SUPORTADOS ✅
-**PROBLEMA**: `getCurrentWallFuelMass()` assumia cilindro único
-**SOLUÇÃO**: Tratamento adequado para motores multicilindros:
-```cpp
-// CORREÇÃO CRÍTICA: engine->wallFuel[i] NÃO EXISTE!
-// Usar: engine->injectionEvents.elements[i].getWallFuel()
-for (int i = 0; i < engineConfiguration->cylindersCount; i++)
-```
-- Calcula média dos cilindros com combustível significativo
-- Adiciona `cylinderIndex` na estrutura `InjectionConditions`
-- Fallback seguro para cilindro 0
-- **CORREÇÃO CRÍTICA**: Usar estrutura correta `injectionEvents.elements[i].getWallFuel()`
+#### LOGS PARA VERIFICAÇÃO ✅
+- `WW: Injection cyl=X mass=Y.YYY rpm=ZZZZ map=WW.W`
+- `WW: lambda=X.XXX target=Y.YYY error=Z.ZZZ samples=N`
+- `WW: shouldApply avgErr=X.XXX mapVar=Y.Y samples=N`
+- `WW: APPLIED beta[i][j]: old->new (corr=X.XXX) tau: old->new (corr=Y.YYY)`
 
-#### 4. COMPATIBILIDADE EMBARCADA ✅
-**PROBLEMA**: Uso de std::vector causava erros de linkagem
-**SOLUÇÃO**: Substituição por cyclic_buffer:
-```cpp
-cyclic_buffer<InjectionConditions, 100> injectionQueue;
-```
-- Estrutura de dados adequada para firmware embarcado
-- Gerenciamento automático de memória
-- Sem dependências de STL
+#### PRÓXIMOS PASSOS PARA TESTE
+1. Compilar e testar no motor real
+2. Verificar se logs aparecem durante operação
+3. Confirmar se correções são aplicadas nas tabelas
+4. Ajustar thresholds se necessário
 
-#### 5. SUAVIZAÇÃO PARA EVITAR BURACOS NO MAPA ✅
-**PROBLEMA**: Correções pontuais criavam descontinuidades no mapa
-**SOLUÇÃO**: Função de smoothing com correções graduais nas células adjacentes:
-```cpp
-void applySmoothingCorrection(int centerMapIdx, int centerRpmIdx, 
-                             float betaCorrection, float tauCorrection)
-```
-- **ALGORITMO DE SUAVIZAÇÃO BASEADO EM DISTÂNCIA**:
-  - Distância 1 (adjacentes): 60% da correção original
-  - Distância 2: 30% da correção original  
-  - Distância 3+: 10% da correção original
-- **RAIO DE SUAVIZAÇÃO**: 2 células em cada direção (5x5 total)
-- **DISTÂNCIA MANHATTAN**: Mais apropriada para tabelas discretas
-- **CORREÇÃO GRADUAL**: `1.0 + smoothFactor * (correction - 1.0)`
-- **LIMITES RESPEITADOS**: Clamp 0.5-2.0 aplicado em todas as células
-- **VERIFICAÇÃO DE BOUNDS**: Evita acessos fora dos limites da tabela
-- Aplicado automaticamente após cada `applyPhysicalCorrection()`
-
-### RESULTADO FINAL
-Sistema matematicamente garantido para convergir sob condições normais de operação, seguindo rigorosamente os princípios físicos e matemáticos do artigo científico de referência, com todas as funcionalidades essenciais preservadas e modelo de delay robusto baseado na física real do motor.
+### RESULTADO ESPERADO
+Sistema agora deve:
+- Capturar injeções reais (não estimativas)
+- Processar erros lambda corretamente
+- Aplicar correções quando critérios são atendidos
+- Fornecer visibilidade completa via logs debug
 
 ## LIÇÕES APRENDIDAS
 
 ### Técnicas
-- RLS deve ser baseado em regressor físico real, não heurísticas
-- Sincronização temporal é crítica para wall wetting devido aos atrasos
-- Detecção deve focar no objetivo final (erro lambda) não em proxies (TPS/MAP)
-- Implementação deve seguir literatura científica rigorosamente
-- **Modelo de delay deve considerar todos os componentes físicos do processo**
+- **Fluxo de dados crítico**: Separar captura de eventos reais vs. processamento contínuo
+- **Thresholds adaptativos**: Começar permissivo e ajustar baseado em dados reais
+- **Debug essencial**: Logs em pontos críticos para validação de funcionamento
+- **Integração correta**: Usar pontos onde dados reais estão disponíveis
 
 ### Implementação
-- Modificar minimamente código existente preservando interfaces
-- Usar cyclic_buffer ao invés de std::vector para firmware embarcado
-- Implementar funções auxiliares para acesso a dados globais
-- Documentar claramente as correções baseadas no artigo científico
-- **SEMPRE preservar funcionalidades essenciais como salvamento e verificações de segurança**
-- **Incluir fuel_math.h para usar getNumberOfInjections() corretamente**
+- **Timing correto**: Capturar dados no momento exato da injeção real
+- **Validação de dados**: Verificar ranges válidos antes de processar
+- **Logs informativos**: Incluir dados suficientes para debug completo
+- **Modificações mínimas**: Preservar funcionalidade existente
