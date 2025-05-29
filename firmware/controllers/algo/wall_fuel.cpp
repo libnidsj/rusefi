@@ -360,7 +360,7 @@ void WallFuelController::onFastCallback() {
 	
 	// *** INTEGRAÇÃO COM SISTEMA SINCRONIZADO ***
 	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		float tps = Sensor::getOrZero(SensorType::Tps1);
+		// float tps = Sensor::getOrZero(SensorType::Tps1);
 		float map = Sensor::getOrZero(SensorType::Map);
 		float clt = Sensor::getOrZero(SensorType::Clt);
 		
