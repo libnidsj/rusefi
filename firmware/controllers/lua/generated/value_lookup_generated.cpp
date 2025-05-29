@@ -467,6 +467,9 @@ float getConfigValueByName(const char *name) {
 // wwEnableAdaptiveLearning
 		case 1498590712:
 			return engineConfiguration->wwEnableAdaptiveLearning;
+// wwLambdaDelayFactor
+		case 467776290:
+			return engineConfiguration->wwLambdaDelayFactor;
 // wwTpsThreshold
 		case -762793481:
 			return engineConfiguration->wwTpsThreshold;
@@ -2882,6 +2885,11 @@ bool setConfigValueByName(const char *name, float value) {
 		case 1498590712:
 	{
 		engineConfiguration->wwEnableAdaptiveLearning = (int)value;
+		return 1;
+	}
+		case 467776290:
+	{
+		engineConfiguration->wwLambdaDelayFactor = value;
 		return 1;
 	}
 		case -762793481:

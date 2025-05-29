@@ -460,6 +460,9 @@ null
 ### wwEnableAdaptiveLearning
 Enable adaptive learning for wall wetting parameters
 
+### wwLambdaDelayFactor
+Fator multiplicativo do atraso entre o gas saindo no escape e chegando a sonda lambda
+
 ### wwTpsThreshold
 TPS change threshold for transient detection (per callback)
 
