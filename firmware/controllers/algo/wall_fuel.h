@@ -9,7 +9,7 @@
 #include "engine_module.h"
 #include <rusefi/timer.h>
 #include "rusefi_types.h"
-#include <vector>
+#include "cyclic_buffer.h"
 
 /**
  * Wall wetting, also known as fuel film
@@ -116,7 +116,7 @@ public:
 class SynchronizedWallWettingAdapter {
 private:
 	PhysicalRLSAdapter physicalRLS;
-	std::vector<InjectionConditions> injectionQueue;  // Fila de injeções aguardando observação
+	cyclic_buffer<InjectionConditions, 100> injectionQueue;  // Fila de injeções aguardando observação
 	
 	// Thresholds baseados no artigo
 	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.02f;  // 2% - foco em excursões A/F
@@ -146,7 +146,7 @@ public:
 	}
 	
 	// Estado
-	bool isActive() const { return !injectionQueue.empty(); }
+	bool isActive() const { return injectionQueue.getCount() > 0; }
 	int getSampleCount() const { return physicalRLS.getSampleCount(); }
 	float getAverageError() const { return physicalRLS.getAverageError(); }
 };

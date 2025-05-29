@@ -191,13 +191,8 @@ void SynchronizedWallWettingAdapter::onFuelInjection(float rpm, float map, float
 	// Adicionar na fila com timestamp futuro
 	injection.observationTime = injection.timestamp + delayUs;
 	
-	// Manter apenas injeções recentes (limitar tamanho da fila)
-	const size_t MAX_QUEUE_SIZE = 1000;
-	injectionQueue.push_back(injection);
-	
-	if (injectionQueue.size() > MAX_QUEUE_SIZE) {
-		injectionQueue.erase(injectionQueue.begin());
-	}
+	// Adicionar na fila circular (automaticamente gerencia o tamanho)
+	injectionQueue.add(injection);
 }
 
 void SynchronizedWallWettingAdapter::onLambdaObservation(float lambdaError, float currentRpm, float currentMap) {
@@ -215,15 +210,18 @@ void SynchronizedWallWettingAdapter::onLambdaObservation(float lambdaError, floa
 	// *** BUSCAR INJEÇÃO CORRESPONDENTE (SINCRONIZAÇÃO TEMPORAL) ***
 	InjectionConditions* matchingInjection = nullptr;
 	
-	for (auto& injection : injectionQueue) {
-		if (!injection.valid) continue;
+	// Iterar sobre o buffer circular usando índices
+	int queueSize = injectionQueue.getCount();
+	for (int i = 0; i < queueSize && i < injectionQueue.getSize(); i++) {
+		InjectionConditions& inj = injectionQueue.elements[i];
+		if (!inj.valid) continue;
 		
 		// Verificar se chegou a hora desta injeção ser observada
-		if (currentTime >= injection.observationTime) {
+		if (currentTime >= inj.observationTime) {
 			// Janela de tempo válida (±100ms para compensar variações)
-			uint32_t timeDiff = currentTime - injection.observationTime;
+			uint32_t timeDiff = currentTime - inj.observationTime;
 			if (timeDiff < 100000) { // 100ms
-				matchingInjection = &injection;
+				matchingInjection = &inj;
 				break;
 			}
 		}
@@ -269,7 +267,9 @@ bool SynchronizedWallWettingAdapter::shouldApplyCorrection(const InjectionCondit
 	float maxMap = injection.map;
 	
 	// Calcular variação de MAP nas últimas injeções
-	for (const auto& inj : injectionQueue) {
+	int queueSize = injectionQueue.getCount();
+	for (int i = 0; i < queueSize && i < injectionQueue.getSize(); i++) {
+		const InjectionConditions& inj = injectionQueue.elements[i];
 		if (inj.valid) {
 			minMap = minF(minMap, inj.map);
 			maxMap = maxF(maxMap, inj.map);
