@@ -587,8 +587,8 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	}
 	
 	// Find table indices for the given conditions
-	int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, map);
-	int rpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, rpm);
+	int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, map);
+	int rpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, rpm);
 	
 	if (mapIdx < 0 || rpmIdx < 0) {
 		return; // Invalid indices
@@ -596,8 +596,8 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	
 	// Apply beta correction to INITIAL transient conditions (where transient started)
 	if (betaCorrection != 1.0f && !std::isnan(betaCorrection) && m_adaptiveData.initialTransientRpm > 0) {
-		int initialMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, m_adaptiveData.initialTransientMap);
-		int initialRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, m_adaptiveData.initialTransientRpm);
+		int initialMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, m_adaptiveData.initialTransientMap);
+		int initialRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, m_adaptiveData.initialTransientRpm);
 		
 		if (initialMapIdx >= 0 && initialRpmIdx >= 0) {
 			// Apply beta correction directly (no autoscale multiplication needed)
@@ -622,12 +622,12 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	
 	// Apply tau correction to FINAL transient conditions (where transient ended)
 	if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
-		int finalMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, m_adaptiveData.finalTransientMap);
-		int finalRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, m_adaptiveData.finalTransientRpm);
+		int finalMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, m_adaptiveData.finalTransientMap);
+		int finalRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, m_adaptiveData.finalTransientRpm);
 		
 		if (finalMapIdx >= 0 && finalRpmIdx >= 0) {
 			// Apply tau correction directly (no autoscale multiplication needed)
-			float currentTauCorrection = config->wwBetaCorrection[finalMapIdx][finalRpmIdx];
+			float currentTauCorrection = config->wwTauCorrection[finalMapIdx][finalRpmIdx];
 			
 			// Protect against NaN in calculations
 			if (!std::isnan(currentTauCorrection)) {
@@ -637,7 +637,7 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 				if (!std::isnan(newTauCorrection)) {
 					// Clamp to reasonable bounds
 					newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
-					config->wwBetaCorrection[finalMapIdx][finalRpmIdx] = newTauCorrection;
+					config->wwTauCorrection[finalMapIdx][finalRpmIdx] = newTauCorrection;
 					
 					// Apply smoothing to adjacent cells
 					smoothCorrectionTable(finalMapIdx, finalRpmIdx, 1.0f, tauCorrection);
@@ -689,13 +689,13 @@ void WallFuelController::smoothCorrectionTable(int mapIdx, int rpmIdx, float bet
 			// Apply smoothed tau correction with NaN protection
 			if (tauCorrection != 1.0f && !std::isnan(tauCorrection)) {
 				float smoothedTauCorr = 1.0f + factor * (tauCorrection - 1.0f);
-				float oldTau = config->wwBetaCorrection[adjMapIdx][adjRpmIdx];
+				float oldTau = config->wwTauCorrection[adjMapIdx][adjRpmIdx];
 				
 				// Protect against NaN in calculations
 				if (!std::isnan(oldTau) && !std::isnan(smoothedTauCorr)) {
 					float newTau = oldTau * smoothedTauCorr;
 					if (!std::isnan(newTau)) {
-						config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newTau, 2.0f);
+						config->wwTauCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newTau, 2.0f);
 					}
 				}
 			}

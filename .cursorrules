@@ -112,6 +112,13 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **Tuning prático**: Beta é ajustado observando resposta IMEDIATA pós-aceleração, tau é ajustado observando resposta PROLONGADA
   - **Direção física**: Lambda lean pós-aceleração → aumentar beta; Lambda rich durante aceleração prolongada → diminuir tau
   - **Timing crítico**: Beta afeta os primeiros 100-200ms, tau afeta os próximos 1-3 segundos após transiente
+- **CRITICAL WALL WETTING TABLE SIZES**: As tabelas de correção do wall wetting usam tamanhos específicos:
+  - **wwCorrectionMapBins[WWAE_CORRECTION_SIZE]** - 8 elementos (MAP bins)
+  - **wwCorrectionRpmBins[WWAE_CORRECTION_SIZE]** - 8 elementos (RPM bins)
+  - **wwBetaCorrection[WWAE_CORRECTION_SIZE][WWAE_CORRECTION_SIZE]** - 8x8 tabela
+  - **wwTauCorrection[WWAE_CORRECTION_SIZE][WWAE_CORRECTION_SIZE]** - 8x8 tabela
+  - **ERRO COMUM**: Usar WWAE_TABLE_SIZE ou WWAE_RPM_SIZE em vez de WWAE_CORRECTION_SIZE para as tabelas de correção
+  - **CORREÇÃO**: Sempre usar WWAE_CORRECTION_SIZE (8) para findIndexMsg() nas tabelas de correção adaptativa
 
 # Scratchpad
 
@@ -302,6 +309,12 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
 - **Problema**: Multiplicações desnecessárias por 0.01f e 100.0f
 - **Correção**: Aplicação direta nas tabelas de correção
 - **Implementação**: `applyCorrectionToTable()` sem conversões autoscale
+
+#### 8. TAMANHOS DE TABELA CORRIGIDOS ✅
+- **Problema**: Uso incorreto de WWAE_TABLE_SIZE e WWAE_RPM_SIZE para tabelas de correção
+- **Correção**: Usar WWAE_CORRECTION_SIZE (8) para todas as tabelas de correção adaptativa
+- **Implementação**: `findIndexMsg()` com tamanhos corretos para wwCorrectionMapBins e wwCorrectionRpmBins
+- **Tabelas corrigidas**: wwBetaCorrection e wwTauCorrection agora acessadas corretamente
 
 ### RESULTADO FINAL CORRIGIDO ✅
 Sistema adaptativo agora implementa corretamente:
