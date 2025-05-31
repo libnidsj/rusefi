@@ -873,7 +873,7 @@ void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderI
 	}
 	
 	float rpm = Sensor::getOrZero(SensorType::Rpm);
-	float map = Sensor::getOrZero(SensorType::Map);
+	// float map = Sensor::getOrZero(SensorType::Map);
 	auto clt = Sensor::get(SensorType::Clt);
 	
 	// Verificar condições mínimas
