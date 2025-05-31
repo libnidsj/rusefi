@@ -119,6 +119,11 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **wwTauCorrection[WWAE_CORRECTION_SIZE][WWAE_CORRECTION_SIZE]** - 8x8 tabela
   - **ERRO COMUM**: Usar WWAE_TABLE_SIZE ou WWAE_RPM_SIZE em vez de WWAE_CORRECTION_SIZE para as tabelas de correção
   - **CORREÇÃO**: Sempre usar WWAE_CORRECTION_SIZE (8) para findIndexMsg() nas tabelas de correção adaptativa
+- **CRITICAL TABLE INDEX MAPPING**: Para mapeamento de índices em tabelas, usar priv::getBin() em vez de findIndexMsg():
+  - **Padrão correto**: `auto binMap = priv::getBin(map, config->wwCorrectionMapBins); int mapIdx = binMap.Idx;`
+  - **Padrão incorreto**: `int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, map);`
+  - **Vantagens**: priv::getBin() é mais eficiente, elegante, e retorna tanto índice quanto fração para interpolação
+  - **Implementação**: Seguir o mesmo padrão usado pelo LTFT (Long Term Fuel Trim) na firmware
 
 # Scratchpad
 
@@ -315,6 +320,12 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
 - **Correção**: Usar WWAE_CORRECTION_SIZE (8) para todas as tabelas de correção adaptativa
 - **Implementação**: `findIndexMsg()` com tamanhos corretos para wwCorrectionMapBins e wwCorrectionRpmBins
 - **Tabelas corrigidas**: wwBetaCorrection e wwTauCorrection agora acessadas corretamente
+
+#### 9. MAPEAMENTO DE ÍNDICES CORRIGIDO ✅
+- **Problema**: Uso de findIndexMsg() que é menos eficiente e não segue padrão da firmware
+- **Correção**: Usar priv::getBin() seguindo o mesmo padrão do LTFT (Long Term Fuel Trim)
+- **Implementação**: `auto binMap = priv::getBin(map, config->wwCorrectionMapBins); int mapIdx = binMap.Idx;`
+- **Vantagens**: Mais eficiente, elegante, e retorna tanto índice quanto fração para interpolação
 
 ### RESULTADO FINAL CORRIGIDO ✅
 Sistema adaptativo agora implementa corretamente:

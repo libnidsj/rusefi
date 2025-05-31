@@ -586,20 +586,30 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 		return;
 	}
 	
-	// Find table indices for the given conditions
-	int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, map);
-	int rpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, rpm);
+	// Use the same approach as LTFT - getBin() instead of findIndexMsg()
+	auto binMap = priv::getBin(map, config->wwCorrectionMapBins);
+	auto binRpm = priv::getBin(rpm, config->wwCorrectionRpmBins);
 	
-	if (mapIdx < 0 || rpmIdx < 0) {
+	int mapIdx = binMap.Idx;
+	int rpmIdx = binRpm.Idx;
+	
+	// Bounds check - getBin() already handles this, but double-check for safety
+	if (mapIdx < 0 || mapIdx >= WWAE_CORRECTION_SIZE - 1 || 
+		rpmIdx < 0 || rpmIdx >= WWAE_CORRECTION_SIZE - 1) {
 		return; // Invalid indices
 	}
 	
 	// Apply beta correction to INITIAL transient conditions (where transient started)
 	if (betaCorrection != 1.0f && !std::isnan(betaCorrection) && m_adaptiveData.initialTransientRpm > 0) {
-		int initialMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, m_adaptiveData.initialTransientMap);
-		int initialRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, m_adaptiveData.initialTransientRpm);
+		auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, config->wwCorrectionMapBins);
+		auto initialBinRpm = priv::getBin(m_adaptiveData.initialTransientRpm, config->wwCorrectionRpmBins);
 		
-		if (initialMapIdx >= 0 && initialRpmIdx >= 0) {
+		int initialMapIdx = initialBinMap.Idx;
+		int initialRpmIdx = initialBinRpm.Idx;
+		
+		if (initialMapIdx >= 0 && initialMapIdx < WWAE_CORRECTION_SIZE - 1 && 
+			initialRpmIdx >= 0 && initialRpmIdx < WWAE_CORRECTION_SIZE - 1) {
+			
 			// Apply beta correction directly (no autoscale multiplication needed)
 			float currentBetaCorrection = config->wwBetaCorrection[initialMapIdx][initialRpmIdx];
 			
@@ -622,10 +632,15 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	
 	// Apply tau correction to FINAL transient conditions (where transient ended)
 	if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
-		int finalMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, m_adaptiveData.finalTransientMap);
-		int finalRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_CORRECTION_SIZE, m_adaptiveData.finalTransientRpm);
+		auto finalBinMap = priv::getBin(m_adaptiveData.finalTransientMap, config->wwCorrectionMapBins);
+		auto finalBinRpm = priv::getBin(m_adaptiveData.finalTransientRpm, config->wwCorrectionRpmBins);
 		
-		if (finalMapIdx >= 0 && finalRpmIdx >= 0) {
+		int finalMapIdx = finalBinMap.Idx;
+		int finalRpmIdx = finalBinRpm.Idx;
+		
+		if (finalMapIdx >= 0 && finalMapIdx < WWAE_CORRECTION_SIZE - 1 && 
+			finalRpmIdx >= 0 && finalRpmIdx < WWAE_CORRECTION_SIZE - 1) {
+			
 			// Apply tau correction directly (no autoscale multiplication needed)
 			float currentTauCorrection = config->wwTauCorrection[finalMapIdx][finalRpmIdx];
 			
