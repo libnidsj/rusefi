@@ -30,6 +30,7 @@ struct IWallFuelController {
 	virtual bool getEnable() const = 0;
 	virtual float getAlpha() const = 0;
 	virtual float getBeta() const = 0;
+	virtual void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) = 0;
 };
 
 // Circular buffer for load derivative calculation
@@ -200,5 +201,5 @@ private:
 	bool shouldAdaptTau() const;
 	
 	// Integration with injection system
-	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);
+	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) override;
 };

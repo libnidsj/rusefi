@@ -127,7 +127,9 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - **CRITICAL MISSING METHODS**: Métodos chamados por outros módulos devem estar declarados no header e implementados:
   - **onActualFuelInjection()**: Método chamado por main_trigger_callback.cpp para notificar injeções reais
   - **Declaração**: `void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);` no header
+  - **Interface**: Deve ser adicionado à interface `IWallFuelController` como método virtual puro
   - **Implementação**: Função básica que verifica condições e registra injeção para debug
+  - **Override**: Usar `override` na implementação para indicar que sobrescreve método da interface
   - **Integração**: Permite que o sistema de wall wetting seja notificado de injeções reais
 
 # Scratchpad
@@ -335,6 +337,8 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
 #### 10. MÉTODO FALTANTE IMPLEMENTADO ✅
 - **Problema**: onActualFuelInjection() chamado por main_trigger_callback.cpp mas não implementado
 - **Correção**: Adicionada declaração no header e implementação no .cpp
+- **Interface**: Adicionado à interface IWallFuelController como método virtual puro
+- **Override**: Implementação usa `override` para indicar sobrescrita da interface
 - **Funcionalidade**: Permite notificação de injeções reais para integração futura
 - **Debug**: Inclui logging condicional para diagnóstico do sistema
 
