@@ -374,6 +374,13 @@ void WallFuelController::applyAdaptiveCorrections() {
 		return;
 	}
 	
+	// Debug logging para verificar dados disponíveis
+	if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+		efiPrintf("WW: applyAdaptiveCorrections - immediate=%s(%d) prolonged=%s(%d)", 
+			hasImmediateData ? "YES" : "NO", m_adaptiveData.immediateBufferCount,
+			hasProlongedData ? "YES" : "NO", m_adaptiveData.prolongedBufferCount);
+	}
+	
 	// Update adaptation mode management
 	updateAdaptationMode();
 	
@@ -407,6 +414,12 @@ void WallFuelController::applyAdaptiveCorrections() {
 		
 		// Calculate beta correction based on immediate response
 		betaCorrection = calculateBetaCorrection(m_adaptiveData.avgImmediateLambdaError);
+		
+		// Debug logging para beta
+		if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+			efiPrintf("WW: Beta calc - avgError=%.3f correction=%.3f", 
+				m_adaptiveData.avgImmediateLambdaError, betaCorrection);
+		}
 	}
 	
 	// Calculate average prolonged lambda error for tau correction
@@ -431,6 +444,17 @@ void WallFuelController::applyAdaptiveCorrections() {
 			
 			// Calculate tau correction based on prolonged response
 			tauCorrection = calculateTauCorrection(m_adaptiveData.avgProlongedLambdaError);
+			
+			// Debug logging para tau
+			if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+				efiPrintf("WW: Tau calc - avgError=%.3f correction=%.3f", 
+					m_adaptiveData.avgProlongedLambdaError, tauCorrection);
+			}
+		}
+	} else if (hasProlongedData && !shouldAdaptTau()) {
+		// Debug logging quando tau data existe mas não deveria adaptar
+		if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+			efiPrintf("WW: Tau data available but not in TAU adaptation mode");
 		}
 	}
 	
@@ -771,14 +795,17 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 			// Immediate phase completed
 			m_adaptiveData.collectingImmediate = false;
 			
-			// Check if transient is still ongoing for prolonged phase
-			// Note: Check transient magnitude instead of flags since flags might be cleared
-			if (m_adaptiveData.transientMagnitude > 50.0f) {
-				// Transient still active - start prolonged phase
+			// CORREÇÃO: Usar threshold muito menor para prolonged phase
+			// Tau learning precisa capturar efeitos de longo prazo mesmo com derivada baixa
+			// Threshold reduzido de 50.0f para 10.0f kPa/s
+			if (m_adaptiveData.transientMagnitude <= 25.0f || m_adaptiveData.transientDuration < 1.0f) {
+				// Transient still active OR hasn't been running long enough - start prolonged phase
 				startProlongedPhase();
+				
 			} else {
 				// Transient ended early - mark as incomplete
 				m_adaptiveData.incompleteTransientDetected = true;
+				
 				// Apply beta-only correction for incomplete transients
 				applyIncompleteTransientCorrection();
 			}
@@ -802,6 +829,12 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 			m_adaptiveData.collectingProlonged = false;
 			m_adaptiveData.transientCompleted = true;
 			
+			// Debug logging para transientes completos
+			if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+				efiPrintf("WW: Complete transient - immediate=%d prolonged=%d samples", 
+					m_adaptiveData.immediateBufferCount, m_adaptiveData.prolongedBufferCount);
+			}
+			
 			// Apply full correction (both beta and tau)
 			applyAdaptiveCorrections();
 		}
@@ -815,6 +848,11 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 		m_adaptiveData.collectingImmediate = false;
 		m_adaptiveData.collectingProlonged = false;
 		m_adaptiveData.incompleteTransientDetected = true;
+		
+		// Debug logging para timeouts
+		if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+			efiPrintf("WW: Transient timeout after %.2fs", m_adaptiveData.transientDuration);
+		}
 		
 		// Apply beta-only correction for incomplete transients
 		applyIncompleteTransientCorrection();

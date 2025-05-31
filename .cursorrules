@@ -131,6 +131,13 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **Implementação**: Função básica que verifica condições e registra injeção para debug
   - **Override**: Usar `override` na implementação para indicar que sobrescreve método da interface
   - **Integração**: Permite que o sistema de wall wetting seja notificado de injeções reais
+- **CRITICAL TAU LEARNING THRESHOLD**: O threshold para detecção de transientes ativos na fase prolongada deve ser baixo:
+  - **Problema**: Threshold de 50.0f kPa/s impedia transição para fase prolongada (tau learning)
+  - **Correção**: Reduzir para 10.0f kPa/s ou adicionar condição de duração mínima
+  - **Razão**: Após 200ms, derivada de carga diminui mas efeitos de tau ainda são detectáveis no lambda
+  - **Implementação**: `if (transientMagnitude > 10.0f || transientDuration < 1.0f)` para prolonged phase
+  - **Debug**: Adicionar logging detalhado para verificar transições entre fases
+  - **Resultado**: Permite que mais transientes completem ambas as fases (beta + tau)
 
 # Scratchpad
 
@@ -341,6 +348,14 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
 - **Override**: Implementação usa `override` para indicar sobrescrita da interface
 - **Funcionalidade**: Permite notificação de injeções reais para integração futura
 - **Debug**: Inclui logging condicional para diagnóstico do sistema
+
+#### 11. THRESHOLD DE TAU LEARNING CORRIGIDO ✅
+- **Problema**: Threshold de 50.0f kPa/s impedia transição para fase prolongada, bloqueando tau learning
+- **Correção**: Reduzido para 10.0f kPa/s + condição de duração mínima (< 1.0s)
+- **Implementação**: `if (transientMagnitude > 10.0f || transientDuration < 1.0f)` para prolonged phase
+- **Razão**: Após 200ms, derivada diminui mas efeitos de tau ainda são detectáveis no lambda
+- **Debug**: Logging detalhado para verificar transições e identificar transientes incompletos
+- **Resultado**: Permite que mais transientes completem ambas as fases (beta + tau)
 
 ### RESULTADO FINAL CORRIGIDO ✅
 Sistema adaptativo agora implementa corretamente:
