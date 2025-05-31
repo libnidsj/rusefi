@@ -2063,9 +2063,6 @@ float getConfigValueByName(const char *name) {
 // wwBufferSize
 		case -1566672952:
 			return config->wwBufferSize;
-// wwDirectionalCorrections
-		case -1534096468:
-			return config->wwDirectionalCorrections;
 // tcu_shiftTime
 		case -1658957891:
 			return config->tcu_shiftTime;
@@ -5545,11 +5542,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1566672952:
 	{
 		config->wwBufferSize = (int)value;
-		return 1;
-	}
-		case -1534096468:
-	{
-		config->wwDirectionalCorrections = (int)value;
 		return 1;
 	}
 		case -1658957891:

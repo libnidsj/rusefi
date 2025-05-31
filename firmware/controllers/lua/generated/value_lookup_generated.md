@@ -2056,9 +2056,6 @@ Delay após ignição OFF para salvamento do LTFT
 ### wwBufferSize
 200
 
-### wwDirectionalCorrections
-"Enable directional wall wetting corrections"
-
 ### tcu_shiftTime
 
 
