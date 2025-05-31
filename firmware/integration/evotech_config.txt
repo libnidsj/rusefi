@@ -2192,7 +2192,6 @@ uint8_t[WWAE_CORRECTION_SIZE x WWAE_CORRECTION_SIZE] autoscale wwTauCorrection;;
 uint8_t[WWAE_CORRECTION_SIZE x WWAE_CORRECTION_SIZE] autoscale wwBetaCorrection;;"Beta correction multiplier", 0.01, 0, 0.0, 2.5, 2
 
 uint16_t wwBufferSize;200;"Wall Wetting Buffer Size", 1, 0, 50, 400, 0
-bit wwDirectionalCorrections;"Enable directional wall wetting corrections"
 
 uint8_t[HPFP_LOBE_PROFILE_SIZE] autoscale hpfpLobeProfileQuantityBins;;"%", 0.5, 0, 0, 100, 1
 uint8_t[HPFP_LOBE_PROFILE_SIZE] autoscale hpfpLobeProfileAngle;;"deg", 0.5, 0, 0, 125, 1

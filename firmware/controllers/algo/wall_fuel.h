@@ -8,21 +8,11 @@
 #include "wall_fuel_state_generated.h"
 #include "engine_module.h"
 #include <rusefi/timer.h>
-#include "rusefi_types.h"
 #include "cyclic_buffer.h"
 
 /**
  * Wall wetting, also known as fuel film
  * See https://github.com/rusefi/rusefi/issues/151 for the theory
- * 
- * IMPLEMENTAÇÃO BASEADA EM:
- * - SAE 810494 (Aquino) - Modelo físico correto
- * - "On-Line Adaptation of Wall-Wetting Model Parameters" (2001) - RLS Eqs. 10-22
- * 
- * PRINCIPAIS CORREÇÕES SEGUINDO O ARTIGO:
- * 1. RLS baseado em regressor físico real do modelo Aquino
- * 2. Sincronização com atrasos de transporte/combustão  
- * 3. Detecção focada em excursões de A/F (lambda error)
  */
 class WallFuel : public wall_fuel_state_s {
 public:
@@ -42,168 +32,170 @@ struct IWallFuelController {
 	virtual float getBeta() const = 0;
 };
 
-// *** ESTRUTURAS FÍSICAS CORRIGIDAS BASEADAS NO ARTIGO ***
+// Circular buffer for load derivative calculation
+#define WW_LOAD_BUFFER_SIZE 8
+#define WW_IMMEDIATE_BUFFER_SIZE 10  // Beta: primeiros 200ms (10 amostras a 50Hz)
+#define WW_PROLONGED_BUFFER_SIZE 150 // Tau: 200ms-3s (150 amostras a 50Hz)
 
-// Condições exatas de injeção para sincronização física
-struct InjectionConditions {
-	float rpm;              // RPM no momento da injeção
-	float map;              // MAP no momento da injeção  
-	float clt;              // CLT no momento da injeção
-	float injectedMass;     // Massa efetivamente injetada
-	float wallFuelMass;     // Massa do filme no momento da injeção
-	uint32_t timestamp;     // Timestamp da injeção
-	uint32_t observationTime; // Quando esta injeção será observada no lambda
-	int cylinderIndex;      // Índice do cilindro (0-based) para múltiplos cilindros
-	bool valid;             // Dados válidos
+// Adaptive correction data structure
+struct WwAdaptiveData {
+	float loadBuffer[WW_LOAD_BUFFER_SIZE];
+	int bufferIndex = 0;
+	float lastLoad = 0;
+	float loadDerivative = 0;
 	
-	InjectionConditions() : rpm(0), map(0), clt(0), injectedMass(0), wallFuelMass(0), 
-						   timestamp(0), observationTime(0), cylinderIndex(0), valid(false) {}
-};
-
-// *** RLS FÍSICO BASEADO NO MODELO AQUINO (Eqs. 10-22) ***
-class PhysicalRLSAdapter {
-private:
-	static constexpr int PARAM_COUNT = 2;    // beta_correction, tau_correction
-	static constexpr float DEFAULT_FORGETTING = 0.98f;
+	// Transient detection and timing
+	bool isPositiveTransient = false;
+	bool isNegativeTransient = false;
+	float transientMagnitude = 0;
+	float transientStartTime = 0;
+	bool waitingForResponse = false;
 	
-	float theta[PARAM_COUNT];                 // Parâmetros estimados [beta_corr, tau_corr]
-	float P[PARAM_COUNT][PARAM_COUNT];        // Matriz de covariância  
-	float forgettingFactor;
-	bool initialized;
-	int sampleCount;
-	float errorSum;
+	// Separate buffers for beta (immediate) and tau (prolonged) responses
+	float immediateLambdaBuffer[WW_IMMEDIATE_BUFFER_SIZE];  // Beta: 0-200ms
+	float prolongedLambdaBuffer[WW_PROLONGED_BUFFER_SIZE];  // Tau: 200ms-3s
+	int immediateBufferIndex = 0;
+	int prolongedBufferIndex = 0;
+	int immediateBufferCount = 0;
+	int prolongedBufferCount = 0;
 	
-	// Função auxiliar para calcular tau (implementar no .cpp)
-	float computeTau(float rpm, float map, float clt) const;
+	// Response phase tracking
+	bool collectingImmediate = false;  // 0-200ms for beta
+	bool collectingProlonged = false;  // 200ms-3s for tau
+	float phaseStartTime = 0;
 	
-public:
-	PhysicalRLSAdapter() : forgettingFactor(DEFAULT_FORGETTING), initialized(false), 
-						   sampleCount(0), errorSum(0.0f) {
-		reset();
-	}
+	// Average errors for correction calculation
+	float avgImmediateLambdaError = 0;  // For beta correction
+	float avgProlongedLambdaError = 0;  // For tau correction
+	
+	// Transient conditions for correction
+	float transientRpm = 0;
+	float transientMap = 0;
+	bool hasValidTransientData = false;
+	
+	// Separate conditions for beta (initial) and tau (final) corrections
+	float initialTransientRpm = 0;  // Beta: condições no início do transiente
+	float initialTransientMap = 0;
+	float finalTransientRpm = 0;    // Tau: condições no final do transiente  
+	float finalTransientMap = 0;
+	
+	// Transient completion tracking
+	bool transientCompleted = false;
+	bool incompleteTransientDetected = false;
+	float transientDuration = 0;
+	float minTransientDuration = 0.5f; // 500ms minimum for complete transient
+	float incompleteTimeout = 3.0f;    // 3s timeout for incomplete transients (initialized)
+	
+	// Decoupled adaptation periods to avoid beta-tau coupling
+	enum AdaptationMode {
+		ADAPT_BETA_ONLY,    // Adapt only beta, keep tau fixed
+		ADAPT_TAU_ONLY,     // Adapt only tau, keep beta fixed
+		ADAPT_BOTH          // Adapt both (for comparison/testing)
+	};
+	
+	AdaptationMode currentAdaptationMode = ADAPT_BETA_ONLY;
+	int transientCounter = 0;
+	int adaptationCycleLength = 10;  // 10 transients per adaptation period (initialized)
+	int betaAdaptationCycles = 5;    // 5 cycles for beta adaptation (50 transients total)
+	int tauAdaptationCycles = 5;     // 5 cycles for tau adaptation (50 transients total)
+	int currentCycleCount = 0;
 	
 	void reset() {
-		// Inicialização conservadora
-		theta[0] = 1.0f;  // beta_correction = 1.0 (neutro)
-		theta[1] = 1.0f;  // tau_correction = 1.0 (neutro)
+		// Reset all learning state
+		isPositiveTransient = false;
+		isNegativeTransient = false;
+		collectingImmediate = false;
+		collectingProlonged = false;
+		transientCompleted = false;
+		incompleteTransientDetected = false;
 		
-		// Matriz de covariância inicial  
-		for (int i = 0; i < PARAM_COUNT; i++) {
-			for (int j = 0; j < PARAM_COUNT; j++) {
-				P[i][j] = (i == j) ? 10.0f : 0.0f;  // Diagonal dominante
-			}
-		}
-		initialized = true;
-		sampleCount = 0;
-		errorSum = 0.0f;
+		// Reset buffers
+		immediateBufferCount = 0;
+		prolongedBufferCount = 0;
+		immediateBufferIndex = 0;
+		prolongedBufferIndex = 0;
+		
+		// Reset timing
+		transientStartTime = 0;
+		phaseStartTime = 0;
+		transientDuration = 0;
+		
+		// Reset conditions
+		initialTransientRpm = 0;
+		initialTransientMap = 0;
+		finalTransientRpm = 0;
+		finalTransientMap = 0;
+		
+		// Reset errors
+		avgImmediateLambdaError = 0;
+		avgProlongedLambdaError = 0;
+		
+		// Note: Don't reset adaptation mode variables here
+		// They should persist across individual transient resets
+		// Only reset on ignition cycle or manual reset
 	}
 	
-	void update(float lambdaError, const InjectionConditions& injection, 
-				float currentRpm, float currentMap);
-	
-	float getBetaCorrection() const { return initialized ? theta[0] : 1.0f; }
-	float getTauCorrection() const { return initialized ? theta[1] : 1.0f; }
-	bool isInitialized() const { return initialized; }
-	int getSampleCount() const { return sampleCount; }
-	float getAverageError() const { return sampleCount > 0 ? errorSum / sampleCount : 0.0f; }
-	
-	void setForgettingFactor(float factor) { 
-		forgettingFactor = clampF(0.95f, factor, 0.999f); 
+	void resetAdaptationCycle() {
+		// Reset adaptation cycle (called on ignition or manual reset)
+		currentAdaptationMode = ADAPT_BETA_ONLY;
+		transientCounter = 0;
+		currentCycleCount = 0;
 	}
 };
 
-// *** SISTEMA SINCRONIZADO COM ATRASOS DE TRANSPORTE ***
-class SynchronizedWallWettingAdapter {
-private:
-	PhysicalRLSAdapter physicalRLS;
-	cyclic_buffer<InjectionConditions, 100> injectionQueue;  // Fila de injeções aguardando observação
-	
-	// Thresholds baseados no artigo
-	static constexpr float LAMBDA_ERROR_THRESHOLD = 0.10f;  // 2% - mais sensível para detectar excursões A/F
-	static constexpr int MIN_SAMPLES_FOR_CORRECTION = 10;   // Mínimo para convergência  
-	
-	// Função auxiliar para obter massa atual do filme
-	float getCurrentWallFuelMass() const;
-	
-	// Validação de condições estáveis
-	bool areConditionsStable(const InjectionConditions& injection) const;
-	
-public:
-	SynchronizedWallWettingAdapter() {}
-	
-	// Interface principal seguindo o artigo
-	void onFuelInjection(float rpm, float map, float clt, float injectedMass);
-	void onLambdaObservation(float lambdaError, float currentRpm, float currentMap);
-	
-	// Aplicação física das correções
-	bool shouldApplyCorrection(const InjectionConditions& injection);
-	void applyPhysicalCorrection(const InjectionConditions& injection);
-	
-	// *** SUAVIZAÇÃO PARA EVITAR BURACOS NO MAPA ***
-	void applySmoothingCorrection(int centerMapIdx, int centerRpmIdx, 
-								  float betaCorrection, float tauCorrection);
-	
-	// Reset para novo ciclo
-	void reset() {
-		physicalRLS.reset();
-		injectionQueue.clear();
-	}
-	
-	// Estado
-	bool isActive() const { return injectionQueue.getCount() > 0; }
-	int getSampleCount() const { return physicalRLS.getSampleCount(); }
-	float getAverageError() const { return physicalRLS.getAverageError(); }
-};
-
-// *** CONTROLADOR PRINCIPAL CORRIGIDO ***
 class WallFuelController : public IWallFuelController, public EngineModule {
 public:
 	using interface_t = IWallFuelController;
 
-	WallFuelController();
-
 	void onFastCallback() override;
+	void onSlowCallback() override;
 	void onIgnitionStateChanged(bool ignitionOn) override;
-	
-	// Interface básica - SEM ALTERAÇÕES
-	bool getEnable() const override { return m_enable; }
-	float getAlpha() const override { return m_alpha; }
-	float getBeta() const override { return m_beta; }
-	
-	// Diagnóstico para adaptação
-	bool isAdaptationActive() const { return synchronizedAdapter.isActive(); }
-	int getCurrentSampleCount() const { return synchronizedAdapter.getSampleCount(); }
-	float getCurrentAverageError() const { return synchronizedAdapter.getAverageError(); }
-	
-	// *** NOVA FUNÇÃO PARA INTEGRAÇÃO COM SISTEMA DE INJEÇÃO ***
-	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);
+
+	bool getEnable() const override {
+		return m_enable;
+	}
+
+	float getAlpha() const override {
+		return m_alpha;
+	}
+
+	float getBeta() const override {
+		return m_beta;
+	}
 
 protected:
-	bool m_enable;
-	float m_alpha;
-	float m_beta;
-	
-	// *** NOVO SISTEMA SINCRONIZADO ***
-	SynchronizedWallWettingAdapter synchronizedAdapter;
-	
-	// Funções auxiliares - mantidas para compatibilidade
 	float computeTau() const;
 	float computeBeta() const;
-	
-	// Nova função necessária para integração
-	float getLastInjectedMass() const;  // Implementar no .cpp
-	
+
 private:
-	// *** ESTADO DE IGNIÇÃO RESTAURADO ***
-	bool ignitionState;
-	Timer ignitionOffTimer;
+	bool m_enable = false;
+	float m_alpha = 0;
+	float m_beta = 0;
+	
+	// Adaptive learning system
+	WwAdaptiveData m_adaptiveData;
+	Timer m_learningTimer;
+	Timer m_ignitionOffTimer;
+	bool m_ignitionState = false;
+	bool m_pendingSave = false;
+	
+	// Adaptive learning methods
+	void updateLoadDerivative(float currentLoad);
+	void detectTransients();
+	void updateLambdaResponse(float lambdaError, float currentTime);
+	void startImmediatePhase();
+	void startProlongedPhase();
+	void applyAdaptiveCorrections();
+	void applyIncompleteTransientCorrection();
+	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
+	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
+
+	// Separate correction calculations for beta and tau
+	float calculateBetaCorrection(float avgImmediateLambdaError);
+	float calculateTauCorrection(float avgProlongedLambdaError);
+	
+	// Decoupled adaptation management
+	void updateAdaptationMode();
+	bool shouldAdaptBeta() const;
+	bool shouldAdaptTau() const;
 };
-
-// *** CONFIGURAÇÃO MÍNIMA - APENAS 3 PARÂMETROS ***
-// Todos os outros parâmetros são calculados automaticamente ou fixos
-// engineConfiguration->wwAdaptiveLearningEnabled: bool
-// engineConfiguration->wwRLSForgettingFactor: float (0.95-0.999, default 0.98)
-// engineConfiguration->wwTransientSensitivity: float (0.5-2.0, default 1.0)
-
-#define WW_CORRECTION_RPM_BINS 8
-#define WW_CORRECTION_MAP_BINS 8
