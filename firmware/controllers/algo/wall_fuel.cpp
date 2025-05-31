@@ -97,8 +97,8 @@ float WallFuelController::computeTau() const {
 
 		tau *= interpolate3d(
 			config->wwTauMapRpmValues,
-			config->wwMapBins, map,
-			config->wwRpmBins, rpm
+			config->wwCorrectionMapBins, map,
+			config->wwCorrectionRpmBins, rpm
 		);
 
 		// Apply adaptive correction table if directional corrections are enabled
@@ -137,8 +137,8 @@ float WallFuelController::computeBeta() const {
 
 		beta *= interpolate3d(
 			config->wwBetaMapRpmValues,
-			config->wwMapBins, map,
-			config->wwRpmBins, rpm
+			config->wwCorrectionMapBins, map,
+			config->wwCorrectionRpmBins, rpm
 		);
 
 		// Apply adaptive correction table if directional corrections are enabled
@@ -233,7 +233,7 @@ void WallFuelController::onFastCallback() {
 	
 	// Update lambda response collection if in a collection phase
 	auto lambda = Sensor::get(SensorType::Lambda1);
-	auto targetLambda = Sensor::get(SensorType::LambdaTarget);
+	auto targetLambda = engine->fuelComputer.targetLambda;
 	
 	if (lambda.Valid && targetLambda.Valid && 
 		lambda.Value > 0.5f && lambda.Value < 1.5f &&
@@ -601,7 +601,7 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 		
 		if (initialMapIdx >= 0 && initialRpmIdx >= 0) {
 			// Apply beta correction directly (no autoscale multiplication needed)
-			float currentBetaCorrection = engineConfiguration->wwBetaCorrection[initialMapIdx][initialRpmIdx];
+			float currentBetaCorrection = config->wwBetaCorrection[initialMapIdx][initialRpmIdx];
 			
 			// Protect against NaN in calculations
 			if (!std::isnan(currentBetaCorrection)) {
@@ -611,7 +611,7 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 				if (!std::isnan(newBetaCorrection)) {
 					// Clamp to reasonable bounds
 					newBetaCorrection = fmaxf(0.5f, fminf(2.0f, newBetaCorrection));
-					engineConfiguration->wwBetaCorrection[initialMapIdx][initialRpmIdx] = newBetaCorrection;
+					config->wwBetaCorrection[initialMapIdx][initialRpmIdx] = newBetaCorrection;
 					
 					// Apply smoothing to adjacent cells
 					smoothCorrectionTable(initialMapIdx, initialRpmIdx, betaCorrection, 1.0f);
@@ -627,7 +627,7 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 		
 		if (finalMapIdx >= 0 && finalRpmIdx >= 0) {
 			// Apply tau correction directly (no autoscale multiplication needed)
-			float currentTauCorrection = engineConfiguration->wwTauCorrection[finalMapIdx][finalRpmIdx];
+			float currentTauCorrection = config->wwBetaCorrection[finalMapIdx][finalRpmIdx];
 			
 			// Protect against NaN in calculations
 			if (!std::isnan(currentTauCorrection)) {
@@ -637,7 +637,7 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 				if (!std::isnan(newTauCorrection)) {
 					// Clamp to reasonable bounds
 					newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
-					engineConfiguration->wwTauCorrection[finalMapIdx][finalRpmIdx] = newTauCorrection;
+					config->wwBetaCorrection[finalMapIdx][finalRpmIdx] = newTauCorrection;
 					
 					// Apply smoothing to adjacent cells
 					smoothCorrectionTable(finalMapIdx, finalRpmIdx, 1.0f, tauCorrection);
@@ -675,13 +675,13 @@ void WallFuelController::smoothCorrectionTable(int mapIdx, int rpmIdx, float bet
 			// Apply smoothed beta correction with NaN protection
 			if (betaCorrection != 1.0f && !std::isnan(betaCorrection)) {
 				float smoothedBetaCorr = 1.0f + factor * (betaCorrection - 1.0f);
-				float oldBeta = engineConfiguration->wwBetaCorrection[adjMapIdx][adjRpmIdx];
+				float oldBeta = config->wwBetaCorrection[adjMapIdx][adjRpmIdx];
 				
 				// Protect against NaN in calculations
 				if (!std::isnan(oldBeta) && !std::isnan(smoothedBetaCorr)) {
 					float newBeta = oldBeta * smoothedBetaCorr;
 					if (!std::isnan(newBeta)) {
-						engineConfiguration->wwBetaCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newBeta, 2.0f);
+						config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newBeta, 2.0f);
 					}
 				}
 			}
@@ -689,13 +689,13 @@ void WallFuelController::smoothCorrectionTable(int mapIdx, int rpmIdx, float bet
 			// Apply smoothed tau correction with NaN protection
 			if (tauCorrection != 1.0f && !std::isnan(tauCorrection)) {
 				float smoothedTauCorr = 1.0f + factor * (tauCorrection - 1.0f);
-				float oldTau = engineConfiguration->wwTauCorrection[adjMapIdx][adjRpmIdx];
+				float oldTau = config->wwBetaCorrection[adjMapIdx][adjRpmIdx];
 				
 				// Protect against NaN in calculations
 				if (!std::isnan(oldTau) && !std::isnan(smoothedTauCorr)) {
 					float newTau = oldTau * smoothedTauCorr;
 					if (!std::isnan(newTau)) {
-						engineConfiguration->wwTauCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newTau, 2.0f);
+						config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newTau, 2.0f);
 					}
 				}
 			}
