@@ -91,10 +91,6 @@ void InjectionEvent::onTriggerTooth(efitick_t nowNt, float currentPhase, float n
 	// TODO: is it correct to wall wet on both pulses?
 	injectionMassGrams = wallFuel.adjust(injectionMassGrams);
 
-	// *** INTEGRAÇÃO COM SISTEMA WALL WETTING ADAPTATIVO ***
-	// Notificar o controlador sobre a injeção real que está acontecendo
-	engine->module<WallFuelController>()->onActualFuelInjection(injectionMassGrams, this->cylinderNumber);
-
 	// Disable staging in simultaneous mode
 	float stage2Fraction = isSimultaneous ? 0 : getEngineState()->injectionStage2Fraction;
 
