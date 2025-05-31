@@ -198,4 +198,7 @@ private:
 	void updateAdaptationMode();
 	bool shouldAdaptBeta() const;
 	bool shouldAdaptTau() const;
+	
+	// Integration with injection system
+	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);
 };

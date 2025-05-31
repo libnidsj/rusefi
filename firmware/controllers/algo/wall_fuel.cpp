@@ -866,3 +866,27 @@ bool WallFuelController::shouldAdaptTau() const {
 	return m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY ||
 		   m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BOTH;
 }
+
+void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderIndex) {
+	if (!engineConfiguration->wwEnableAdaptiveLearning || !m_enable) {
+		return;
+	}
+	
+	float rpm = Sensor::getOrZero(SensorType::Rpm);
+	float map = Sensor::getOrZero(SensorType::Map);
+	auto clt = Sensor::get(SensorType::Clt);
+	
+	// Verificar condições mínimas
+	if (rpm < 100 || !clt.Valid || clt.Value < engineConfiguration->wwMinCoolantTemp) {
+		return;
+	}
+	
+	// Log para debug (pode ser removido em produção)
+	if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
+		efiPrintf("WW: Injection cyl=%d mass=%.3f rpm=%.0f map=%.1f", 
+				 cylinderIndex, injectedMass, rpm, map);
+	}
+	
+	// Esta função pode ser expandida no futuro para integração com sistema de adaptação
+	// Por enquanto, apenas registra a injeção para possível uso futuro
+}
