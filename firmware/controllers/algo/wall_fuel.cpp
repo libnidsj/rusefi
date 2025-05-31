@@ -235,11 +235,11 @@ void WallFuelController::onFastCallback() {
 	auto lambda = Sensor::get(SensorType::Lambda1);
 	auto targetLambda = engine->fuelComputer.targetLambda;
 	
-	if (lambda.Valid && targetLambda.Valid && 
-		lambda.Value > 0.5f && lambda.Value < 1.5f &&
-		targetLambda.Value > 0.5f && targetLambda.Value < 1.5f) {
+	if (lambda.Valid && 
+		lambda.Value > 0.5f && lambda.Value < 3.5f &&
+		targetLambda > 0.5f && targetLambda < 1.5f) {
 		
-		float lambdaError = lambda.Value - targetLambda.Value;
+		float lambdaError = lambda.Value - targetLambda;
 		float currentTime = m_learningTimer.getElapsedSeconds();
 		
 		updateLambdaResponse(lambdaError, currentTime);
@@ -587,8 +587,8 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	}
 	
 	// Find table indices for the given conditions
-	int mapIdx = findIndexMsg("wwMapBins", engineConfiguration->wwMapBins, WWAE_TABLE_SIZE, map);
-	int rpmIdx = findIndexMsg("wwRpmBins", engineConfiguration->wwRpmBins, WWAE_RPM_SIZE, rpm);
+	int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, map);
+	int rpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, rpm);
 	
 	if (mapIdx < 0 || rpmIdx < 0) {
 		return; // Invalid indices
@@ -596,8 +596,8 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	
 	// Apply beta correction to INITIAL transient conditions (where transient started)
 	if (betaCorrection != 1.0f && !std::isnan(betaCorrection) && m_adaptiveData.initialTransientRpm > 0) {
-		int initialMapIdx = findIndexMsg("wwMapBins", engineConfiguration->wwMapBins, WWAE_TABLE_SIZE, m_adaptiveData.initialTransientMap);
-		int initialRpmIdx = findIndexMsg("wwRpmBins", engineConfiguration->wwRpmBins, WWAE_RPM_SIZE, m_adaptiveData.initialTransientRpm);
+		int initialMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, m_adaptiveData.initialTransientMap);
+		int initialRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, m_adaptiveData.initialTransientRpm);
 		
 		if (initialMapIdx >= 0 && initialRpmIdx >= 0) {
 			// Apply beta correction directly (no autoscale multiplication needed)
@@ -622,8 +622,8 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	
 	// Apply tau correction to FINAL transient conditions (where transient ended)
 	if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
-		int finalMapIdx = findIndexMsg("wwMapBins", engineConfiguration->wwMapBins, WWAE_TABLE_SIZE, m_adaptiveData.finalTransientMap);
-		int finalRpmIdx = findIndexMsg("wwRpmBins", engineConfiguration->wwRpmBins, WWAE_RPM_SIZE, m_adaptiveData.finalTransientRpm);
+		int finalMapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_TABLE_SIZE, m_adaptiveData.finalTransientMap);
+		int finalRpmIdx = findIndexMsg("wwRpmBins", config->wwCorrectionRpmBins, WWAE_RPM_SIZE, m_adaptiveData.finalTransientRpm);
 		
 		if (finalMapIdx >= 0 && finalRpmIdx >= 0) {
 			// Apply tau correction directly (no autoscale multiplication needed)
