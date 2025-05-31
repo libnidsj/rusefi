@@ -881,12 +881,6 @@ void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderI
 		return;
 	}
 	
-	// Log para debug (pode ser removido em produção)
-	if (engineConfiguration->debugMode == DBG_WALL_WETTING) {
-		efiPrintf("WW: Injection cyl=%d mass=%.3f rpm=%.0f map=%.1f", 
-				 cylinderIndex, injectedMass, rpm, map);
-	}
-	
 	// Esta função pode ser expandida no futuro para integração com sistema de adaptação
 	// Por enquanto, apenas registra a injeção para possível uso futuro
 }

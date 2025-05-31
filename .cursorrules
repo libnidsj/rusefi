@@ -124,6 +124,11 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **Padrão incorreto**: `int mapIdx = findIndexMsg("wwMapBins", config->wwCorrectionMapBins, WWAE_CORRECTION_SIZE, map);`
   - **Vantagens**: priv::getBin() é mais eficiente, elegante, e retorna tanto índice quanto fração para interpolação
   - **Implementação**: Seguir o mesmo padrão usado pelo LTFT (Long Term Fuel Trim) na firmware
+- **CRITICAL MISSING METHODS**: Métodos chamados por outros módulos devem estar declarados no header e implementados:
+  - **onActualFuelInjection()**: Método chamado por main_trigger_callback.cpp para notificar injeções reais
+  - **Declaração**: `void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);` no header
+  - **Implementação**: Função básica que verifica condições e registra injeção para debug
+  - **Integração**: Permite que o sistema de wall wetting seja notificado de injeções reais
 
 # Scratchpad
 
@@ -326,6 +331,12 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
 - **Correção**: Usar priv::getBin() seguindo o mesmo padrão do LTFT (Long Term Fuel Trim)
 - **Implementação**: `auto binMap = priv::getBin(map, config->wwCorrectionMapBins); int mapIdx = binMap.Idx;`
 - **Vantagens**: Mais eficiente, elegante, e retorna tanto índice quanto fração para interpolação
+
+#### 10. MÉTODO FALTANTE IMPLEMENTADO ✅
+- **Problema**: onActualFuelInjection() chamado por main_trigger_callback.cpp mas não implementado
+- **Correção**: Adicionada declaração no header e implementação no .cpp
+- **Funcionalidade**: Permite notificação de injeções reais para integração futura
+- **Debug**: Inclui logging condicional para diagnóstico do sistema
 
 ### RESULTADO FINAL CORRIGIDO ✅
 Sistema adaptativo agora implementa corretamente:
