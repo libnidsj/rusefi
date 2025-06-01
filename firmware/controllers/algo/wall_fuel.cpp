@@ -455,12 +455,6 @@ void WallFuelController::applyAdaptiveCorrections() {
 	// Increment completed learning cycles counter
 	m_adaptiveData.completedLearningCycles++;
 	
-	// Debug logging
-	if (betaCorrection != 1.0f || tauCorrection != 1.0f) {
-		const char* modeStr = (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BETA_ONLY) ? "BETA" :
-							  (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY) ? "TAU" : "BOTH";
-	}
-	
 	// Clear transient flags after processing is complete
 	m_adaptiveData.isPositiveTransient = false;
 	m_adaptiveData.isNegativeTransient = false;
