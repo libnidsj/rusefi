@@ -163,6 +163,24 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **Física**: Quando beta e tau divergem muito, reduz ambas as correções para estabilidade
   - **Localização**: Aplicado no início de `applyCorrectionToTable()` antes das correções serem aplicadas às tabelas
   - **Resultado**: Sistema mais estável com convergência mais suave, especialmente durante transientes complexos
+- **CRITICAL FINAL CONDITIONS CAPTURE**: A captura das condições finais para correção de tau deve ser feita durante a fase prolongada, NÃO quando o transiente termina:
+  - **PROBLEMA CRÍTICO**: Condições finais eram capturadas quando transientMagnitude caía (fim do transiente), mas isso é fisicamente incorreto
+  - **FÍSICA CORRETA**: Tau deve ser corrigido nas condições onde os efeitos prolongados são OBSERVADOS, não onde o transiente para
+  - **TIMING INCORRETO**: Capturar no fim do transiente ignora que tau atua durante toda a fase prolongada (200ms-3s)
+  - **SOLUÇÃO IMPLEMENTADA**: Capturar finalTransientRpm/Map continuamente DURANTE a fase prolongada em updateLambdaResponse()
+  - **IMPLEMENTAÇÃO**: `m_adaptiveData.finalTransientRpm = rpm; m_adaptiveData.finalTransientMap = map;` dentro do loop da fase prolongada
+  - **FALLBACK**: Se condições finais não foram capturadas, usar condições atuais como fallback antes de aplicar correções
+  - **RESULTADO**: Tau é corrigido nas condições corretas onde seus efeitos são realmente observados no lambda
+  - **LOCALIZAÇÃO**: Removida captura automática em detectTransients(), adicionada captura contínua em updateLambdaResponse()
+- **CRITICAL CONFIGURABLE LEARNING RATES**: Usar parâmetros configuráveis para taxas de aprendizado em vez de valores fixos no código:
+  - **PROBLEMA**: Taxas de correção fixas (0.10f) no código não permitem ajuste fino sem recompilação
+  - **SOLUÇÃO**: Usar `engineConfiguration->wwBetaLearningRate` e `engineConfiguration->wwTauLearningRate`
+  - **IMPLEMENTAÇÃO BETA**: `const float correctionRate = engineConfiguration->wwBetaLearningRate;` em calculateBetaCorrection()
+  - **IMPLEMENTAÇÃO TAU**: `const float correctionRate = engineConfiguration->wwTauLearningRate;` em calculateTauCorrection()
+  - **VANTAGENS**: Permite ajuste fino via TunerStudio sem recompilação, diferentes taxas para beta vs tau
+  - **FLEXIBILIDADE**: Usuário pode ajustar agressividade do aprendizado baseado no comportamento do motor
+  - **TUNING**: Taxa baixa (0.05) para motores estáveis, taxa alta (0.15) para aprendizado rápido
+  - **RESULTADO**: Sistema mais flexível e tunável para diferentes aplicações e preferências do usuário
 
 # Scratchpad
 
@@ -434,6 +452,26 @@ if (avgProlongedLambdaError < -0.02) { // Lean prolongado
   - **Robustez**: Sistema funciona corretamente mesmo com condução agressiva
   - **Diagnóstico**: Estatísticas ajudam a identificar padrões de condução problemáticos
 - **Logging**: Mostra contadores de interrupção para análise de qualidade dos dados
+
+#### 15. CORREÇÃO DE CAPTURA DAS CONDIÇÕES FINAIS IMPLEMENTADA ✅
+- **PROBLEMA CRÍTICO**: finalTransientRpm/Map eram capturadas quando transiente terminava (transientMagnitude < threshold)
+- **FÍSICA INCORRETA**: Tau deve ser corrigido onde efeitos prolongados são OBSERVADOS, não onde transiente para
+- **TIMING ERRADO**: Captura no fim do transiente ignora que tau atua durante toda a fase prolongada (200ms-3s)
+- **CORREÇÃO IMPLEMENTADA**: Captura contínua durante fase prolongada em updateLambdaResponse()
+- **IMPLEMENTAÇÃO**: Condições finais atualizadas a cada amostra da fase prolongada (últimas condições válidas são usadas)
+- **FALLBACK**: Se condições finais não foram capturadas, usar condições atuais antes de aplicar correções
+- **RESULTADO**: Tau corrigido nas condições corretas onde efeitos são realmente observados no lambda
+- **LOCALIZAÇÃO**: Removida captura em detectTransients(), adicionada em updateLambdaResponse() durante fase prolongada
+
+#### 16. TAXAS DE APRENDIZADO CONFIGURÁVEIS IMPLEMENTADAS ✅
+- **PROBLEMA**: Taxas de correção fixas (0.10f) no código não permitiam ajuste fino sem recompilação
+- **SOLUÇÃO**: Substituição por parâmetros configuráveis `engineConfiguration->wwBetaLearningRate` e `wwTauLearningRate`
+- **IMPLEMENTAÇÃO BETA**: `const float correctionRate = engineConfiguration->wwBetaLearningRate;` em calculateBetaCorrection()
+- **IMPLEMENTAÇÃO TAU**: `const float correctionRate = engineConfiguration->wwTauLearningRate;` em calculateTauCorrection()
+- **VANTAGENS**: Ajuste fino via TunerStudio, diferentes taxas para beta vs tau, sem necessidade de recompilação
+- **FLEXIBILIDADE**: Usuário pode ajustar agressividade baseado no comportamento específico do motor
+- **TUNING SUGERIDO**: Taxa baixa (0.05) para motores estáveis, taxa alta (0.15) para aprendizado rápido
+- **RESULTADO**: Sistema mais flexível e tunável para diferentes aplicações e preferências do usuário
 
 ### RESULTADO FINAL CORRIGIDO ✅
 Sistema adaptativo agora implementa corretamente:

@@ -333,6 +333,10 @@ void WallFuelController::detectTransients() {
 				m_adaptiveData.initialTransientRpm = rpm;
 				m_adaptiveData.initialTransientMap = map;
 				
+				// Reset final conditions - will be captured during prolonged phase
+				m_adaptiveData.finalTransientRpm = 0;
+				m_adaptiveData.finalTransientMap = 0;
+				
 				// Start immediate phase for beta tuning
 				startImmediatePhase();
 			}
@@ -355,24 +359,19 @@ void WallFuelController::detectTransients() {
 				m_adaptiveData.initialTransientRpm = rpm;
 				m_adaptiveData.initialTransientMap = map;
 				
+				// Reset final conditions - will be captured during prolonged phase
+				m_adaptiveData.finalTransientRpm = 0;
+				m_adaptiveData.finalTransientMap = 0;
+				
 				// Start immediate phase for beta tuning
 				startImmediatePhase();
 			}
 		}
-	} else {
-		// No significant transient detected
-		if (wasInTransient) {
-			// Transient just ended - capture FINAL conditions for tau correction
-			auto rpm = Sensor::getOrZero(SensorType::Rpm);
-			auto map = Sensor::getOrZero(SensorType::Map);
-			m_adaptiveData.finalTransientRpm = rpm;
-			m_adaptiveData.finalTransientMap = map;
-		}
-		
-		// Don't clear transient flags here - they will be cleared after processing
-		// This prevents conflicts with updateLambdaResponse that needs these flags
-		// Flags will be cleared in applyAdaptiveCorrections() or applyIncompleteTransientCorrection()
 	}
+	
+	// NOTE: Removed the automatic capture of final conditions when transient ends
+	// Final conditions will now be captured during the prolonged phase in updateLambdaResponse()
+	// This ensures tau correction is applied where tau effects are actually observed
 }
 
 void WallFuelController::applyAdaptiveCorrections() {
@@ -523,8 +522,8 @@ void WallFuelController::applyIncompleteTransientCorrection() {
 
 float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 	// Beta correction based on immediate lambda response (relative error)
-	// Conservative 10% correction rate with ±67% bounds per cycle (0.33 to 3.00)
-	const float correctionRate = 0.10f; // 10% correction rate
+	// Use configurable learning rate with ±67% bounds per cycle (0.33 to 3.00)
+	const float correctionRate = engineConfiguration->wwBetaLearningRate; // Configurable beta learning rate
 	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
 	
 	// Protect against NaN input
@@ -572,7 +571,7 @@ float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 float WallFuelController::calculateTauCorrection() {
 	// Tau correction based on lambda TREND during prolonged phase, not just average
 	// Different behavior for acceleration vs deceleration transients
-	const float correctionRate = 0.10f; // 10% correction rate
+	const float correctionRate = engineConfiguration->wwTauLearningRate; // Configurable tau learning rate
 	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
 	
 	// Need at least 10 samples for meaningful trend analysis
@@ -905,10 +904,31 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 				m_adaptiveData.prolongedBufferIndex = (m_adaptiveData.prolongedBufferIndex + 1) % WW_PROLONGED_BUFFER_SIZE_MAX;
 				m_adaptiveData.prolongedBufferCount++;
 			}
+			
+			// CRITICAL FIX: Capture FINAL conditions during prolonged phase
+			// This ensures tau correction is applied where tau effects are actually observed
+			// Update final conditions continuously during prolonged phase (last valid conditions will be used)
+			auto rpm = Sensor::getOrZero(SensorType::Rpm);
+			auto map = Sensor::getOrZero(SensorType::Map);
+			if (rpm > 100 && map > 10) { // Basic validity check
+				m_adaptiveData.finalTransientRpm = rpm;
+				m_adaptiveData.finalTransientMap = map;
+			}
 		} else {
 			// Prolonged phase completed
 			m_adaptiveData.collectingProlonged = false;
 			m_adaptiveData.transientCompleted = true;
+			
+			// Ensure we have valid final conditions before applying corrections
+			if (m_adaptiveData.finalTransientRpm <= 0 || m_adaptiveData.finalTransientMap <= 0) {
+				// Fallback: use current conditions if final conditions weren't captured
+				auto rpm = Sensor::getOrZero(SensorType::Rpm);
+				auto map = Sensor::getOrZero(SensorType::Map);
+				if (rpm > 100 && map > 10) {
+					m_adaptiveData.finalTransientRpm = rpm;
+					m_adaptiveData.finalTransientMap = map;
+				}
+			}
 			
 			// Apply full correction (both beta and tau)
 			applyAdaptiveCorrections();
