@@ -1884,7 +1884,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.05.31.frankenso_na6.1760068619"
+#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.01.frankenso_na6.1760068619"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'
