@@ -257,16 +257,17 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 		m_adaptiveData.resetAdaptationCycle(); // Reset adaptation cycle on ignition
 		
 		// Ensure all critical values are properly initialized
-		m_adaptiveData.adaptationCycleLength = 10;  // 10 transients per cycle
-		m_adaptiveData.betaAdaptationCycles = 5;    // 5 cycles for beta (50 transients)
-		m_adaptiveData.tauAdaptationCycles = 5;     // 5 cycles for tau (50 transients)
-		m_adaptiveData.incompleteTimeout = 3.0f;    // 3 seconds timeout
-		m_adaptiveData.minTransientDuration = 0.5f; // 500ms minimum duration
+		m_adaptiveData.adaptationCycleLength = 2;   // 2 transients per cycle
+		m_adaptiveData.betaAdaptationCycles = 3;     // 3 cycles for beta (6 transients)
+		m_adaptiveData.tauAdaptationCycles = 3;      // 3 cycles for tau (6 transients)
+		m_adaptiveData.incompleteTimeout = 5.0f;     // 5 seconds timeout (increased from 3.0f)
+		m_adaptiveData.minTransientDuration = 0.5f;  // 500ms minimum duration
 		
 		m_pendingSave = false;
 	} else {
 		// When ignition turns off, schedule save if we have updates
 		if (engineConfiguration->wwEnableAdaptiveLearning) {
+			setNeedToWriteConfiguration();
 			m_pendingSave = true;
 			m_ignitionOffTimer.reset();
 		}
@@ -283,8 +284,8 @@ void WallFuelController::updateLoadDerivative(float currentLoad) {
 	int oldestIndex = m_adaptiveData.bufferIndex; // Points to oldest after increment
 	float oldLoad = m_adaptiveData.loadBuffer[oldestIndex];
 	
-	// Calculate derivative in kPa/s (assuming onFastCallback runs at 50Hz)
-	const float deltaTime = 0.02f * WW_LOAD_BUFFER_SIZE; // 8 samples * 20ms = 160ms
+	// Calculate derivative in kPa/s (assuming onFastCallback runs at 200Hz)
+	const float deltaTime = 0.005f * WW_LOAD_BUFFER_SIZE; // 8 samples * 5ms = 40ms
 	m_adaptiveData.loadDerivative = (currentLoad - oldLoad) / deltaTime;
 	
 	m_adaptiveData.lastLoad = currentLoad;
@@ -292,15 +293,24 @@ void WallFuelController::updateLoadDerivative(float currentLoad) {
 
 void WallFuelController::detectTransients() {
 	// Threshold for transient detection (kPa/s)
-	const float transientThreshold = 50.0f; // 50 kPa/s
+	const float transientThreshold = 30.0f; // 50 kPa/s
 	
 	// transientMagnitude is now updated continuously in onFastCallback
 	// m_adaptiveData.transientMagnitude = fabsf(m_adaptiveData.loadDerivative);
 	
 	// Check if we're starting a new transient
 	bool wasInTransient = m_adaptiveData.isPositiveTransient || m_adaptiveData.isNegativeTransient;
+	bool isCurrentlyLearning = m_adaptiveData.collectingImmediate || m_adaptiveData.collectingProlonged;
 	
 	if (m_adaptiveData.transientMagnitude > transientThreshold) {
+		// NEW TRANSIENT DETECTED!
+		
+		// If we're currently in a learning phase, this is a new transient interrupting the previous one
+		if (isCurrentlyLearning && wasInTransient) {
+			// Reset current learning cycle - data is contaminated by multiple transients
+			m_adaptiveData.reset();
+		}
+		
 		// QUALQUER transiente (positivo ou negativo) afeta AMBOS beta e tau
 		// Beta atua imediatamente (0-200ms), tau atua a longo prazo (200ms-3s)
 		
@@ -415,10 +425,10 @@ void WallFuelController::applyAdaptiveCorrections() {
 		float sum = 0.0f;
 		int validSamples = 0;
 		
-		// Bounds check for buffer access
-		int maxSamples = fminf(m_adaptiveData.prolongedBufferCount, WW_PROLONGED_BUFFER_SIZE);
+		// Bounds check for buffer access - use dynamic target size
+		int maxSamples = fminf(m_adaptiveData.prolongedBufferCount, m_adaptiveData.prolongedBufferSizeTarget);
 		for (int i = 0; i < maxSamples; i++) {
-			if (i >= 0 && i < WW_PROLONGED_BUFFER_SIZE) {
+			if (i >= 0 && i < WW_PROLONGED_BUFFER_SIZE_MAX) {
 				float sample = m_adaptiveData.prolongedLambdaBuffer[i];
 				if (!std::isnan(sample)) {
 					sum += sample;
@@ -430,8 +440,8 @@ void WallFuelController::applyAdaptiveCorrections() {
 		if (validSamples > 0) {
 			m_adaptiveData.avgProlongedLambdaError = sum / validSamples;
 			
-			// Calculate tau correction based on prolonged response
-			tauCorrection = calculateTauCorrection(m_adaptiveData.avgProlongedLambdaError);
+			// Calculate tau correction based on trend analysis (no parameter needed)
+			tauCorrection = calculateTauCorrection();
 			
 		}
 	} else if (hasProlongedData && !shouldAdaptTau()) {
@@ -442,17 +452,14 @@ void WallFuelController::applyAdaptiveCorrections() {
 	applyCorrectionToTable(betaCorrection, tauCorrection, 
 		m_adaptiveData.initialTransientRpm, m_adaptiveData.initialTransientMap);
 	
+	// Increment completed learning cycles counter
+	m_adaptiveData.completedLearningCycles++;
+	
 	// Debug logging
 	if (betaCorrection != 1.0f || tauCorrection != 1.0f) {
 		const char* modeStr = (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BETA_ONLY) ? "BETA" :
 							  (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY) ? "TAU" : "BOTH";
-		efiPrintf("WW Adaptive [%s]: Beta=%.3f Tau=%.3f RPM=%.0f MAP=%.0f", 
-			modeStr, betaCorrection, tauCorrection, 
-			m_adaptiveData.initialTransientRpm, m_adaptiveData.initialTransientMap);
 	}
-	
-	// Mark that we need to save configuration
-	setNeedToWriteConfiguration();
 	
 	// Clear transient flags after processing is complete
 	m_adaptiveData.isPositiveTransient = false;
@@ -512,9 +519,6 @@ void WallFuelController::applyIncompleteTransientCorrection() {
 	applyCorrectionToTable(betaCorrection, 1.0f, 
 		m_adaptiveData.initialTransientRpm, m_adaptiveData.initialTransientMap);
 	
-	// Mark that we need to save configuration
-	setNeedToWriteConfiguration();
-	
 	// Clear transient flags after processing is complete
 	m_adaptiveData.isPositiveTransient = false;
 	m_adaptiveData.isNegativeTransient = false;
@@ -525,8 +529,8 @@ void WallFuelController::applyIncompleteTransientCorrection() {
 
 float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 	// Beta correction based on immediate lambda response (relative error)
-	// Conservative 5% correction rate with ±67% bounds per cycle (0.33 to 3.00)
-	const float correctionRate = 0.05f; // 5% correction rate
+	// Conservative 10% correction rate with ±67% bounds per cycle (0.33 to 3.00)
+	const float correctionRate = 0.10f; // 10% correction rate
 	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
 	
 	// Protect against NaN input
@@ -538,10 +542,27 @@ float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 		return 1.0f; // No correction needed
 	}
 	
-	// Beta correction: 
-	// Lambda lean (negative error) -> increase beta (more fuel sticks to walls)
-	// Lambda rich (positive error) -> decrease beta (less fuel sticks to walls)
-	float correction = 1.0f - (avgLambdaError * correctionRate);
+	// Determine transient direction for physics-correct beta correction
+	bool isPositiveTransient = m_adaptiveData.isPositiveTransient;
+	bool isNegativeTransient = m_adaptiveData.isNegativeTransient;
+	
+	float correction = 1.0f;
+	
+	if (isPositiveTransient) {
+		// POSITIVE TRANSIENT (Acceleration): More fuel hits walls, need more beta
+		// Lambda lean (negative error) -> increase beta (more fuel sticks to walls)
+		// Lambda rich (positive error) -> decrease beta (less fuel sticks to walls)
+		correction = 1.0f - (avgLambdaError * correctionRate);
+	} else if (isNegativeTransient) {
+		// NEGATIVE TRANSIENT (Deceleration): Less fuel hits walls, fuel evaporates from walls
+		// Physics is different - during decel, existing wall fuel evaporates into airstream
+		// Lambda lean (negative error) -> decrease beta (less fuel available to stick)
+		// Lambda rich (positive error) -> increase beta (more wall fuel evaporating)
+		correction = 1.0f + (avgLambdaError * correctionRate * 1.2f); // Reduced factor for decel
+	} else {
+		// No clear transient direction, use conservative approach
+		correction = 1.0f - (avgLambdaError * correctionRate * 0.5f);
+	}
 	
 	// Protect against NaN in calculation
 	if (std::isnan(correction)) {
@@ -554,25 +575,87 @@ float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 	return correction;
 }
 
-float WallFuelController::calculateTauCorrection(float avgLambdaError) {
-	// Tau correction based on prolonged lambda response (absolute error)
-	// Conservative 5% correction rate with ±67% bounds per cycle (0.33 to 3.00)
-	const float correctionRate = 0.05f; // 5% correction rate
+float WallFuelController::calculateTauCorrection() {
+	// Tau correction based on lambda TREND during prolonged phase, not just average
+	// Different behavior for acceleration vs deceleration transients
+	const float correctionRate = 0.10f; // 10% correction rate
 	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
 	
-	// Protect against NaN input
-	if (std::isnan(avgLambdaError)) {
-		return 1.0f; // No correction for invalid input
+	// Need at least 10 samples for meaningful trend analysis
+	if (m_adaptiveData.prolongedBufferCount < 10) {
+		return 1.0f; // Not enough data for trend analysis
 	}
 	
-	if (fabsf(avgLambdaError) < 0.05f) {
-		return 1.0f; // No correction needed (higher threshold for tau)
+	// Calculate linear trend (slope) of lambda error over time
+	// Using simple linear regression: y = mx + b, where m is the slope we want
+	float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+	int validSamples = 0;
+	
+	// Bounds check for buffer access
+	int maxSamples = fminf(m_adaptiveData.prolongedBufferCount, m_adaptiveData.prolongedBufferSizeTarget);
+	for (int i = 0; i < maxSamples; i++) {
+		if (i >= 0 && i < WW_PROLONGED_BUFFER_SIZE_MAX) {
+			float sample = m_adaptiveData.prolongedLambdaBuffer[i];
+			if (!std::isnan(sample)) {
+				float x = (float)i; // Time index
+				float y = sample;   // Lambda error
+				
+				sumX += x;
+				sumY += y;
+				sumXY += x * y;
+				sumX2 += x * x;
+				validSamples++;
+			}
+		}
 	}
 	
-	// Tau correction:
-	// Lambda lean (negative error) -> increase tau (slower evaporation)
-	// Lambda rich (positive error) -> decrease tau (faster evaporation)
-	float correction = 1.0f - (avgLambdaError * correctionRate);
+	if (validSamples < 10) {
+		return 1.0f; // Not enough valid samples
+	}
+	
+	// Calculate slope (trend) using linear regression
+	// slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	float denominator = validSamples * sumX2 - sumX * sumX;
+	if (fabsf(denominator) < 0.001f) {
+		return 1.0f; // Avoid division by zero
+	}
+	
+	float slope = (validSamples * sumXY - sumX * sumY) / denominator;
+	
+	// Protect against NaN in slope calculation
+	if (std::isnan(slope)) {
+		return 1.0f; // No correction for invalid calculation
+	}
+	
+	// Use slope magnitude for correction strength
+	// Typical slope range is -0.01 to +0.01 per sample for significant trends
+	const float slopeThreshold = 0.001f; // Minimum slope to trigger correction
+	
+	if (fabsf(slope) < slopeThreshold) {
+		return 1.0f; // Slope too small, tau is approximately correct
+	}
+	
+	// Determine transient direction for physics-correct tau correction
+	bool isPositiveTransient = m_adaptiveData.isPositiveTransient;
+	bool isNegativeTransient = m_adaptiveData.isNegativeTransient;
+	
+	float correction = 1.0f;
+	
+	if (isPositiveTransient) {
+		// POSITIVE TRANSIENT (Acceleration): Fuel builds up on walls
+		// Positive slope (lambda getting more lean over time) -> tau too low, increase tau
+		// Negative slope (lambda getting more rich over time) -> tau too high, decrease tau
+		correction = 1.0f - (slope * correctionRate * 100.0f);
+	} else if (isNegativeTransient) {
+		// NEGATIVE TRANSIENT (Deceleration): Fuel evaporates from walls
+		// Physics is inverted - during decel, wall fuel evaporates into airstream
+		// Positive slope (lambda getting more lean) -> tau too high, decrease tau
+		// Negative slope (lambda getting more rich) -> tau too low, increase tau
+		correction = 1.0f + (slope * correctionRate * 100.0f); // Inverted correction for decel
+	} else {
+		// No clear transient direction, use conservative approach
+		correction = 1.0f - (slope * correctionRate * 50.0f); // Reduced factor
+	}
 	
 	// Protect against NaN in calculation
 	if (std::isnan(correction)) {
@@ -589,6 +672,15 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	if (!engineConfiguration->wwEnableAdaptiveLearning) {
 		return;
 	}
+	
+	// Cross-coupling correction to reduce instability when both parameters are being corrected
+	// When beta and tau corrections are both significant, reduce their magnitude to prevent oscillations
+	float cross_coupling = 1.0f - (0.2f * fabsf(betaCorrection - tauCorrection));
+	cross_coupling = fmaxf(0.5f, fminf(1.0f, cross_coupling)); // Clamp between 0.5 and 1.0
+	
+	// Apply cross-coupling factor to both corrections
+	betaCorrection = 1.0f + (betaCorrection - 1.0f) * cross_coupling;
+	tauCorrection = 1.0f + (tauCorrection - 1.0f) * cross_coupling;
 	
 	// Use the same approach as LTFT - getBin() instead of findIndexMsg()
 	auto binMap = priv::getBin(map, config->wwCorrectionMapBins);
@@ -744,7 +836,20 @@ void WallFuelController::startImmediatePhase() {
 }
 
 void WallFuelController::startProlongedPhase() {
-	// Start collecting prolonged response for tau tuning (200ms-3s)
+	// Calculate dynamic prolonged phase duration based on current tau
+	float currentTau = computeTau();
+	m_adaptiveData.currentTau = currentTau;
+	
+	// Duration = WW_TAU_MULTIPLIER × tau (captures ~95% of tau effect)
+	m_adaptiveData.prolongedPhaseDuration = WW_TAU_MULTIPLIER * currentTau;
+	
+	// Calculate target buffer size (200Hz sampling rate)
+	int targetSize = (int)(m_adaptiveData.prolongedPhaseDuration * 200.0f);
+	
+	// Clamp to maximum buffer size for safety
+	m_adaptiveData.prolongedBufferSizeTarget = fminf(targetSize, WW_PROLONGED_BUFFER_SIZE_MAX);
+	
+	// Start collecting prolonged response for tau tuning
 	m_adaptiveData.collectingImmediate = false;
 	m_adaptiveData.collectingProlonged = true;
 	m_adaptiveData.phaseStartTime = m_learningTimer.getElapsedSeconds();
@@ -763,7 +868,7 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 	if (m_adaptiveData.collectingImmediate) {
 		float timeSincePhaseStart = currentTime - m_adaptiveData.phaseStartTime;
 		
-		if (timeSincePhaseStart <= 0.2f && m_adaptiveData.immediateBufferCount < WW_IMMEDIATE_BUFFER_SIZE) {
+		if (timeSincePhaseStart >= 0.2f && timeSincePhaseStart <= 0.4f && m_adaptiveData.immediateBufferCount < WW_IMMEDIATE_BUFFER_SIZE) {
 			// Still in immediate phase window
 			// Bounds check for buffer access
 			if (m_adaptiveData.immediateBufferIndex >= 0 && m_adaptiveData.immediateBufferIndex < WW_IMMEDIATE_BUFFER_SIZE) {
@@ -771,37 +876,39 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 				m_adaptiveData.immediateBufferIndex = (m_adaptiveData.immediateBufferIndex + 1) % WW_IMMEDIATE_BUFFER_SIZE;
 				m_adaptiveData.immediateBufferCount++;
 			}
-		} else {
+		} else if (timeSincePhaseStart > 0.4f) {
 			// Immediate phase completed
 			m_adaptiveData.collectingImmediate = false;
 			
-			// CORREÇÃO: Usar threshold muito menor para prolonged phase
-			// Tau learning precisa capturar efeitos de longo prazo mesmo com derivada baixa
-			// Threshold reduzido de 50.0f para 10.0f kPa/s
-			if (m_adaptiveData.transientMagnitude <= 25.0f || m_adaptiveData.transientDuration < 1.0f) {
-				// Transient still active OR hasn't been running long enough - start prolonged phase
-				startProlongedPhase();
-				
-			} else {
-				// Transient ended early - mark as incomplete
-				m_adaptiveData.incompleteTransientDetected = true;
-				
-				// Apply beta-only correction for incomplete transients
-				applyIncompleteTransientCorrection();
-			}
+			startProlongedPhase();
 		}
 	}
 	
-	// Prolonged phase collection (200ms-3s for tau tuning)
+	// Prolonged phase collection (dynamic duration based on tau)
 	if (m_adaptiveData.collectingProlonged) {
 		float timeSincePhaseStart = currentTime - m_adaptiveData.phaseStartTime;
 		
-		if (timeSincePhaseStart <= 2.8f && m_adaptiveData.prolongedBufferCount < WW_PROLONGED_BUFFER_SIZE) {
-			// Still in prolonged phase window (200ms + 2.8s = 3s total)
+		// Check for new transient during prolonged phase
+		if (m_adaptiveData.transientMagnitude > 50.0f) {
+			applyIncompleteTransientCorrection();
+
+			// New transient detected during tau learning phase
+			// Reset and start fresh learning cycle
+			m_adaptiveData.collectingProlonged = false;
+			m_adaptiveData.interruptedTauPhases++;
+			m_adaptiveData.reset();
+			
+			// detectTransients() will be called next and will start new cycle
+			return;
+		}
+		
+		if (timeSincePhaseStart <= m_adaptiveData.prolongedPhaseDuration && 
+			m_adaptiveData.prolongedBufferCount < m_adaptiveData.prolongedBufferSizeTarget) {
+			// Still in prolonged phase window (dynamic duration based on tau)
 			// Bounds check for buffer access
-			if (m_adaptiveData.prolongedBufferIndex >= 0 && m_adaptiveData.prolongedBufferIndex < WW_PROLONGED_BUFFER_SIZE) {
+			if (m_adaptiveData.prolongedBufferIndex >= 0 && m_adaptiveData.prolongedBufferIndex < WW_PROLONGED_BUFFER_SIZE_MAX) {
 				m_adaptiveData.prolongedLambdaBuffer[m_adaptiveData.prolongedBufferIndex] = lambdaError;
-				m_adaptiveData.prolongedBufferIndex = (m_adaptiveData.prolongedBufferIndex + 1) % WW_PROLONGED_BUFFER_SIZE;
+				m_adaptiveData.prolongedBufferIndex = (m_adaptiveData.prolongedBufferIndex + 1) % WW_PROLONGED_BUFFER_SIZE_MAX;
 				m_adaptiveData.prolongedBufferCount++;
 			}
 		} else {
@@ -832,12 +939,6 @@ void WallFuelController::updateAdaptationMode() {
 	// Increment transient counter
 	m_adaptiveData.transientCounter++;
 	
-	// Debug logging for adaptation state
-	efiPrintf("WW Adaptive: Transient %d/%d in %s mode", 
-		m_adaptiveData.transientCounter, 
-		m_adaptiveData.adaptationCycleLength,
-		(m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BETA_ONLY) ? "BETA" : "TAU");
-	
 	// Check if we need to switch adaptation modes
 	if (m_adaptiveData.transientCounter >= m_adaptiveData.adaptationCycleLength) {
 		m_adaptiveData.transientCounter = 0;
@@ -849,16 +950,12 @@ void WallFuelController::updateAdaptationMode() {
 				// Switch to tau adaptation
 				m_adaptiveData.currentAdaptationMode = WwAdaptiveData::ADAPT_TAU_ONLY;
 				m_adaptiveData.currentCycleCount = 0;
-				efiPrintf("WW Adaptive: Switching to TAU adaptation period (cycle %d complete)", 
-					m_adaptiveData.betaAdaptationCycles);
 			}
 		} else if (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY) {
 			if (m_adaptiveData.currentCycleCount >= m_adaptiveData.tauAdaptationCycles) {
 				// Switch back to beta adaptation
 				m_adaptiveData.currentAdaptationMode = WwAdaptiveData::ADAPT_BETA_ONLY;
 				m_adaptiveData.currentCycleCount = 0;
-				efiPrintf("WW Adaptive: Switching to BETA adaptation period (cycle %d complete)", 
-					m_adaptiveData.tauAdaptationCycles);
 			}
 		}
 	}

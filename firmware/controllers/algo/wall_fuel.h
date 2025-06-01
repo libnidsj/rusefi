@@ -35,8 +35,9 @@ struct IWallFuelController {
 
 // Circular buffer for load derivative calculation
 #define WW_LOAD_BUFFER_SIZE 8
-#define WW_IMMEDIATE_BUFFER_SIZE 10  // Beta: primeiros 200ms (10 amostras a 50Hz)
-#define WW_PROLONGED_BUFFER_SIZE 150 // Tau: 200ms-3s (150 amostras a 50Hz)
+#define WW_IMMEDIATE_BUFFER_SIZE 40  // Beta: primeiros 200ms (40 amostras a 200Hz)
+#define WW_PROLONGED_BUFFER_SIZE_MAX 1000 // Tau: máximo para tau=5s (1000 amostras a 200Hz)
+#define WW_TAU_MULTIPLIER 3.0f       // Coleta dados por 3×tau (captura ~95% do efeito)
 
 // Adaptive correction data structure
 struct WwAdaptiveData {
@@ -54,7 +55,7 @@ struct WwAdaptiveData {
 	
 	// Separate buffers for beta (immediate) and tau (prolonged) responses
 	float immediateLambdaBuffer[WW_IMMEDIATE_BUFFER_SIZE];  // Beta: 0-200ms
-	float prolongedLambdaBuffer[WW_PROLONGED_BUFFER_SIZE];  // Tau: 200ms-3s
+	float prolongedLambdaBuffer[WW_PROLONGED_BUFFER_SIZE_MAX];  // Tau: 200ms-3s
 	int immediateBufferIndex = 0;
 	int prolongedBufferIndex = 0;
 	int immediateBufferCount = 0;
@@ -64,6 +65,11 @@ struct WwAdaptiveData {
 	bool collectingImmediate = false;  // 0-200ms for beta
 	bool collectingProlonged = false;  // 200ms-3s for tau
 	float phaseStartTime = 0;
+	
+	// Dynamic prolonged phase duration based on tau
+	float currentTau = 1.0f;           // Current tau value for this transient
+	float prolongedPhaseDuration = 0;  // Duration in seconds (WW_TAU_MULTIPLIER × tau)
+	int prolongedBufferSizeTarget = 0; // Target buffer size for current tau
 	
 	// Average errors for correction calculation
 	float avgImmediateLambdaError = 0;  // For beta correction
@@ -85,7 +91,7 @@ struct WwAdaptiveData {
 	bool incompleteTransientDetected = false;
 	float transientDuration = 0;
 	float minTransientDuration = 0.5f; // 500ms minimum for complete transient
-	float incompleteTimeout = 3.0f;    // 3s timeout for incomplete transients (initialized)
+	float incompleteTimeout = 5.0f;    // 5s timeout for incomplete transients (increased from 3.0f)
 	
 	// Decoupled adaptation periods to avoid beta-tau coupling
 	enum AdaptationMode {
@@ -96,10 +102,15 @@ struct WwAdaptiveData {
 	
 	AdaptationMode currentAdaptationMode = ADAPT_BETA_ONLY;
 	int transientCounter = 0;
-	int adaptationCycleLength = 10;  // 10 transients per adaptation period (initialized)
-	int betaAdaptationCycles = 5;    // 5 cycles for beta adaptation (50 transients total)
-	int tauAdaptationCycles = 5;     // 5 cycles for tau adaptation (50 transients total)
+	int adaptationCycleLength = 2;   // 2 transients per adaptation period (initialized)
+	int betaAdaptationCycles = 3;     // 3 cycles for beta adaptation (6 transients total)
+	int tauAdaptationCycles = 3;      // 3 cycles for tau adaptation (6 transients total)
 	int currentCycleCount = 0;
+	
+	// Statistics for debugging
+	int interruptedBetaPhases = 0;   // Count of beta phases interrupted by new transients
+	int interruptedTauPhases = 0;    // Count of tau phases interrupted by new transients
+	int completedLearningCycles = 0; // Count of successfully completed learning cycles
 	
 	void reset() {
 		// Reset all learning state
@@ -134,6 +145,9 @@ struct WwAdaptiveData {
 		// Note: Don't reset adaptation mode variables here
 		// They should persist across individual transient resets
 		// Only reset on ignition cycle or manual reset
+		
+		// Note: Don't reset statistics counters (interruptedBetaPhases, etc.)
+		// They should persist to provide debugging information across multiple cycles
 	}
 	
 	void resetAdaptationCycle() {
@@ -193,7 +207,7 @@ private:
 
 	// Separate correction calculations for beta and tau
 	float calculateBetaCorrection(float avgImmediateLambdaError);
-	float calculateTauCorrection(float avgProlongedLambdaError);
+	float calculateTauCorrection();
 	
 	// Decoupled adaptation management
 	void updateAdaptationMode();
