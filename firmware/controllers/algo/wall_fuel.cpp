@@ -728,6 +728,12 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 		int finalMapIdx = finalBinMap.Idx;
 		int finalRpmIdx = finalBinRpm.Idx;
 		*/
+
+		auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, config->wwCorrectionMapBins);
+		auto initialBinRpm = priv::getBin(m_adaptiveData.initialTransientRpm, config->wwCorrectionRpmBins);
+		
+		int initialMapIdx = initialBinMap.Idx;
+		int initialRpmIdx = initialBinRpm.Idx;
 		
 		if (initialMapIdx >= 0 && initialMapIdx < WWAE_CORRECTION_SIZE - 1 && 
 			initialRpmIdx >= 0 && initialRpmIdx < WWAE_CORRECTION_SIZE - 1) {
