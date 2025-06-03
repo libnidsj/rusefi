@@ -494,6 +494,63 @@ float getConfigValueByName(const char *name) {
 // wwMinMapForLearning
 		case 913889548:
 			return engineConfiguration->wwMinMapForLearning;
+// wwAquinoAccelThresh
+		case 1221572678:
+			return engineConfiguration->wwAquinoAccelThresh;
+// wwAquinoDecelThresh
+		case -520422837:
+			return engineConfiguration->wwAquinoDecelThresh;
+// wwAquinoMapAccelThresh
+		case 1839245860:
+			return engineConfiguration->wwAquinoMapAccelThresh;
+// wwAquinoMapDecelThresh
+		case 97250345:
+			return engineConfiguration->wwAquinoMapDecelThresh;
+// wwAquinoMinLambdaErr
+		case -645124242:
+			return engineConfiguration->wwAquinoMinLambdaErr;
+// wwAquinoTransMinDuration
+		case 1996375922:
+			return engineConfiguration->wwAquinoTransMinDuration;
+// wwAquinoAnalysisMaxDuration
+		case -1602136400:
+			return engineConfiguration->wwAquinoAnalysisMaxDuration;
+// wwAquinoBetaAccelGain
+		case -412339181:
+			return engineConfiguration->wwAquinoBetaAccelGain;
+// wwAquinoBetaDecelGain
+		case 493170904:
+			return engineConfiguration->wwAquinoBetaDecelGain;
+// wwAquinoBetaLeanThresh
+		case -647172630:
+			return engineConfiguration->wwAquinoBetaLeanThresh;
+// wwAquinoBetaRichThresh
+		case -834382352:
+			return engineConfiguration->wwAquinoBetaRichThresh;
+// wwAquinoTauSettleThresh
+		case 1375708777:
+			return engineConfiguration->wwAquinoTauSettleThresh;
+// wwAquinoTauIdealFactor
+		case 1188428648:
+			return engineConfiguration->wwAquinoTauIdealFactor;
+// wwAquinoTauToleranceFactor
+		case 1268131782:
+			return engineConfiguration->wwAquinoTauToleranceFactor;
+// wwAquinoTauOvershootMinDur
+		case -947757278:
+			return engineConfiguration->wwAquinoTauOvershootMinDur;
+// wwAquinoTauOvershootMinMag
+		case -947748148:
+			return engineConfiguration->wwAquinoTauOvershootMinMag;
+// wwAquinoTauOvershootGain
+		case 1071661042:
+			return engineConfiguration->wwAquinoTauOvershootGain;
+// wwAquinoTauSlowGain
+		case 945105454:
+			return engineConfiguration->wwAquinoTauSlowGain;
+// wwAquinoTauFastGain
+		case -212134025:
+			return engineConfiguration->wwAquinoTauFastGain;
 // fordInjectorSmallPulseSlope
 		case -1465119085:
 			return engineConfiguration->fordInjectorSmallPulseSlope;
@@ -2927,6 +2984,101 @@ bool setConfigValueByName(const char *name, float value) {
 		case 913889548:
 	{
 		engineConfiguration->wwMinMapForLearning = value;
+		return 1;
+	}
+		case 1221572678:
+	{
+		engineConfiguration->wwAquinoAccelThresh = value;
+		return 1;
+	}
+		case -520422837:
+	{
+		engineConfiguration->wwAquinoDecelThresh = value;
+		return 1;
+	}
+		case 1839245860:
+	{
+		engineConfiguration->wwAquinoMapAccelThresh = value;
+		return 1;
+	}
+		case 97250345:
+	{
+		engineConfiguration->wwAquinoMapDecelThresh = value;
+		return 1;
+	}
+		case -645124242:
+	{
+		engineConfiguration->wwAquinoMinLambdaErr = value;
+		return 1;
+	}
+		case 1996375922:
+	{
+		engineConfiguration->wwAquinoTransMinDuration = value;
+		return 1;
+	}
+		case -1602136400:
+	{
+		engineConfiguration->wwAquinoAnalysisMaxDuration = value;
+		return 1;
+	}
+		case -412339181:
+	{
+		engineConfiguration->wwAquinoBetaAccelGain = value;
+		return 1;
+	}
+		case 493170904:
+	{
+		engineConfiguration->wwAquinoBetaDecelGain = value;
+		return 1;
+	}
+		case -647172630:
+	{
+		engineConfiguration->wwAquinoBetaLeanThresh = value;
+		return 1;
+	}
+		case -834382352:
+	{
+		engineConfiguration->wwAquinoBetaRichThresh = value;
+		return 1;
+	}
+		case 1375708777:
+	{
+		engineConfiguration->wwAquinoTauSettleThresh = value;
+		return 1;
+	}
+		case 1188428648:
+	{
+		engineConfiguration->wwAquinoTauIdealFactor = value;
+		return 1;
+	}
+		case 1268131782:
+	{
+		engineConfiguration->wwAquinoTauToleranceFactor = value;
+		return 1;
+	}
+		case -947757278:
+	{
+		engineConfiguration->wwAquinoTauOvershootMinDur = value;
+		return 1;
+	}
+		case -947748148:
+	{
+		engineConfiguration->wwAquinoTauOvershootMinMag = value;
+		return 1;
+	}
+		case 1071661042:
+	{
+		engineConfiguration->wwAquinoTauOvershootGain = value;
+		return 1;
+	}
+		case 945105454:
+	{
+		engineConfiguration->wwAquinoTauSlowGain = value;
+		return 1;
+	}
+		case -212134025:
+	{
+		engineConfiguration->wwAquinoTauFastGain = value;
 		return 1;
 	}
 		case -1465119085:
