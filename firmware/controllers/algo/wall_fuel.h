@@ -316,6 +316,9 @@ public:
 protected:
 	float computeTau() const;
 	float computeBeta() const;
+	void performSettlingAnalysis();
+	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
+	void onSlowCallback() override;
 
 private:
 	bool m_enable = false;
@@ -346,13 +349,11 @@ private:
 	
 	// === RESPONSE ANALYSIS ===
 	void analyzeCollectedResponse();
-	void performSettlingAnalysis();
 	float calculateBetaCorrection();
 	float calculateTauCorrection();
 	
 	// === CORRECTION APPLICATION ===
 	void applyCorrections();
-	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
 	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
 	
 	// === TIMEOUT & ERROR HANDLING ===
