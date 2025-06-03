@@ -197,6 +197,28 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
   - **CORREÇÃO**: Verificar `idleController.useClosedLoop` antes de usar valor do integrador
   - **IMPLEMENTAÇÃO**: Adicionada verificação após validação da fase de marcha lenta
   - **RESULTADO**: LTIT só aprende quando PID está realmente controlando, garantindo integrador válido
+- **CRITICAL BETA PHYSICS CORRECTION**: A física de correção de Beta para desaceleração estava INVERTIDA na implementação:
+  - **PROBLEMA CRÍTICO**: Lógica de desaceleração tinha física incorreta - aumentava beta quando devia diminuir e vice-versa
+  - **FÍSICA CORRETA DESACELERAÇÃO**: Durante desaceleração, combustível existente nas paredes continua evaporando
+  - **Lambda RICH em desaceleração**: Muito combustível das paredes evaporando → DIMINUIR beta para reduzir evaporação
+  - **Lambda LEAN em desaceleração**: Pouco combustível das paredes → AUMENTAR beta para manter mais combustível nas paredes
+  - **CORREÇÃO IMPLEMENTADA**: Invertida a lógica para física correta - rich → diminuir beta, lean → aumentar beta
+  - **FONTE**: Baseado no paper original SAE 810494 de Aquino sobre wall wetting transient behavior
+  - **RESULTADO**: Física correta alinhada com modelo Aquino original, evita instabilidade do sistema
+- **CRITICAL LAMBDA ERROR CALCULATION VERIFICATION**: Confirmado que o sistema calcula e usa lambda error corretamente:
+  - **CÁLCULO CORRETO**: `lambdaError = lambda.Value - targetLambda` (medido - alvo)
+  - **PROPAGAÇÃO CORRETA**: Lambda error é armazenado nos buffers, não valores absolutos
+  - **PROCESSAMENTO CORRETO**: Funções de correção recebem médias dos erros, não leituras diretas
+  - **FÍSICA CORRETA**: Error positivo (lean) → aumentar beta, error negativo (rich) → diminuir beta
+  - **VALIDAÇÃO**: Não há confusão entre leitura de lambda e erro de lambda na implementação
+  - **RESULTADO**: Sistema está matematicamente correto e fisicamente consistente conforme modelo Aquino
+- **CRITICAL ABSOLUTE VALUE COMPARISONS**: Para robustez numérica, sempre usar valor absoluto do erro e determinar sinal separadamente:
+  - **PROBLEMA**: Comparações diretas com erros positivos/negativos podem causar problemas numéricos
+  - **SOLUÇÃO**: `float errorMagnitude = fabsf(avgLambdaError); bool isLean = avgLambdaError > 0.0f;`
+  - **IMPLEMENTAÇÃO**: Separar magnitude do erro (para thresholds) da direção (para física)
+  - **VANTAGEM**: Comparações mais robustas e lógica mais clara para lean/rich
+  - **APLICAÇÃO**: Usado em `calculateBetaCorrection()` para evitar problemas de comparação
+  - **RESULTADO**: Sistema mais confiável e menos suscetível a problemas numéricos
 
 # Scratchpad
 

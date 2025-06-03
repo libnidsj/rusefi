@@ -590,8 +590,13 @@ float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 		return 1.0f; // No correction for invalid input
 	}
 	
+	// Always work with absolute error magnitude for robust comparisons
+	float errorMagnitude = fabsf(avgLambdaError);
+	bool isLean = avgLambdaError > 0.0f;  // Positive error = lean condition
+	bool isRich = avgLambdaError < 0.0f;  // Negative error = rich condition
+	
 	// Check if error is significant enough for adaptation
-	if (fabsf(avgLambdaError) < minLambdaErr) {
+	if (errorMagnitude < minLambdaErr) {
 		return 1.0f; // Error too small, no correction needed
 	}
 	
@@ -604,39 +609,41 @@ float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
 	if (isPositiveTransient) {
 		// ACCELERATION TRANSIENT: More fuel hits walls during acceleration
 		// Aquino Model Logic for Acceleration:
-		// - Lambda lean (avgLambdaError > betaLeanThresh) -> increase beta (more fuel sticks to walls)
-		// - Lambda rich (avgLambdaError < betaRichThresh) -> decrease beta (less fuel sticks to walls)
+		// - Lambda lean (isLean && errorMagnitude > betaLeanThresh) -> increase beta
+		// - Lambda rich (isRich && errorMagnitude > betaRichThresh) -> decrease beta
 		
-		if (avgLambdaError > betaLeanThresh) {
+		if (isLean && errorMagnitude > betaLeanThresh) {
 			// Too lean during acceleration, need more beta
-			deltaCorrection = betaAccelGain * avgLambdaError;
-		} else if (avgLambdaError < betaRichThresh) {
+			deltaCorrection = betaAccelGain * errorMagnitude; // Positive correction
+		} else if (isRich && errorMagnitude > fabsf(betaRichThresh)) {
 			// Too rich during acceleration, need less beta
-			deltaCorrection = betaAccelGain * avgLambdaError; // Negative correction
+			deltaCorrection = -betaAccelGain * errorMagnitude; // Negative correction
 		}
 		// If between thresholds, no correction needed (deltaCorrection remains 0)
 		
 	} else if (isNegativeTransient) {
 		// DECELERATION TRANSIENT: Less fuel hits walls, existing fuel evaporates
-		// Aquino Model Logic for Deceleration (physics are different):
-		// - Lambda lean (avgLambdaError > betaLeanThresh) -> decrease beta (less fuel available)
-		// - Lambda rich (avgLambdaError < betaRichThresh) -> increase beta (more evaporation effect)
+		// Aquino Model Logic for Deceleration - CORRECTED PHYSICS:
+		// - Lambda rich (isRich && errorMagnitude > betaRichThresh) -> decrease beta
+		// - Lambda lean (isLean && errorMagnitude > betaLeanThresh) -> increase beta
 		
-		if (avgLambdaError < betaRichThresh) {
-			// Too rich during deceleration, wall fuel evaporating too much
-			deltaCorrection = betaDecelGain * fabsf(avgLambdaError); // Positive correction (increase beta)
-		} else if (avgLambdaError > betaLeanThresh) {
-			// Too lean during deceleration, not enough wall fuel
-			deltaCorrection = -betaDecelGain * avgLambdaError; // Negative correction (decrease beta)
+		if (isRich && errorMagnitude > fabsf(betaRichThresh)) {
+			// Too rich during deceleration, too much wall fuel evaporating
+			// Need to DECREASE beta so less fuel evaporates from walls
+			deltaCorrection = -betaDecelGain * errorMagnitude; // Negative correction (decrease beta)
+		} else if (isLean && errorMagnitude > betaLeanThresh) {
+			// Too lean during deceleration, not enough fuel from walls + injection
+			// Need to INCREASE beta so more fuel remains available from walls
+			deltaCorrection = betaDecelGain * errorMagnitude; // Positive correction (increase beta)
 		}
 		// If between thresholds, no correction needed
 		
 	} else {
 		// No clear transient direction, use conservative acceleration logic
-		if (avgLambdaError > betaLeanThresh) {
-			deltaCorrection = betaAccelGain * avgLambdaError * 0.5f; // Conservative gain
-		} else if (avgLambdaError < betaRichThresh) {
-			deltaCorrection = betaAccelGain * avgLambdaError * 0.5f; // Conservative gain
+		if (isLean && errorMagnitude > betaLeanThresh) {
+			deltaCorrection = betaAccelGain * errorMagnitude * 0.5f; // Conservative gain
+		} else if (isRich && errorMagnitude > fabsf(betaRichThresh)) {
+			deltaCorrection = -betaAccelGain * errorMagnitude * 0.5f; // Conservative gain
 		}
 	}
 	
