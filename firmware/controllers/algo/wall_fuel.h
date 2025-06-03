@@ -330,10 +330,6 @@ private:
 	bool m_pendingSave = false;
 	
 	// === PRIVATE METHODS ===
-	float computeTau() const;
-	float computeBeta() const;
-	
-	// === STATE MACHINE METHODS ===
 	void updateStateMachine(float currentTime);
 	void processCurrentState(float currentTime);
 	bool validateSensorData() const;
