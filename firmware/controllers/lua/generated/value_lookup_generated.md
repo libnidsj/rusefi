@@ -460,32 +460,8 @@ null
 ### wwEnableAdaptiveLearning
 Enable adaptive learning for wall wetting parameters
 
-### wwLambdaDelayFactor
-Fator multiplicativo do atraso entre o gas saindo no escape e chegando a sonda lambda
-
-### wwTpsThreshold
-TPS change threshold for transient detection (per callback)
-
-### wwMapThreshold
-MAP change threshold for transient detection (per callback)
-
-### wwBetaLearningRate
-Learning rate for adaptive corrections
-
-### wwTauLearningRate
-Learning rate for adaptive corrections
-
-### wwBetaBuffer
-Initial learning size
-
 ### wwMinCoolantTemp
 Minimum coolant temperature for learning
-
-### wwMaxCoolantTemp
-Maximum coolant temperature for learning
-
-### wwMinMapForLearning
-Minimum MAP pressure for learning
 
 ### wwAquinoAccelThresh
 Acceleration transient threshold for adaptive detection
