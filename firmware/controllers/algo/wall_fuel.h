@@ -34,8 +34,8 @@ struct IWallFuelController {
 };
 
 // Circular buffer for load derivative calculation
-#define WW_LOAD_BUFFER_SIZE 8
-#define WW_TPS_BUFFER_SIZE 8         // Buffer for TPS derivative calculation  
+#define WW_LOAD_BUFFER_SIZE 40
+#define WW_TPS_BUFFER_SIZE 40         // Buffer for TPS derivative calculation  
 #define WW_IMMEDIATE_BUFFER_SIZE 40  // Beta: primeiros 200ms (40 amostras a 200Hz)
 #define WW_PROLONGED_BUFFER_SIZE_MAX 1000 // Tau: máximo para tau=5s (1000 amostras a 200Hz)
 #define WW_TAU_MULTIPLIER 3.0f       // Coleta dados por 3×tau (captura ~95% do efeito)

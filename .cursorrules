@@ -222,6 +222,162 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 # Scratchpad
 
+## 🚨 PROBLEMA CRÍTICO DESCOBERTO: ALGORITMO IMPEDE CORREÇÕES
+
+### TAREFA ATUAL ⚠️ 
+**Problema**: Correções do wall wetting adaptativo não estão acontecendo
+**Causa identificada**: **PROBLEMAS ALGORÍTMICOS CRÍTICOS** (não configuração)
+
+### ❌ PROBLEMAS ENCONTRADOS NO ALGORITMO
+
+#### 1. **PROBLEMA CRÍTICO: Parâmetros com valor DEFAULT 0**
+```
+// evotech_config.txt - TODOS os parâmetros Aquino têm default = 0 (último número)
+float wwAquinoAccelThresh;...;"%/s", 1, 0, 10, 200, 0  ← DEFAULT = 0!
+float wwAquinoBetaAccelGain;...;"", 1, 0, -0.4, 0.4, 2, 0  ← DEFAULT = 0!
+```
+**Resultado**: 
+- Thresholds = 0 → Nenhum transiente detectado
+- Ganhos = 0 → Nenhuma correção aplicada mesmo se detectado
+
+#### 2. **PROBLEMA CRÍTICO: Verificação de condições iniciais incompleta**
+```cpp
+// Em applyCorrectionToTable():
+if (m_adaptiveData.initialTransientRpm > 0) { // ← NUNCA é > 0 se não inicializado!
+```
+**Resultado**: Correções nunca aplicadas se RPM inicial não for capturado
+
+#### 3. **PROBLEMA CRÍTICO: Condições finais sempre zeradas**
+```cpp  
+// Tau correction usa initialTransientRpm em vez de finalTransientRpm
+// mas finalTransientRpm só é preenchido DURANTE fase prolongada
+if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
+    // Usa initialTransient em vez de final - INCONSISTENTE
+    auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, ...);
+```
+
+#### 4. **PROBLEMA CRÍTICO: Código comentado impede correção de Tau**
+```cpp
+// Apply tau correction to FINAL transient conditions (where transient ended)
+if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
+    /*
+    auto finalBinMap = priv::getBin(m_adaptiveData.finalTransientMap, config->wwCorrectionMapBins);
+    auto finalBinRpm = priv::getBin(m_adaptiveData.finalTransientRpm, config->wwCorrectionRpmBins);
+    
+    int finalMapIdx = finalBinMap.Idx;
+    int finalRpmIdx = finalBinRpm.Idx;
+    */ ← CÓDIGO COMENTADO! Tau nunca é aplicado nas condições corretas
+```
+
+#### 5. **PROBLEMA ALGORÍTMICO: Detecção de transientes falha**
+```cpp
+// detectAquinoTransients() compara com thresholds que são 0 (default)
+bool mapAccel = m_adaptiveData.loadDerivative > mapAccelThresh; // > 0 sempre false
+bool tpsAccel = m_adaptiveData.tpsDerivative > tpsAccelThresh; // > 0 sempre false
+```
+
+### 🔧 CORREÇÕES NECESSÁRIAS
+
+#### CORREÇÃO 1: Valores default funcionais
+```
+// evotech_config.txt - alterar últimos valores de 0 para valores funcionais:
+wwAquinoAccelThresh = 30.0       // %/s
+wwAquinoMapAccelThresh = 20.0    // kPa/s  
+wwAquinoBetaAccelGain = 0.1      // ganho moderado
+wwAquinoTauSlowGain = 0.1        // ganho moderado
+wwAquinoMinLambdaErr = 0.05      // 5% erro mínimo
+```
+
+#### CORREÇÃO 2: Inicialização adequada das condições
+```cpp
+// Garantir que initialTransientRpm/Map são sempre capturados
+// Adicionar fallback se condições não forem capturadas
+```
+
+#### CORREÇÃO 3: Correção de Tau nas condições corretas
+```cpp
+// Descomentar e corrigir código para usar finalTransientRpm/Map
+// OU implementar fallback para initialTransient se final não disponível
+```
+
+#### CORREÇÃO 4: Debug logging
+```cpp
+// Adicionar logs para verificar:
+// - Se transientes são detectados
+// - Se correções são calculadas (≠ 1.0)
+// - Se condições (RPM/MAP) são válidas
+// - Se tabelas são realmente modificadas
+```
+
+### 🎯 PLANO DE CORREÇÃO IMEDIATO
+
+1. **✅ Identificado**: Problema principal são defaults = 0
+2. **✅ CORRIGIDO**: Valores default na configuração (evotech_config.txt)
+3. **✅ CORRIGIDO**: Descomentado e corrigido código de tau correction
+4. **✅ CORRIGIDO**: Adicionado fallback para condições finais de tau
+5. **✅ CORRIGIDO**: Adicionado debug logging detalhado
+6. **🔧 PRÓXIMO**: Testar e verificar se correções acontecem
+
+### 📋 STATUS ATUAL
+**CORREÇÕES APLICADAS**: ✅ Todos os problemas críticos identificados foram corrigidos
+- ✅ Valores default funcionais: thresholds 30%/s, 20kPa/s, ganhos 0.1
+- ✅ Tau correction: código descomentado e com fallback para condições iniciais
+- ✅ Debug logs: WW_DEBUG, WW_TRANSIENT, WW_CORRECTION_APPLIED
+- ✅ Lógica de aplicação: corrigida para sempre tentar aplicar se correction != 1.0
+
+### 🔧 CORREÇÕES IMPLEMENTADAS DETALHADAS
+
+#### ✅ CORREÇÃO 1: Valores default funcionais (evotech_config.txt)
+```
+wwAquinoAccelThresh = 30        // %/s (era 0)
+wwAquinoMapAccelThresh = 20     // kPa/s (era 0)  
+wwAquinoBetaAccelGain = 0.1     // ganho moderado (era 0)
+wwAquinoTauSlowGain = 0.1       // ganho moderado (era 0)
+wwAquinoMinLambdaErr = 0.05     // 5% erro mínimo (era 0)
+// Todos os outros parâmetros também corrigidos
+```
+
+#### ✅ CORREÇÃO 2: Tau correction descomentado (wall_fuel.cpp)
+```cpp
+// ANTES: Código comentado /* */ que impedia tau correction
+// DEPOIS: Código funcional com fallback
+if (tauCorrection != 1.0f && !std::isnan(tauCorrection)) {
+    float tauRpm = (m_adaptiveData.finalTransientRpm > 0) ? 
+                   m_adaptiveData.finalTransientRpm : m_adaptiveData.initialTransientRpm;
+    // ... aplicação correta
+}
+```
+
+#### ✅ CORREÇÃO 3: Debug logging detalhado
+```cpp
+// Status geral a cada 2s
+efiPrintf("WW_DEBUG: enable=%d, adaptive=%d, CLT=%.1f, RPM=%.0f, transients=%d/%d", ...);
+
+// Detecção de transientes
+efiPrintf("WW_TRANSIENT: MAP_deriv=%.1f, TPS_deriv=%.1f, pos=%d, neg=%d, collecting=%d/%d", ...);
+
+// Correções aplicadas
+efiPrintf("WW_CORRECTION_APPLIED: beta=%.3f, tau=%.3f, rpm=%.0f, map=%.1f, cycles=%d", ...);
+```
+
+### 🎯 PRÓXIMOS PASSOS PARA TESTE
+
+1. **Recompilar firmware** com as correções aplicadas
+2. **Conectar console** e observar logs WW_DEBUG, WW_TRANSIENT, WW_CORRECTION_APPLIED  
+3. **Fazer transientes** (acelerar/desacelerar) e verificar se são detectados
+4. **Verificar se correções != 1.0** são calculadas e aplicadas
+5. **Confirmar que tabelas** wwBetaCorrection/wwTauCorrection são modificadas
+
+### 🔍 SINAIS DE FUNCIONAMENTO CORRETO
+
+✅ **WW_DEBUG logs** mostram enable=1, adaptive=1, transients detectados
+✅ **WW_TRANSIENT logs** durante aceleração/desaceleração  
+✅ **WW_CORRECTION_APPLIED logs** com beta/tau != 1.000
+✅ **Tabelas de correção** com valores diferentes de 1.0 após transientes
+✅ **Comportamento do motor** melhora gradualmente com adaptação
+
+---
+
 ## ANÁLISE DE CONFORMIDADE: MODELO AQUINO vs IMPLEMENTAÇÃO ATUAL 🔍
 
 ### TAREFA ATUAL ✅

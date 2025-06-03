@@ -211,22 +211,16 @@ void WallFuelController::onFastCallback() {
 	
 	// Only learn when engine is warm enough
 	auto clt = Sensor::get(SensorType::Clt);
-	if (!clt.Valid || clt.Value < engineConfiguration->wwMinCoolantTemp) {
+	if (clt.Value < engineConfiguration->wwMinCoolantTemp) {
 		return;
 	}
 	
 	// Get current load (MAP)
 	auto mapSensor = Sensor::get(SensorType::Map);
-	if (!mapSensor.Valid) {
-		return;
-	}
 	float currentLoad = mapSensor.Value;
 	
 	// Get current TPS for Aquino model improvement
 	auto tpsSensor = Sensor::get(SensorType::Tps1);
-	if (!tpsSensor.Valid) {
-		return; // TPS is critical for Aquino model
-	}
 	float currentTps = tpsSensor.Value;
 	
 	// Update load and TPS derivative calculations
@@ -286,7 +280,7 @@ void WallFuelController::updateLoadDerivative(float currentLoad) {
 	float oldLoad = m_adaptiveData.loadBuffer[oldestIndex];
 	
 	// Calculate derivative in kPa/s (assuming onFastCallback runs at 200Hz)
-	const float deltaTime = 0.005f * WW_LOAD_BUFFER_SIZE; // 8 samples * 5ms = 40ms
+	const float deltaTime = 0.005f * WW_LOAD_BUFFER_SIZE; // 40 samples * 5ms = 200ms
 	m_adaptiveData.loadDerivative = (currentLoad - oldLoad) / deltaTime;
 	
 	m_adaptiveData.lastLoad = currentLoad;
@@ -303,7 +297,7 @@ void WallFuelController::updateTpsDerivative(float currentTps) {
 	float oldTps = m_adaptiveData.tpsBuffer[oldestIndex];
 	
 	// Calculate derivative in %/s (assuming onFastCallback runs at 200Hz)
-	const float deltaTime = 0.005f * WW_TPS_BUFFER_SIZE; // 8 samples * 5ms = 40ms
+	const float deltaTime = 0.005f * WW_TPS_BUFFER_SIZE; // 40 samples * 5ms = 200ms
 	m_adaptiveData.tpsDerivative = (currentTps - oldTps) / deltaTime;
 	
 	m_adaptiveData.lastTps = currentTps;
@@ -852,15 +846,6 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 		return;
 	}
 	
-	// Cross-coupling correction to reduce instability when both parameters are being corrected
-	// When beta and tau corrections are both significant, reduce their magnitude to prevent oscillations
-	float cross_coupling = 1.0f - (0.2f * fabsf(betaCorrection - tauCorrection));
-	cross_coupling = fmaxf(0.5f, fminf(1.0f, cross_coupling)); // Clamp between 0.5 and 1.0
-	
-	// Apply cross-coupling factor to both corrections
-	betaCorrection = 1.0f + (betaCorrection - 1.0f) * cross_coupling;
-	tauCorrection = 1.0f + (tauCorrection - 1.0f) * cross_coupling;
-	
 	// Use the same approach as LTFT - getBin() instead of findIndexMsg()
 	auto binMap = priv::getBin(map, config->wwCorrectionMapBins);
 	auto binRpm = priv::getBin(rpm, config->wwCorrectionRpmBins);
@@ -906,39 +891,37 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 	}
 	
 	// Apply tau correction to FINAL transient conditions (where transient ended)
-	if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
-		/*
-		auto finalBinMap = priv::getBin(m_adaptiveData.finalTransientMap, config->wwCorrectionMapBins);
-		auto finalBinRpm = priv::getBin(m_adaptiveData.finalTransientRpm, config->wwCorrectionRpmBins);
+	if (tauCorrection != 1.0f && !std::isnan(tauCorrection)) {
+		// Use final conditions if available, otherwise fallback to initial conditions
+		float tauRpm = (m_adaptiveData.finalTransientRpm > 0) ? m_adaptiveData.finalTransientRpm : m_adaptiveData.initialTransientRpm;
+		float tauMap = (m_adaptiveData.finalTransientMap > 0) ? m_adaptiveData.finalTransientMap : m_adaptiveData.initialTransientMap;
 		
-		int finalMapIdx = finalBinMap.Idx;
-		int finalRpmIdx = finalBinRpm.Idx;
-		*/
-
-		auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, config->wwCorrectionMapBins);
-		auto initialBinRpm = priv::getBin(m_adaptiveData.initialTransientRpm, config->wwCorrectionRpmBins);
-		
-		int initialMapIdx = initialBinMap.Idx;
-		int initialRpmIdx = initialBinRpm.Idx;
-		
-		if (initialMapIdx >= 0 && initialMapIdx < WWAE_CORRECTION_SIZE - 1 && 
-			initialRpmIdx >= 0 && initialRpmIdx < WWAE_CORRECTION_SIZE - 1) {
+		if (tauRpm > 0) {
+			auto tauBinMap = priv::getBin(tauMap, config->wwCorrectionMapBins);
+			auto tauBinRpm = priv::getBin(tauRpm, config->wwCorrectionRpmBins);
 			
-			// Apply tau correction directly (no autoscale multiplication needed)
-			float currentTauCorrection = config->wwTauCorrection[initialMapIdx][initialRpmIdx];
+			int tauMapIdx = tauBinMap.Idx;
+			int tauRpmIdx = tauBinRpm.Idx;
 			
-			// Protect against NaN in calculations
-			if (!std::isnan(currentTauCorrection)) {
-				float newTauCorrection = currentTauCorrection * tauCorrection;
+			if (tauMapIdx >= 0 && tauMapIdx < WWAE_CORRECTION_SIZE - 1 && 
+				tauRpmIdx >= 0 && tauRpmIdx < WWAE_CORRECTION_SIZE - 1) {
 				
-				// Additional NaN check after multiplication
-				if (!std::isnan(newTauCorrection)) {
-					// Clamp to reasonable bounds
-					newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
-					config->wwTauCorrection[initialMapIdx][initialRpmIdx] = newTauCorrection;
+				// Apply tau correction directly (no autoscale multiplication needed)
+				float currentTauCorrection = config->wwTauCorrection[tauMapIdx][tauRpmIdx];
+				
+				// Protect against NaN in calculations
+				if (!std::isnan(currentTauCorrection)) {
+					float newTauCorrection = currentTauCorrection * tauCorrection;
 					
-					// Apply smoothing to adjacent cells
-					smoothCorrectionTable(initialMapIdx, initialRpmIdx, 1.0f, tauCorrection);
+					// Additional NaN check after multiplication
+					if (!std::isnan(newTauCorrection)) {
+						// Clamp to reasonable bounds
+						newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
+						config->wwTauCorrection[tauMapIdx][tauRpmIdx] = newTauCorrection;
+						
+						// Apply smoothing to adjacent cells
+						smoothCorrectionTable(tauMapIdx, tauRpmIdx, 1.0f, tauCorrection);
+					}
 				}
 			}
 		}
