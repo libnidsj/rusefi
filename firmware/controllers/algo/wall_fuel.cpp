@@ -292,105 +292,9 @@ void WallFuelController::updateTpsDerivative(float currentTps) {
 	m_adaptiveData.lastTps = currentTps;
 }
 
-void WallFuelController::updateLambdaResponse(float lambdaError, float currentTime) {
-	// Update transient duration tracking
-	if (m_adaptiveData.collectingImmediate || m_adaptiveData.collectingProlonged) {
-		m_adaptiveData.transientDuration = currentTime - m_adaptiveData.transientStartTime;
-	}
-	
-	// Immediate phase collection (0-200ms for beta tuning)
-	if (m_adaptiveData.collectingImmediate) {
-		float timeSinceTransientStart = currentTime - m_adaptiveData.transientStartTime;
-		float wBetaEnd = m_adaptiveData.prolongedPhaseDuration; // Temporarily stored W_beta end time
-		
-		if (timeSinceTransientStart >= 0.0f && timeSinceTransientStart <= wBetaEnd && 
-			m_adaptiveData.immediateBufferCount < WW_IMMEDIATE_BUFFER_SIZE) {
-			// Still in W_beta window (Aquino: 0 to min(0.2s, 0.5*tau))
-			// Bounds check for buffer access
-			if (m_adaptiveData.immediateBufferIndex >= 0 && m_adaptiveData.immediateBufferIndex < WW_IMMEDIATE_BUFFER_SIZE) {
-				m_adaptiveData.immediateLambdaBuffer[m_adaptiveData.immediateBufferIndex] = lambdaError;
-				m_adaptiveData.immediateBufferIndex = (m_adaptiveData.immediateBufferIndex + 1) % WW_IMMEDIATE_BUFFER_SIZE;
-				m_adaptiveData.immediateBufferCount++;
-			}
-		} else if (timeSinceTransientStart > wBetaEnd) {
-			// W_beta phase completed, check minimum duration before W_tau
-			m_adaptiveData.collectingImmediate = false;
-			
-			if (m_adaptiveData.transientDuration >= engineConfiguration->wwAquinoTransMinDuration) {
-				startProlongedPhase();
-			} else {
-				// Transient too short for Aquino analysis, abort
-				m_adaptiveData.reset();
-			}
-		}
-	}
-	
-	// Prolonged phase collection (dynamic duration based on tau)
-	if (m_adaptiveData.collectingProlonged) {
-		float timeSincePhaseStart = currentTime - m_adaptiveData.phaseStartTime;
-		
-		// Check for new transient during prolonged phase using Aquino thresholds
-		bool newMapTransient = m_adaptiveData.mapTransientDetected;
-		bool newTpsTransient = m_adaptiveData.tpsTransientDetected;
-		bool newTransientDetected = newMapTransient || newTpsTransient;
-		
-		if (newTransientDetected) {
-			applyIncompleteTransientCorrection();
-
-			// New transient detected during tau learning phase
-			// Reset and start fresh learning cycle
-			m_adaptiveData.collectingProlonged = false;
-			m_adaptiveData.interruptedTauPhases++;
-			m_adaptiveData.reset();
-			
-			// detectAquinoTransients() will be called next and will start new cycle
-			return;
-		}
-		
-		if (timeSincePhaseStart <= m_adaptiveData.prolongedPhaseDuration && 
-			m_adaptiveData.prolongedBufferCount < m_adaptiveData.prolongedBufferSizeTarget) {
-			// Still in prolonged phase window (Aquino W_tau: 2.5*tau duration)
-			// Bounds check for buffer access
-			if (m_adaptiveData.prolongedBufferIndex >= 0 && m_adaptiveData.prolongedBufferIndex < WW_PROLONGED_BUFFER_SIZE_MAX) {
-				m_adaptiveData.prolongedLambdaBuffer[m_adaptiveData.prolongedBufferIndex] = lambdaError;
-				m_adaptiveData.prolongedBufferIndex = (m_adaptiveData.prolongedBufferIndex + 1) % WW_PROLONGED_BUFFER_SIZE_MAX;
-				m_adaptiveData.prolongedBufferCount++;
-				
-				// Continuously capture final conditions during W_tau for proper tau correction
-				auto rpm = Sensor::getOrZero(SensorType::Rpm);
-				auto map = Sensor::getOrZero(SensorType::Map);
-				if (rpm > 100 && map > 10) {
-					m_adaptiveData.finalTransientRpm = rpm;
-					m_adaptiveData.finalTransientMap = map;
-				}
-				
-			}
-			
-		} else {
-			// Prolonged phase completed
-			m_adaptiveData.collectingProlonged = false;
-			m_adaptiveData.transientCompleted = true;
-			
-			// Apply full Aquino correction (both beta and tau)
-			applyAdaptiveCorrections();
-		}
-	}
-	
-	// Handle incomplete transient timeout
-	if ((m_adaptiveData.collectingImmediate || m_adaptiveData.collectingProlonged) && 
-		m_adaptiveData.transientDuration > engineConfiguration->wwAquinoAnalysisMaxDuration) {
-		
-		// Timeout reached - treat as incomplete transient
-		m_adaptiveData.collectingImmediate = false;
-		m_adaptiveData.collectingProlonged = false;
-		m_adaptiveData.incompleteTransientDetected = true;
-		
-		// Apply beta-only correction for incomplete transients
-		applyIncompleteTransientCorrection();
-	}
-}
-
 void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderIndex) {
+	(void)injectedMass;
+	(void)cylinderIndex;
 	if (!engineConfiguration->wwEnableAdaptiveLearning || !m_enable) {
 		return;
 	}
@@ -635,6 +539,7 @@ void WallFuelController::processCurrentState(float currentTime) {
 }
 
 void WallFuelController::detectTransients(float currentTime) {
+	(void)currentTime;
 	// Use Aquino model thresholds from configuration
 	float mapAccelThresh = engineConfiguration->wwAquinoMapAccelThresh;    // kPa/s
 	float mapDecelThresh = engineConfiguration->wwAquinoMapDecelThresh;    // kPa/s  
@@ -710,6 +615,7 @@ WwTransientType WallFuelController::classifyTransientType() const {
 }
 
 void WallFuelController::collectLambdaData(float lambdaError, float currentTime) {
+	(void)currentTime;
 	// Validate lambda error
 	if (std::isnan(lambdaError) || fabsf(lambdaError) > 1.0f) {
 		return; // Invalid lambda error
@@ -950,10 +856,6 @@ void WallFuelController::applyCorrections() {
 	// Use initial conditions for beta, final conditions for tau (with fallback)
 	float betaRpm = m_adaptiveData.initialTransientRpm;
 	float betaMap = m_adaptiveData.initialTransientMap;
-	float tauRpm = (m_adaptiveData.finalTransientRpm > 0) ? 
-	               m_adaptiveData.finalTransientRpm : m_adaptiveData.initialTransientRpm;
-	float tauMap = (m_adaptiveData.finalTransientMap > 0) ? 
-	               m_adaptiveData.finalTransientMap : m_adaptiveData.initialTransientMap;
 	
 	// Apply corrections to tables
 	applyCorrectionToTable(betaCorrection, tauCorrection, betaRpm, betaMap);
