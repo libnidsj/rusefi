@@ -235,24 +235,13 @@ void setDefaultWallWetting() {
 	engineConfiguration->complexWallModel = true;
 	engineConfiguration->wwEnableAdaptiveLearning = true;
 	
-	// *** CORREÇÃO: DETECÇÃO DE TRANSIENTE COM UNIDADES CORRETAS ***
-	// Thresholds em unidades por segundo (não por callback)
-	engineConfiguration->wwTpsThreshold = 10.0f;       // %/s - Threshold realista para TPS
-	engineConfiguration->wwMapThreshold = 40.0f;       // kPa/s - Threshold realista para MAP
-	
-	// Parâmetros simplificados - apenas os essenciais
-	
-	// Learning parameters
-	engineConfiguration->wwBetaLearningRate = 0.05f;       // 5% learning rate
-	engineConfiguration->wwTauLearningRate = 0.05f;       // 5% learning rate
-	
 	// Learning validation parameters
 	engineConfiguration->wwMinCoolantTemp = 70.0f;     // °C - Engine must be warmed up
-	engineConfiguration->wwMaxCoolantTemp = 110.0f;    // °C - Not overheating
-	engineConfiguration->wwMinMapForLearning = 30.0f;  // kPa - Minimum load for learning
 
 	// linear reasonable bins
 	setLinearCurve(config->wwCltBins, -40, 100, 1);
+
+	// linear reasonable bins
 	setLinearCurve(config->wwMapBins, 10, 80, 1);
 	setLinearCurve(config->wwRpmBins, 500, 7000, 1);
 

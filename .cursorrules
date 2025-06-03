@@ -351,3 +351,12 @@ A implementação atual já atende aos requisitos do modelo Aquino especificado 
 - Removidas funções: `updateAdaptationMode()`, `shouldAdaptBeta()`, `shouldAdaptTau()`
 - Simplificada lógica em `applyAdaptiveCorrections()` e `applyIncompleteTransientCorrection()`
 - **RESULTADO**: Sistema mais direto e eficiente, sempre otimizando ambos os parâmetros em cada transiente
+
+**CORREÇÃO DE ERROS DE COMPILAÇÃO EM DEFAULT_FUEL.CPP**: ✅
+- Removidas variáveis não definidas no evotech_config atual:
+  - `wwTpsThreshold` e `wwMapThreshold` (parâmetros antigos de detecção)
+  - `wwBetaLearningRate` e `wwTauLearningRate` (substituídos por parâmetros Aquino)
+  - `wwMaxCoolantTemp` e `wwMinMapForLearning` (não implementados)
+- Mantidas apenas as variáveis essenciais que existem:
+  - `complexWallModel`, `wwEnableAdaptiveLearning`, `wwMinCoolantTemp`
+- **RESULTADO**: Compilação sem erros, sistema funcional com parâmetros Aquino corretos
