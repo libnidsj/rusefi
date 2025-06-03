@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 224974518
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.03.subaru_eg33_f7.224974518"
+#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.04.subaru_eg33_f7.224974518"
