@@ -318,7 +318,6 @@ protected:
 	float computeBeta() const;
 	void performSettlingAnalysis();
 	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
-	void onSlowCallback() override;
 
 private:
 	bool m_enable = false;
