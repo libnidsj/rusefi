@@ -467,33 +467,9 @@ float getConfigValueByName(const char *name) {
 // wwEnableAdaptiveLearning
 		case 1498590712:
 			return engineConfiguration->wwEnableAdaptiveLearning;
-// wwLambdaDelayFactor
-		case 467776290:
-			return engineConfiguration->wwLambdaDelayFactor;
-// wwTpsThreshold
-		case -762793481:
-			return engineConfiguration->wwTpsThreshold;
-// wwMapThreshold
-		case -1621962210:
-			return engineConfiguration->wwMapThreshold;
-// wwBetaLearningRate
-		case 479387595:
-			return engineConfiguration->wwBetaLearningRate;
-// wwTauLearningRate
-		case -401535303:
-			return engineConfiguration->wwTauLearningRate;
-// wwBetaBuffer
-		case -1094878327:
-			return engineConfiguration->wwBetaBuffer;
 // wwMinCoolantTemp
 		case -694128867:
 			return engineConfiguration->wwMinCoolantTemp;
-// wwMaxCoolantTemp
-		case 1160366303:
-			return engineConfiguration->wwMaxCoolantTemp;
-// wwMinMapForLearning
-		case 913889548:
-			return engineConfiguration->wwMinMapForLearning;
 // wwAquinoAccelThresh
 		case 1221572678:
 			return engineConfiguration->wwAquinoAccelThresh;
@@ -2941,49 +2917,9 @@ bool setConfigValueByName(const char *name, float value) {
 		engineConfiguration->wwEnableAdaptiveLearning = (int)value;
 		return 1;
 	}
-		case 467776290:
-	{
-		engineConfiguration->wwLambdaDelayFactor = value;
-		return 1;
-	}
-		case -762793481:
-	{
-		engineConfiguration->wwTpsThreshold = value;
-		return 1;
-	}
-		case -1621962210:
-	{
-		engineConfiguration->wwMapThreshold = value;
-		return 1;
-	}
-		case 479387595:
-	{
-		engineConfiguration->wwBetaLearningRate = value;
-		return 1;
-	}
-		case -401535303:
-	{
-		engineConfiguration->wwTauLearningRate = value;
-		return 1;
-	}
-		case -1094878327:
-	{
-		engineConfiguration->wwBetaBuffer = (int)value;
-		return 1;
-	}
 		case -694128867:
 	{
 		engineConfiguration->wwMinCoolantTemp = value;
-		return 1;
-	}
-		case 1160366303:
-	{
-		engineConfiguration->wwMaxCoolantTemp = value;
-		return 1;
-	}
-		case 913889548:
-	{
-		engineConfiguration->wwMinMapForLearning = value;
 		return 1;
 	}
 		case 1221572678:

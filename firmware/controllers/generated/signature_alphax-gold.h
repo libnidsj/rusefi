@@ -2,5 +2,5 @@
 // was generated automatically by rusEFI tool config_definition-all.jar based on gen_config.sh by SignatureConsumer
 //
 
-#define SIGNATURE_HASH 1767086479
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.03.alphax-gold.1767086479"
+#define SIGNATURE_HASH 3204430605
+#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.03.alphax-gold.3204430605"
