@@ -487,6 +487,63 @@ Maximum coolant temperature for learning
 ### wwMinMapForLearning
 Minimum MAP pressure for learning
 
+### wwAquinoAccelThresh
+Acceleration transient threshold for adaptive detection
+
+### wwAquinoDecelThresh
+Deceleration transient threshold for adaptive detection
+
+### wwAquinoMapAccelThresh
+MAP acceleration threshold for adaptive detection
+
+### wwAquinoMapDecelThresh
+MAP deceleration threshold for adaptive detection
+
+### wwAquinoMinLambdaErr
+Minimum lambda error magnitude for adaptation
+
+### wwAquinoTransMinDuration
+Minimum transient duration for analysis
+
+### wwAquinoAnalysisMaxDuration
+Maximum analysis window duration
+
+### wwAquinoBetaAccelGain
+Beta correction gain for acceleration transients
+
+### wwAquinoBetaDecelGain
+Beta correction gain for deceleration transients
+
+### wwAquinoBetaLeanThresh
+Beta lean threshold for correction
+
+### wwAquinoBetaRichThresh
+Beta rich threshold for correction
+
+### wwAquinoTauSettleThresh
+Lambda settle threshold for tau analysis
+
+### wwAquinoTauIdealFactor
+Ideal settle time factor (multiplied by tau)
+
+### wwAquinoTauToleranceFactor
+Tolerance margin factor for settle time
+
+### wwAquinoTauOvershootMinDur
+Minimum overshoot duration
+
+### wwAquinoTauOvershootMinMag
+Minimum overshoot magnitude
+
+### wwAquinoTauOvershootGain
+Tau correction gain for overshoot
+
+### wwAquinoTauSlowGain
+Tau correction gain for slow settling
+
+### wwAquinoTauFastGain
+Tau correction gain for fast settling
+
 ### fordInjectorSmallPulseSlope
 
 
