@@ -222,14 +222,23 @@ void WallFuelController::onFastCallback() {
 	}
 	float currentLoad = mapSensor.Value;
 	
-	// Update load derivative calculation
+	// Get current TPS for Aquino model improvement
+	auto tpsSensor = Sensor::get(SensorType::Tps1);
+	if (!tpsSensor.Valid) {
+		return; // TPS is critical for Aquino model
+	}
+	float currentTps = tpsSensor.Value;
+	
+	// Update load and TPS derivative calculations
 	updateLoadDerivative(currentLoad);
+	updateTpsDerivative(currentTps);
 	
 	// Update transient magnitude continuously for accurate detection
 	m_adaptiveData.transientMagnitude = fabsf(m_adaptiveData.loadDerivative);
+	m_adaptiveData.tpsTransientMagnitude = fabsf(m_adaptiveData.tpsDerivative);
 	
-	// Detect transients based on load derivative
-	detectTransients();
+	// Detect transients using improved Aquino model (MAP + TPS)
+	detectAquinoTransients();
 	
 	// Update lambda response collection if in a collection phase
 	auto lambda = Sensor::get(SensorType::Lambda1);
@@ -254,14 +263,6 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 		m_learningTimer.reset();
 		m_ignitionOffTimer.reset();
 		m_adaptiveData.reset();
-		m_adaptiveData.resetAdaptationCycle(); // Reset adaptation cycle on ignition
-		
-		// Ensure all critical values are properly initialized
-		m_adaptiveData.adaptationCycleLength = 2;   // 2 transients per cycle
-		m_adaptiveData.betaAdaptationCycles = 3;     // 3 cycles for beta (6 transients)
-		m_adaptiveData.tauAdaptationCycles = 3;      // 3 cycles for tau (6 transients)
-		m_adaptiveData.incompleteTimeout = 5.0f;     // 5 seconds timeout (increased from 3.0f)
-		m_adaptiveData.minTransientDuration = 0.5f;  // 500ms minimum duration
 		
 		m_pendingSave = false;
 	} else {
@@ -291,19 +292,64 @@ void WallFuelController::updateLoadDerivative(float currentLoad) {
 	m_adaptiveData.lastLoad = currentLoad;
 }
 
-void WallFuelController::detectTransients() {
-	// Threshold for transient detection (kPa/s)
-	const float transientThreshold = 30.0f; // 50 kPa/s
+void WallFuelController::updateTpsDerivative(float currentTps) {
+	// Store current TPS in circular buffer
+	m_adaptiveData.tpsBuffer[m_adaptiveData.tpsBufferIndex] = currentTps;
+	m_adaptiveData.tpsBufferIndex = (m_adaptiveData.tpsBufferIndex + 1) % WW_TPS_BUFFER_SIZE;
 	
-	// transientMagnitude is now updated continuously in onFastCallback
-	// m_adaptiveData.transientMagnitude = fabsf(m_adaptiveData.loadDerivative);
+	// Calculate TPS derivative (rate of change)
+	// Use difference between current and oldest value in buffer
+	int oldestIndex = m_adaptiveData.tpsBufferIndex; // Points to oldest after increment
+	float oldTps = m_adaptiveData.tpsBuffer[oldestIndex];
+	
+	// Calculate derivative in %/s (assuming onFastCallback runs at 200Hz)
+	const float deltaTime = 0.005f * WW_TPS_BUFFER_SIZE; // 8 samples * 5ms = 40ms
+	m_adaptiveData.tpsDerivative = (currentTps - oldTps) / deltaTime;
+	
+	m_adaptiveData.lastTps = currentTps;
+}
+
+void WallFuelController::detectAquinoTransients() {
+	// Use Aquino model thresholds from configuration
+	float mapAccelThresh = engineConfiguration->wwAquinoMapAccelThresh;    // kPa/s
+	float mapDecelThresh = engineConfiguration->wwAquinoMapDecelThresh;    // kPa/s  
+	float tpsAccelThresh = engineConfiguration->wwAquinoAccelThresh;       // %/s
+	float tpsDecelThresh = engineConfiguration->wwAquinoDecelThresh;       // %/s
+	
+	// Check MAP-based transients
+	bool mapAccel = m_adaptiveData.loadDerivative > mapAccelThresh;
+	bool mapDecel = m_adaptiveData.loadDerivative < mapDecelThresh;
+	m_adaptiveData.mapTransientDetected = mapAccel || mapDecel;
+	
+	// Check TPS-based transients 
+	bool tpsAccel = m_adaptiveData.tpsDerivative > tpsAccelThresh;
+	bool tpsDecel = m_adaptiveData.tpsDerivative < tpsDecelThresh;
+	m_adaptiveData.tpsTransientDetected = tpsAccel || tpsDecel;
+	
+	// Combined transient detection (either MAP or TPS indicates transient)
+	bool anyTransientDetected = m_adaptiveData.mapTransientDetected || m_adaptiveData.tpsTransientDetected;
+	m_adaptiveData.combinedTransientActive = anyTransientDetected;
+	
+	// Determine transient direction (prioritize TPS, fallback to MAP)
+	bool isAcceleration = false;
+	bool isDeceleration = false;
+	
+	if (m_adaptiveData.tpsTransientDetected) {
+		// Use TPS for direction detection (more direct driver intent)
+		isAcceleration = tpsAccel;
+		isDeceleration = tpsDecel;
+	} else if (m_adaptiveData.mapTransientDetected) {
+		// Fallback to MAP for direction detection
+		isAcceleration = mapAccel;
+		isDeceleration = mapDecel;
+	}
 	
 	// Check if we're starting a new transient
 	bool wasInTransient = m_adaptiveData.isPositiveTransient || m_adaptiveData.isNegativeTransient;
 	bool isCurrentlyLearning = m_adaptiveData.collectingImmediate || m_adaptiveData.collectingProlonged;
 	
-	if (m_adaptiveData.transientMagnitude > transientThreshold) {
-		// NEW TRANSIENT DETECTED!
+	if (anyTransientDetected) {
+		// NEW TRANSIENT DETECTED using Aquino model!
 		
 		// If we're currently in a learning phase, this is a new transient interrupting the previous one
 		if (isCurrentlyLearning && wasInTransient) {
@@ -314,7 +360,7 @@ void WallFuelController::detectTransients() {
 		// QUALQUER transiente (positivo ou negativo) afeta AMBOS beta e tau
 		// Beta atua imediatamente (0-200ms), tau atua a longo prazo (200ms-3s)
 		
-		if (m_adaptiveData.loadDerivative > 0) {
+		if (isAcceleration) {
 			// Positive transient (acceleration)
 			if (!m_adaptiveData.isPositiveTransient) {
 				// Starting new positive transient
@@ -327,11 +373,22 @@ void WallFuelController::detectTransients() {
 				m_adaptiveData.incompleteTransientDetected = false;
 				m_adaptiveData.transientDuration = 0;
 				
+				// Reset Aquino settling analysis
+				m_adaptiveData.settlingAnalysisComplete = false;
+				m_adaptiveData.hasOvershoot = false;
+				m_adaptiveData.settleTime = 0;
+				m_adaptiveData.consecutiveSettledSamples = 0;
+				
 				// Capture INITIAL conditions for beta correction
 				auto rpm = Sensor::getOrZero(SensorType::Rpm);
 				auto map = Sensor::getOrZero(SensorType::Map);
 				m_adaptiveData.initialTransientRpm = rpm;
 				m_adaptiveData.initialTransientMap = map;
+				
+				// Calculate ideal settle time for this transient
+				float currentTau = computeTau();
+				m_adaptiveData.currentTau = currentTau;
+				m_adaptiveData.settleTimeIdeal = currentTau * engineConfiguration->wwAquinoTauIdealFactor;
 				
 				// Reset final conditions - will be captured during prolonged phase
 				m_adaptiveData.finalTransientRpm = 0;
@@ -340,7 +397,7 @@ void WallFuelController::detectTransients() {
 				// Start immediate phase for beta tuning
 				startImmediatePhase();
 			}
-		} else {
+		} else if (isDeceleration) {
 			// Negative transient (deceleration)
 			if (!m_adaptiveData.isNegativeTransient) {
 				// Starting new negative transient
@@ -353,11 +410,22 @@ void WallFuelController::detectTransients() {
 				m_adaptiveData.incompleteTransientDetected = false;
 				m_adaptiveData.transientDuration = 0;
 				
+				// Reset Aquino settling analysis
+				m_adaptiveData.settlingAnalysisComplete = false;
+				m_adaptiveData.hasOvershoot = false;
+				m_adaptiveData.settleTime = 0;
+				m_adaptiveData.consecutiveSettledSamples = 0;
+				
 				// Capture INITIAL conditions for beta correction
 				auto rpm = Sensor::getOrZero(SensorType::Rpm);
 				auto map = Sensor::getOrZero(SensorType::Map);
 				m_adaptiveData.initialTransientRpm = rpm;
 				m_adaptiveData.initialTransientMap = map;
+				
+				// Calculate ideal settle time for this transient
+				float currentTau = computeTau();
+				m_adaptiveData.currentTau = currentTau;
+				m_adaptiveData.settleTimeIdeal = currentTau * engineConfiguration->wwAquinoTauIdealFactor;
 				
 				// Reset final conditions - will be captured during prolonged phase
 				m_adaptiveData.finalTransientRpm = 0;
@@ -383,14 +451,13 @@ void WallFuelController::applyAdaptiveCorrections() {
 		return;
 	}
 	
-	// Update adaptation mode management
-	updateAdaptationMode();
+	// Always adapt both parameters - removed adaptation mode management
 	
 	float betaCorrection = 1.0f;
 	float tauCorrection = 1.0f;
 	
 	// Calculate average immediate lambda error for beta correction
-	if (hasImmediateData && shouldAdaptBeta()) {
+	if (hasImmediateData) {
 		float sum = 0.0f;
 		int validSamples = 0;
 		
@@ -420,7 +487,7 @@ void WallFuelController::applyAdaptiveCorrections() {
 	}
 	
 	// Calculate average prolonged lambda error for tau correction
-	if (hasProlongedData && shouldAdaptTau()) {
+	if (hasProlongedData) {
 		float sum = 0.0f;
 		int validSamples = 0;
 		
@@ -439,12 +506,10 @@ void WallFuelController::applyAdaptiveCorrections() {
 		if (validSamples > 0) {
 			m_adaptiveData.avgProlongedLambdaError = sum / validSamples;
 			
-			// Calculate tau correction based on trend analysis (no parameter needed)
-			tauCorrection = calculateTauCorrection();
+			// Calculate tau correction using Aquino settling analysis
+			tauCorrection = calculateAquinoTauCorrection();
 			
 		}
-	} else if (hasProlongedData && !shouldAdaptTau()) {
-		// Debug logging quando tau data existe mas não deveria adaptar
 	}
 	
 	// Apply corrections to tables
@@ -468,15 +533,6 @@ void WallFuelController::applyIncompleteTransientCorrection() {
 	
 	if (m_adaptiveData.immediateBufferCount == 0) {
 		// No immediate data available
-		m_adaptiveData.reset();
-		return;
-	}
-	
-	// Update adaptation mode management
-	updateAdaptationMode();
-	
-	// Only apply beta correction if we're in a beta adaptation period
-	if (!shouldAdaptBeta()) {
 		m_adaptiveData.reset();
 		return;
 	}
@@ -521,144 +577,269 @@ void WallFuelController::applyIncompleteTransientCorrection() {
 }
 
 float WallFuelController::calculateBetaCorrection(float avgLambdaError) {
-	// Beta correction based on immediate lambda response (relative error)
-	// Use configurable learning rate with ±67% bounds per cycle (0.33 to 3.00)
-	const float correctionRate = engineConfiguration->wwBetaLearningRate; // Configurable beta learning rate
-	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
+	// Aquino Model Beta correction based on immediate lambda response (W_beta window)
+	// Use wwAquinoBeta* parameters from configuration
+	float betaAccelGain = engineConfiguration->wwAquinoBetaAccelGain;
+	float betaDecelGain = engineConfiguration->wwAquinoBetaDecelGain;
+	float betaLeanThresh = engineConfiguration->wwAquinoBetaLeanThresh;
+	float betaRichThresh = engineConfiguration->wwAquinoBetaRichThresh;
+	float minLambdaErr = engineConfiguration->wwAquinoMinLambdaErr;
 	
 	// Protect against NaN input
 	if (std::isnan(avgLambdaError)) {
 		return 1.0f; // No correction for invalid input
 	}
 	
-	if (fabsf(avgLambdaError) < 0.02f) {
-		return 1.0f; // No correction needed
+	// Check if error is significant enough for adaptation
+	if (fabsf(avgLambdaError) < minLambdaErr) {
+		return 1.0f; // Error too small, no correction needed
 	}
 	
 	// Determine transient direction for physics-correct beta correction
 	bool isPositiveTransient = m_adaptiveData.isPositiveTransient;
 	bool isNegativeTransient = m_adaptiveData.isNegativeTransient;
 	
-	float correction = 1.0f;
+	float deltaCorrection = 0.0f;
 	
 	if (isPositiveTransient) {
-		// POSITIVE TRANSIENT (Acceleration): More fuel hits walls, need more beta
-		// Lambda lean (negative error) -> increase beta (more fuel sticks to walls)
-		// Lambda rich (positive error) -> decrease beta (less fuel sticks to walls)
-		correction = 1.0f - (avgLambdaError * correctionRate);
+		// ACCELERATION TRANSIENT: More fuel hits walls during acceleration
+		// Aquino Model Logic for Acceleration:
+		// - Lambda lean (avgLambdaError > betaLeanThresh) -> increase beta (more fuel sticks to walls)
+		// - Lambda rich (avgLambdaError < betaRichThresh) -> decrease beta (less fuel sticks to walls)
+		
+		if (avgLambdaError > betaLeanThresh) {
+			// Too lean during acceleration, need more beta
+			deltaCorrection = betaAccelGain * avgLambdaError;
+		} else if (avgLambdaError < betaRichThresh) {
+			// Too rich during acceleration, need less beta
+			deltaCorrection = betaAccelGain * avgLambdaError; // Negative correction
+		}
+		// If between thresholds, no correction needed (deltaCorrection remains 0)
+		
 	} else if (isNegativeTransient) {
-		// NEGATIVE TRANSIENT (Deceleration): Less fuel hits walls, fuel evaporates from walls
-		// Physics is different - during decel, existing wall fuel evaporates into airstream
-		// Lambda lean (negative error) -> decrease beta (less fuel available to stick)
-		// Lambda rich (positive error) -> increase beta (more wall fuel evaporating)
-		correction = 1.0f + (avgLambdaError * correctionRate * 1.2f); // Reduced factor for decel
+		// DECELERATION TRANSIENT: Less fuel hits walls, existing fuel evaporates
+		// Aquino Model Logic for Deceleration (physics are different):
+		// - Lambda lean (avgLambdaError > betaLeanThresh) -> decrease beta (less fuel available)
+		// - Lambda rich (avgLambdaError < betaRichThresh) -> increase beta (more evaporation effect)
+		
+		if (avgLambdaError < betaRichThresh) {
+			// Too rich during deceleration, wall fuel evaporating too much
+			deltaCorrection = betaDecelGain * fabsf(avgLambdaError); // Positive correction (increase beta)
+		} else if (avgLambdaError > betaLeanThresh) {
+			// Too lean during deceleration, not enough wall fuel
+			deltaCorrection = -betaDecelGain * avgLambdaError; // Negative correction (decrease beta)
+		}
+		// If between thresholds, no correction needed
+		
 	} else {
-		// No clear transient direction, use conservative approach
-		correction = 1.0f - (avgLambdaError * correctionRate * 0.5f);
+		// No clear transient direction, use conservative acceleration logic
+		if (avgLambdaError > betaLeanThresh) {
+			deltaCorrection = betaAccelGain * avgLambdaError * 0.5f; // Conservative gain
+		} else if (avgLambdaError < betaRichThresh) {
+			deltaCorrection = betaAccelGain * avgLambdaError * 0.5f; // Conservative gain
+		}
 	}
+	
+	// Convert delta correction to multiplicative correction factor
+	// deltaCorrection is additive, but we need multiplicative for the table
+	float correction = 1.0f + deltaCorrection;
 	
 	// Protect against NaN in calculation
 	if (std::isnan(correction)) {
 		return 1.0f; // No correction for invalid calculation
 	}
 	
-	// Clamp correction to reasonable bounds (0.33 to 3.00)
-	correction = fmaxf(1.0f - maxCorrection, fminf(1.0f + maxCorrection, correction));
+	// Clamp correction to reasonable bounds (0.5 to 2.0 for beta)
+	const float minBetaCorr = 0.5f;
+	const float maxBetaCorr = 2.0f;
+	correction = fmaxf(minBetaCorr, fminf(maxBetaCorr, correction));
 	
 	return correction;
 }
 
-float WallFuelController::calculateTauCorrection() {
-	// Tau correction based on lambda TREND during prolonged phase, not just average
-	// Different behavior for acceleration vs deceleration transients
-	const float correctionRate = engineConfiguration->wwTauLearningRate; // Configurable tau learning rate
-	const float maxCorrection = 0.67f;   // ±67% bounds (allows 0.33 to 3.00 range)
+float WallFuelController::calculateAquinoTauCorrection() {
+	// Aquino Model Tau correction with settling analysis and overshoot detection
+	// This is called after W_tau window data has been collected
 	
-	// Need at least 10 samples for meaningful trend analysis
-	if (m_adaptiveData.prolongedBufferCount < 10) {
-		return 1.0f; // Not enough data for trend analysis
+	// Get Aquino tau parameters from configuration
+	float settleThresh = engineConfiguration->wwAquinoTauSettleThresh;
+	float toleranceFactor = engineConfiguration->wwAquinoTauToleranceFactor;
+	float overshootMinDur = engineConfiguration->wwAquinoTauOvershootMinDur;
+	float overshootMinMag = engineConfiguration->wwAquinoTauOvershootMinMag;
+	float overshootGain = engineConfiguration->wwAquinoTauOvershootGain;
+	float slowGain = engineConfiguration->wwAquinoTauSlowGain;
+	float fastGain = engineConfiguration->wwAquinoTauFastGain;
+	
+	// Need sufficient data for analysis
+	if (m_adaptiveData.prolongedBufferCount < 20) {
+		return 1.0f; // Not enough data for Aquino analysis
 	}
 	
-	// Calculate linear trend (slope) of lambda error over time
-	// Using simple linear regression: y = mx + b, where m is the slope we want
-	float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-	int validSamples = 0;
+	// Calculate settling analysis if not already completed
+	if (!m_adaptiveData.settlingAnalysisComplete) {
+		performSettlingAnalysis(0, 0); // Will use buffer data for analysis
+	}
 	
-	// Bounds check for buffer access
-	int maxSamples = fminf(m_adaptiveData.prolongedBufferCount, m_adaptiveData.prolongedBufferSizeTarget);
-	for (int i = 0; i < maxSamples; i++) {
-		if (i >= 0 && i < WW_PROLONGED_BUFFER_SIZE_MAX) {
-			float sample = m_adaptiveData.prolongedLambdaBuffer[i];
-			if (!std::isnan(sample)) {
-				float x = (float)i; // Time index
-				float y = sample;   // Lambda error
-				
-				sumX += x;
-				sumY += y;
-				sumXY += x * y;
-				sumX2 += x * x;
-				validSamples++;
-			}
+	float deltaCorrection = 0.0f;
+	
+	// Aquino Model Tau Correction Logic:
+	
+	// Scenario A: Overshoot Detected
+	if (m_adaptiveData.hasOvershoot) {
+		// Overshoot indicates tau is too low, need to increase tau
+		float overshootRatio = m_adaptiveData.overshootMagnitude / overshootMinMag;
+		deltaCorrection = overshootGain * overshootRatio;
+		
+	} else {
+		// Scenario B: No significant overshoot - analyze settling time
+		
+		float settleIdeal = m_adaptiveData.settleTimeIdeal;
+		float settleToleranceMargin = toleranceFactor * settleIdeal;
+		float settleMeasured = m_adaptiveData.settleTime;
+		
+		// B1: Settling too slow
+		if (settleMeasured > (settleIdeal + settleToleranceMargin)) {
+			// Slow settling indicates tau is too high, need to decrease tau
+			float slowRatio = (settleMeasured - settleIdeal) / settleIdeal;
+			deltaCorrection = -slowGain * slowRatio; // Negative = decrease tau
+			
+		// B2: Settling too fast (without problematic overshoot)
+		} else if (settleMeasured < (settleIdeal - settleToleranceMargin)) {
+			// Fast settling indicates tau is too low, need to increase tau
+			float fastRatio = (settleIdeal - settleMeasured) / settleIdeal;
+			deltaCorrection = fastGain * fastRatio; // Positive = increase tau
+			
+		} else {
+			// B3: Settling within expected range - no correction needed
+			deltaCorrection = 0.0f;
 		}
 	}
 	
-	if (validSamples < 10) {
-		return 1.0f; // Not enough valid samples
-	}
-	
-	// Calculate slope (trend) using linear regression
-	// slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
-	float denominator = validSamples * sumX2 - sumX * sumX;
-	if (fabsf(denominator) < 0.001f) {
-		return 1.0f; // Avoid division by zero
-	}
-	
-	float slope = (validSamples * sumXY - sumX * sumY) / denominator;
-	
-	// Protect against NaN in slope calculation
-	if (std::isnan(slope)) {
-		return 1.0f; // No correction for invalid calculation
-	}
-	
-	// Use slope magnitude for correction strength
-	// Typical slope range is -0.01 to +0.01 per sample for significant trends
-	const float slopeThreshold = 0.001f; // Minimum slope to trigger correction
-	
-	if (fabsf(slope) < slopeThreshold) {
-		return 1.0f; // Slope too small, tau is approximately correct
-	}
-	
-	// Determine transient direction for physics-correct tau correction
-	bool isPositiveTransient = m_adaptiveData.isPositiveTransient;
-	bool isNegativeTransient = m_adaptiveData.isNegativeTransient;
-	
-	float correction = 1.0f;
-	
-	if (isPositiveTransient) {
-		// POSITIVE TRANSIENT (Acceleration): Fuel builds up on walls
-		// Positive slope (lambda getting more lean over time) -> tau too low, increase tau
-		// Negative slope (lambda getting more rich over time) -> tau too high, decrease tau
-		correction = 1.0f - (slope * correctionRate * 100.0f);
-	} else if (isNegativeTransient) {
-		// NEGATIVE TRANSIENT (Deceleration): Fuel evaporates from walls
-		// Physics is inverted - during decel, wall fuel evaporates into airstream
-		// Positive slope (lambda getting more lean) -> tau too high, decrease tau
-		// Negative slope (lambda getting more rich) -> tau too low, increase tau
-		correction = 1.0f + (slope * correctionRate * 100.0f); // Inverted correction for decel
-	} else {
-		// No clear transient direction, use conservative approach
-		correction = 1.0f - (slope * correctionRate * 50.0f); // Reduced factor
-	}
+	// Convert delta correction to multiplicative correction factor
+	float correction = 1.0f + deltaCorrection;
 	
 	// Protect against NaN in calculation
 	if (std::isnan(correction)) {
 		return 1.0f; // No correction for invalid calculation
 	}
 	
-	// Clamp correction to reasonable bounds (0.33 to 3.00)
-	correction = fmaxf(1.0f - maxCorrection, fminf(1.0f + maxCorrection, correction));
+	// Clamp correction to reasonable bounds (0.5 to 2.0 for tau)
+	const float minTauCorr = 0.5f;
+	const float maxTauCorr = 2.0f;
+	correction = fmaxf(minTauCorr, fminf(maxTauCorr, correction));
 	
 	return correction;
+}
+
+void WallFuelController::performSettlingAnalysis(float lambdaError, float currentTime) {
+	// Analyze the W_tau window data for settling characteristics
+	// This implementation analyzes the entire prolonged buffer for settling patterns
+	
+	float settleThresh = engineConfiguration->wwAquinoTauSettleThresh;
+	float overshootMinDur = engineConfiguration->wwAquinoTauOvershootMinDur;
+	float overshootMinMag = engineConfiguration->wwAquinoTauOvershootMinMag;
+	
+	if (m_adaptiveData.prolongedBufferCount < 10) {
+		return; // Not enough data
+	}
+	
+	// Calculate average lambda error in first portion of W_tau (initial response)
+	float initialSum = 0.0f;
+	int initialSamples = fminf(10, m_adaptiveData.prolongedBufferCount / 4); // First 25% or 10 samples
+	int validInitialSamples = 0;
+	
+	for (int i = 0; i < initialSamples && i < WW_PROLONGED_BUFFER_SIZE_MAX; i++) {
+		float sample = m_adaptiveData.prolongedLambdaBuffer[i];
+		if (!std::isnan(sample)) {
+			initialSum += sample;
+			validInitialSamples++;
+		}
+	}
+	
+	if (validInitialSamples == 0) {
+		return; // No valid initial data
+	}
+	
+	float initialErrorAvg = initialSum / validInitialSamples;
+	int initialSign = (initialErrorAvg > 0) ? 1 : -1;
+	
+	// Search for settling time and overshoot
+	bool settled = false;
+	bool overshootDetected = false;
+	float maxOvershootMag = 0.0f;
+	int overshootStartIdx = -1;
+	int overshootEndIdx = -1;
+	int settleStartIdx = -1;
+	int consecutiveSettled = 0;
+	
+	// Scan through prolonged buffer
+	int maxSamples = fminf(m_adaptiveData.prolongedBufferCount, WW_PROLONGED_BUFFER_SIZE_MAX);
+	for (int i = initialSamples; i < maxSamples; i++) {
+		float sample = m_adaptiveData.prolongedLambdaBuffer[i];
+		if (std::isnan(sample)) continue;
+		
+		// Check for overshoot (sign reversal with significant magnitude)
+		if (!overshootDetected && (sample * initialSign) < 0 && fabsf(sample) > overshootMinMag) {
+			// Overshoot started
+			overshootDetected = true;
+			overshootStartIdx = i;
+			maxOvershootMag = fabsf(sample);
+		}
+		
+		// Continue tracking overshoot magnitude
+		if (overshootDetected && overshootEndIdx == -1) {
+			if (fabsf(sample) > maxOvershootMag) {
+				maxOvershootMag = fabsf(sample);
+			}
+			
+			// Check if overshoot ended (returned to near zero or original sign)
+			if (fabsf(sample) < overshootMinMag || (sample * initialSign) > 0) {
+				overshootEndIdx = i;
+			}
+		}
+		
+		// Check for settling (staying within threshold)
+		if (fabsf(sample) <= settleThresh) {
+			if (consecutiveSettled == 0) {
+				settleStartIdx = i;
+			}
+			consecutiveSettled++;
+			
+			// Consider settled if stayed within threshold for required samples
+			if (consecutiveSettled >= m_adaptiveData.requiredSettledSamples) {
+				settled = true;
+				break;
+			}
+		} else {
+			// Reset consecutive count if exceeded threshold
+			consecutiveSettled = 0;
+			settleStartIdx = -1;
+		}
+	}
+	
+	// Update adaptive data with analysis results
+	m_adaptiveData.hasOvershoot = overshootDetected;
+	m_adaptiveData.overshootMagnitude = maxOvershootMag;
+	
+	if (overshootDetected && overshootStartIdx != -1 && overshootEndIdx != -1) {
+		// Calculate overshoot duration in seconds (samples / 200Hz)
+		m_adaptiveData.overshootDuration = (overshootEndIdx - overshootStartIdx) * 0.005f;
+		
+		// Only consider it significant overshoot if duration is sufficient
+		if (m_adaptiveData.overshootDuration < overshootMinDur) {
+			m_adaptiveData.hasOvershoot = false;
+		}
+	}
+	
+	if (settled && settleStartIdx != -1) {
+		// Calculate settle time in seconds (samples / 200Hz)
+		m_adaptiveData.settleTime = settleStartIdx * 0.005f;
+	} else {
+		// Never settled within the analysis window
+		m_adaptiveData.settleTime = maxSamples * 0.005f; // Use full window duration
+	}
+	
+	m_adaptiveData.settlingAnalysisComplete = true;
 }
 
 void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map) {
@@ -827,30 +1008,57 @@ void WallFuelController::onSlowCallback() {
 }
 
 void WallFuelController::startImmediatePhase() {
-	// Start collecting immediate response for beta tuning (0-200ms)
+	// Aquino Model W_beta window: 0 to min(0.2s, 0.5*tau)
+	float currentTau = computeTau();
+	m_adaptiveData.currentTau = currentTau;
+	
+	// Calculate W_beta window duration according to Aquino model
+	float wBetaEnd = fminf(0.2f, 0.5f * currentTau);
+	
+	// Start collecting immediate response for beta tuning (W_beta window)
 	m_adaptiveData.collectingImmediate = true;
 	m_adaptiveData.collectingProlonged = false;
 	m_adaptiveData.phaseStartTime = m_learningTimer.getElapsedSeconds();
 	m_adaptiveData.immediateBufferIndex = 0;
 	m_adaptiveData.immediateBufferCount = 0;
 	m_adaptiveData.avgImmediateLambdaError = 0;
+	
+	// Store the calculated window duration for this transient
+	m_adaptiveData.prolongedPhaseDuration = wBetaEnd; // Reuse field to store W_beta end time
 }
 
 void WallFuelController::startProlongedPhase() {
-	// Calculate dynamic prolonged phase duration based on current tau
-	float currentTau = computeTau();
-	m_adaptiveData.currentTau = currentTau;
+	// Aquino Model W_tau window: from W_beta end to W_beta end + 2.5*tau
+	float currentTau = m_adaptiveData.currentTau; // Already calculated in startImmediatePhase
 	
-	// Duration = WW_TAU_MULTIPLIER × tau (captures ~95% of tau effect)
-	m_adaptiveData.prolongedPhaseDuration = WW_TAU_MULTIPLIER * currentTau;
+	// Get W_beta end time (stored in prolongedPhaseDuration temporarily)
+	float wBetaEnd = m_adaptiveData.prolongedPhaseDuration;
+	
+	// Calculate W_tau window duration according to Aquino model  
+	float wTauDuration = fminf(
+		engineConfiguration->wwAquinoAnalysisMaxDuration - wBetaEnd,  // Max analysis time minus W_beta
+		2.5f * currentTau  // Aquino specification: 2.5*tau duration
+	);
+	
+	// Store actual W_tau duration
+	m_adaptiveData.prolongedPhaseDuration = wTauDuration;
 	
 	// Calculate target buffer size (200Hz sampling rate)
-	int targetSize = (int)(m_adaptiveData.prolongedPhaseDuration * 200.0f);
+	int targetSize = (int)(wTauDuration * 200.0f);
 	
 	// Clamp to maximum buffer size for safety
 	m_adaptiveData.prolongedBufferSizeTarget = fminf(targetSize, WW_PROLONGED_BUFFER_SIZE_MAX);
 	
-	// Start collecting prolonged response for tau tuning
+	// Calculate ideal settle time for this transient
+	m_adaptiveData.settleTimeIdeal = currentTau * engineConfiguration->wwAquinoTauIdealFactor;
+	
+	// Reset settling analysis for new W_tau window
+	m_adaptiveData.settlingAnalysisComplete = false;
+	m_adaptiveData.hasOvershoot = false;
+	m_adaptiveData.settleTime = 0;
+	m_adaptiveData.consecutiveSettledSamples = 0;
+	
+	// Start collecting prolonged response for tau tuning (W_tau window)
 	m_adaptiveData.collectingImmediate = false;
 	m_adaptiveData.collectingProlonged = true;
 	m_adaptiveData.phaseStartTime = m_learningTimer.getElapsedSeconds();
@@ -867,21 +1075,28 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 	
 	// Immediate phase collection (0-200ms for beta tuning)
 	if (m_adaptiveData.collectingImmediate) {
-		float timeSincePhaseStart = currentTime - m_adaptiveData.phaseStartTime;
+		float timeSinceTransientStart = currentTime - m_adaptiveData.transientStartTime;
+		float wBetaEnd = m_adaptiveData.prolongedPhaseDuration; // Temporarily stored W_beta end time
 		
-		if (timeSincePhaseStart >= 0.2f && timeSincePhaseStart <= 0.4f && m_adaptiveData.immediateBufferCount < WW_IMMEDIATE_BUFFER_SIZE) {
-			// Still in immediate phase window
+		if (timeSinceTransientStart >= 0.0f && timeSinceTransientStart <= wBetaEnd && 
+			m_adaptiveData.immediateBufferCount < WW_IMMEDIATE_BUFFER_SIZE) {
+			// Still in W_beta window (Aquino: 0 to min(0.2s, 0.5*tau))
 			// Bounds check for buffer access
 			if (m_adaptiveData.immediateBufferIndex >= 0 && m_adaptiveData.immediateBufferIndex < WW_IMMEDIATE_BUFFER_SIZE) {
 				m_adaptiveData.immediateLambdaBuffer[m_adaptiveData.immediateBufferIndex] = lambdaError;
 				m_adaptiveData.immediateBufferIndex = (m_adaptiveData.immediateBufferIndex + 1) % WW_IMMEDIATE_BUFFER_SIZE;
 				m_adaptiveData.immediateBufferCount++;
 			}
-		} else if (timeSincePhaseStart > 0.4f) {
-			// Immediate phase completed
+		} else if (timeSinceTransientStart > wBetaEnd) {
+			// W_beta phase completed, check minimum duration before W_tau
 			m_adaptiveData.collectingImmediate = false;
 			
-			startProlongedPhase();
+			if (m_adaptiveData.transientDuration >= engineConfiguration->wwAquinoTransMinDuration) {
+				startProlongedPhase();
+			} else {
+				// Transient too short for Aquino analysis, abort
+				m_adaptiveData.reset();
+			}
 		}
 	}
 	
@@ -889,8 +1104,12 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 	if (m_adaptiveData.collectingProlonged) {
 		float timeSincePhaseStart = currentTime - m_adaptiveData.phaseStartTime;
 		
-		// Check for new transient during prolonged phase
-		if (m_adaptiveData.transientMagnitude > 50.0f) {
+		// Check for new transient during prolonged phase using Aquino thresholds
+		bool newMapTransient = m_adaptiveData.mapTransientDetected;
+		bool newTpsTransient = m_adaptiveData.tpsTransientDetected;
+		bool newTransientDetected = newMapTransient || newTpsTransient;
+		
+		if (newTransientDetected) {
 			applyIncompleteTransientCorrection();
 
 			// New transient detected during tau learning phase
@@ -899,13 +1118,13 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 			m_adaptiveData.interruptedTauPhases++;
 			m_adaptiveData.reset();
 			
-			// detectTransients() will be called next and will start new cycle
+			// detectAquinoTransients() will be called next and will start new cycle
 			return;
 		}
 		
 		if (timeSincePhaseStart <= m_adaptiveData.prolongedPhaseDuration && 
 			m_adaptiveData.prolongedBufferCount < m_adaptiveData.prolongedBufferSizeTarget) {
-			// Still in prolonged phase window (dynamic duration based on tau)
+			// Still in prolonged phase window (Aquino W_tau: 2.5*tau duration)
 			// Bounds check for buffer access
 			if (m_adaptiveData.prolongedBufferIndex >= 0 && m_adaptiveData.prolongedBufferIndex < WW_PROLONGED_BUFFER_SIZE_MAX) {
 				m_adaptiveData.prolongedLambdaBuffer[m_adaptiveData.prolongedBufferIndex] = lambdaError;
@@ -913,12 +1132,7 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 				m_adaptiveData.prolongedBufferCount++;
 			}
 			
-		} else {
-			// Prolonged phase completed
-			m_adaptiveData.collectingProlonged = false;
-			m_adaptiveData.transientCompleted = true;
-			
-			// Ensure we have valid final conditions before applying corrections
+			// Capture final conditions continuously during W_tau for proper tau correction
 			auto rpm = Sensor::getOrZero(SensorType::Rpm);
 			auto map = Sensor::getOrZero(SensorType::Map);
 			if (rpm > 100 && map > 10) {
@@ -926,14 +1140,19 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 				m_adaptiveData.finalTransientMap = map;
 			}
 			
-			// Apply full correction (both beta and tau)
+		} else {
+			// Prolonged phase completed
+			m_adaptiveData.collectingProlonged = false;
+			m_adaptiveData.transientCompleted = true;
+			
+			// Apply full Aquino correction (both beta and tau)
 			applyAdaptiveCorrections();
 		}
 	}
 	
 	// Handle incomplete transient timeout
 	if ((m_adaptiveData.collectingImmediate || m_adaptiveData.collectingProlonged) && 
-		m_adaptiveData.transientDuration > m_adaptiveData.incompleteTimeout) {
+		m_adaptiveData.transientDuration > engineConfiguration->wwAquinoAnalysisMaxDuration) {
 		
 		// Timeout reached - treat as incomplete transient
 		m_adaptiveData.collectingImmediate = false;
@@ -943,42 +1162,6 @@ void WallFuelController::updateLambdaResponse(float lambdaError, float currentTi
 		// Apply beta-only correction for incomplete transients
 		applyIncompleteTransientCorrection();
 	}
-}
-
-void WallFuelController::updateAdaptationMode() {
-	// Increment transient counter
-	m_adaptiveData.transientCounter++;
-	
-	// Check if we need to switch adaptation modes
-	if (m_adaptiveData.transientCounter >= m_adaptiveData.adaptationCycleLength) {
-		m_adaptiveData.transientCounter = 0;
-		m_adaptiveData.currentCycleCount++;
-		
-		// Determine next adaptation mode based on cycle count
-		if (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BETA_ONLY) {
-			if (m_adaptiveData.currentCycleCount >= m_adaptiveData.betaAdaptationCycles) {
-				// Switch to tau adaptation
-				m_adaptiveData.currentAdaptationMode = WwAdaptiveData::ADAPT_TAU_ONLY;
-				m_adaptiveData.currentCycleCount = 0;
-			}
-		} else if (m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY) {
-			if (m_adaptiveData.currentCycleCount >= m_adaptiveData.tauAdaptationCycles) {
-				// Switch back to beta adaptation
-				m_adaptiveData.currentAdaptationMode = WwAdaptiveData::ADAPT_BETA_ONLY;
-				m_adaptiveData.currentCycleCount = 0;
-			}
-		}
-	}
-}
-
-bool WallFuelController::shouldAdaptBeta() const {
-	return m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BETA_ONLY ||
-		   m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BOTH;
-}
-
-bool WallFuelController::shouldAdaptTau() const {
-	return m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_TAU_ONLY ||
-		   m_adaptiveData.currentAdaptationMode == WwAdaptiveData::ADAPT_BOTH;
 }
 
 void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderIndex) {

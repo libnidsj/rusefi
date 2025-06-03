@@ -35,6 +35,7 @@ struct IWallFuelController {
 
 // Circular buffer for load derivative calculation
 #define WW_LOAD_BUFFER_SIZE 8
+#define WW_TPS_BUFFER_SIZE 8         // Buffer for TPS derivative calculation  
 #define WW_IMMEDIATE_BUFFER_SIZE 40  // Beta: primeiros 200ms (40 amostras a 200Hz)
 #define WW_PROLONGED_BUFFER_SIZE_MAX 1000 // Tau: máximo para tau=5s (1000 amostras a 200Hz)
 #define WW_TAU_MULTIPLIER 3.0f       // Coleta dados por 3×tau (captura ~95% do efeito)
@@ -42,16 +43,25 @@ struct IWallFuelController {
 // Adaptive correction data structure
 struct WwAdaptiveData {
 	float loadBuffer[WW_LOAD_BUFFER_SIZE];
+	float tpsBuffer[WW_TPS_BUFFER_SIZE];  // TPS buffer for derivative calculation
 	int bufferIndex = 0;
+	int tpsBufferIndex = 0;               // TPS buffer index
 	float lastLoad = 0;
+	float lastTps = 0;                    // Last TPS value
 	float loadDerivative = 0;
+	float tpsDerivative = 0;              // TPS derivative (dTPS_dt)
 	
 	// Transient detection and timing
 	bool isPositiveTransient = false;
 	bool isNegativeTransient = false;
 	float transientMagnitude = 0;
+	float tpsTransientMagnitude = 0;      // TPS-based transient magnitude
 	float transientStartTime = 0;
-	bool waitingForResponse = false;
+	
+	// Aquino model: track both MAP and TPS transients
+	bool mapTransientDetected = false;    // MAP transient flag
+	bool tpsTransientDetected = false;    // TPS transient flag
+	bool combinedTransientActive = false; // Either MAP or TPS transient is active
 	
 	// Separate buffers for beta (immediate) and tau (prolonged) responses
 	float immediateLambdaBuffer[WW_IMMEDIATE_BUFFER_SIZE];  // Beta: 0-200ms
@@ -68,17 +78,24 @@ struct WwAdaptiveData {
 	
 	// Dynamic prolonged phase duration based on tau
 	float currentTau = 1.0f;           // Current tau value for this transient
-	float prolongedPhaseDuration = 0;  // Duration in seconds (WW_TAU_MULTIPLIER × tau)
+	float prolongedPhaseDuration = 0;  // Duration in seconds (Aquino W_beta/W_tau)
 	int prolongedBufferSizeTarget = 0; // Target buffer size for current tau
 	
 	// Average errors for correction calculation
 	float avgImmediateLambdaError = 0;  // For beta correction
 	float avgProlongedLambdaError = 0;  // For tau correction
 	
-	// Transient conditions for correction
-	float transientRpm = 0;
-	float transientMap = 0;
-	bool hasValidTransientData = false;
+	// Aquino model: tau settling analysis
+	float settleTime = 0;               // Measured settle time
+	float settleTimeIdeal = 0;          // Ideal settle time (tau * factor)
+	bool hasOvershoot = false;          // Overshoot detected flag
+	float overshootMagnitude = 0;       // Maximum overshoot magnitude
+	float overshootDuration = 0;        // Duration of overshoot
+	bool settlingAnalysisComplete = false; // Settling analysis completed flag
+	
+	// Timestamp tracking for settling analysis
+	int consecutiveSettledSamples = 0;  // Consecutive samples within settle threshold
+	int requiredSettledSamples = 10;    // Required samples to confirm settling (50ms at 200Hz)
 	
 	// Separate conditions for beta (initial) and tau (final) corrections
 	float initialTransientRpm = 0;  // Beta: condições no início do transiente
@@ -90,22 +107,15 @@ struct WwAdaptiveData {
 	bool transientCompleted = false;
 	bool incompleteTransientDetected = false;
 	float transientDuration = 0;
-	float minTransientDuration = 0.5f; // 500ms minimum for complete transient
-	float incompleteTimeout = 5.0f;    // 5s timeout for incomplete transients (increased from 3.0f)
 	
-	// Decoupled adaptation periods to avoid beta-tau coupling
+	// Adaptation mode - always adapt both parameters
 	enum AdaptationMode {
 		ADAPT_BETA_ONLY,    // Adapt only beta, keep tau fixed
 		ADAPT_TAU_ONLY,     // Adapt only tau, keep beta fixed
-		ADAPT_BOTH          // Adapt both (for comparison/testing)
+		ADAPT_BOTH          // Adapt both (always used now)
 	};
 	
-	AdaptationMode currentAdaptationMode = ADAPT_BETA_ONLY;
-	int transientCounter = 0;
-	int adaptationCycleLength = 2;   // 2 transients per adaptation period (initialized)
-	int betaAdaptationCycles = 3;     // 3 cycles for beta adaptation (6 transients total)
-	int tauAdaptationCycles = 3;      // 3 cycles for tau adaptation (6 transients total)
-	int currentCycleCount = 0;
+	AdaptationMode currentAdaptationMode = ADAPT_BOTH;  // Always adapt both
 	
 	// Statistics for debugging
 	int interruptedBetaPhases = 0;   // Count of beta phases interrupted by new transients
@@ -121,16 +131,37 @@ struct WwAdaptiveData {
 		transientCompleted = false;
 		incompleteTransientDetected = false;
 		
+		// Reset Aquino model transient flags
+		mapTransientDetected = false;
+		tpsTransientDetected = false;
+		combinedTransientActive = false;
+		
 		// Reset buffers
 		immediateBufferCount = 0;
 		prolongedBufferCount = 0;
 		immediateBufferIndex = 0;
 		prolongedBufferIndex = 0;
+		tpsBufferIndex = 0;
 		
 		// Reset timing
 		transientStartTime = 0;
 		phaseStartTime = 0;
 		transientDuration = 0;
+		
+		// Reset derivatives
+		loadDerivative = 0;
+		tpsDerivative = 0;
+		transientMagnitude = 0;
+		tpsTransientMagnitude = 0;
+		
+		// Reset Aquino settling analysis
+		settleTime = 0;
+		settleTimeIdeal = 0;
+		hasOvershoot = false;
+		overshootMagnitude = 0;
+		overshootDuration = 0;
+		settlingAnalysisComplete = false;
+		consecutiveSettledSamples = 0;
 		
 		// Reset conditions
 		initialTransientRpm = 0;
@@ -148,13 +179,6 @@ struct WwAdaptiveData {
 		
 		// Note: Don't reset statistics counters (interruptedBetaPhases, etc.)
 		// They should persist to provide debugging information across multiple cycles
-	}
-	
-	void resetAdaptationCycle() {
-		// Reset adaptation cycle (called on ignition or manual reset)
-		currentAdaptationMode = ADAPT_BETA_ONLY;
-		transientCounter = 0;
-		currentCycleCount = 0;
 	}
 };
 
@@ -196,7 +220,8 @@ private:
 	
 	// Adaptive learning methods
 	void updateLoadDerivative(float currentLoad);
-	void detectTransients();
+	void updateTpsDerivative(float currentTps);    // TPS derivative calculation
+	void detectAquinoTransients();                 // Aquino model transient detection
 	void updateLambdaResponse(float lambdaError, float currentTime);
 	void startImmediatePhase();
 	void startProlongedPhase();
@@ -204,15 +229,9 @@ private:
 	void applyIncompleteTransientCorrection();
 	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
 	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
-
-	// Separate correction calculations for beta and tau
 	float calculateBetaCorrection(float avgImmediateLambdaError);
-	float calculateTauCorrection();
-	
-	// Decoupled adaptation management
-	void updateAdaptationMode();
-	bool shouldAdaptBeta() const;
-	bool shouldAdaptTau() const;
+	float calculateAquinoTauCorrection();          // Aquino tau correction with settling analysis
+	void performSettlingAnalysis(float lambdaError, float currentTime); // Settling analysis
 	
 	// Integration with injection system
 	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) override;
