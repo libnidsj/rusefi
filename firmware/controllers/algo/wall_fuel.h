@@ -365,15 +365,7 @@ private:
 	const char* getStateName(WwLearningState state) const;
 	
 	// === LEGACY METHODS (to be removed) ===
-	void detectAquinoTransients();  // Will be replaced by detectTransients()
-	void updateLambdaResponse(float lambdaError, float currentTime);  // Will be replaced by collectLambdaData()
-	void startImmediatePhase();     // Will be replaced by state transitions
-	void startProlongedPhase();     // Will be replaced by state transitions
-	void applyAdaptiveCorrections(); // Will be replaced by applyCorrections()
-	void applyIncompleteTransientCorrection(); // Will be replaced by timeout handling
-	float calculateAquinoTauCorrection(); // Will be replaced by calculateTauCorrection()
-	float calculateBetaCorrection(float avgImmediateLambdaError); // Will be replaced by calculateBetaCorrection()
-	void performSettlingAnalysis(float lambdaError, float currentTime); // Will be replaced by performSettlingAnalysis()
+	// Removidos os protótipos das funções legadas
 	
 	// Integration with injection system
 	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) override;
