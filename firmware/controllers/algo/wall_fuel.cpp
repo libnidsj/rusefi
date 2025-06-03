@@ -662,9 +662,7 @@ float WallFuelController::calculateAquinoTauCorrection() {
 	// This is called after W_tau window data has been collected
 	
 	// Get Aquino tau parameters from configuration
-	float settleThresh = engineConfiguration->wwAquinoTauSettleThresh;
 	float toleranceFactor = engineConfiguration->wwAquinoTauToleranceFactor;
-	float overshootMinDur = engineConfiguration->wwAquinoTauOvershootMinDur;
 	float overshootMinMag = engineConfiguration->wwAquinoTauOvershootMinMag;
 	float overshootGain = engineConfiguration->wwAquinoTauOvershootGain;
 	float slowGain = engineConfiguration->wwAquinoTauSlowGain;
