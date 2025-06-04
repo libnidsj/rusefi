@@ -1056,3 +1056,59 @@ void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauC
 void WallFuelController::performSettlingAnalysis() {
 	// Empty implementation as requested
 }
+
+void WallFuelController::smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection) {
+	// Apply smoothing to adjacent cells to avoid sharp transitions
+	const float smoothingFactor = 0.3f; // 30% of the main correction
+	
+	for (int dMap = -1; dMap <= 1; dMap++) {
+		for (int dRpm = -1; dRpm <= 1; dRpm++) {
+			// Skip the center cell (already corrected)
+			if (dMap == 0 && dRpm == 0) continue;
+			
+			int adjMapIdx = mapIdx + dMap;
+			int adjRpmIdx = rpmIdx + dRpm;
+			
+			// Check bounds
+			if (adjMapIdx < 0 || adjMapIdx >= WWAE_CORRECTION_SIZE ||
+				adjRpmIdx < 0 || adjRpmIdx >= WWAE_CORRECTION_SIZE) {
+				continue;
+			}
+			
+			// Calculate distance-based smoothing factor
+			int distance = abs(dMap) + abs(dRpm);
+			// Protect against division by zero (though distance should never be 0 here)
+			if (distance == 0) continue;
+			
+			float factor = smoothingFactor / distance;
+			
+			// Apply smoothed beta correction with NaN protection
+			if (betaCorrection != 1.0f && !std::isnan(betaCorrection)) {
+				float smoothedBetaCorr = 1.0f + factor * (betaCorrection - 1.0f);
+				float oldBeta = config->wwBetaCorrection[adjMapIdx][adjRpmIdx];
+				
+				// Protect against NaN in calculations
+				if (!std::isnan(oldBeta) && !std::isnan(smoothedBetaCorr)) {
+					float newBeta = oldBeta * smoothedBetaCorr;
+					if (!std::isnan(newBeta)) {
+						config->wwBetaCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newBeta, 2.0f);
+					}
+				}
+			}
+			
+			// Apply smoothed tau correction with NaN protection
+			if (tauCorrection != 1.0f && !std::isnan(tauCorrection)) {
+				float smoothedTauCorr = 1.0f + factor * (tauCorrection - 1.0f);
+				float oldTau = config->wwTauCorrection[adjMapIdx][adjRpmIdx];
+				
+				// Protect against NaN in calculations
+				if (!std::isnan(oldTau) && !std::isnan(smoothedTauCorr)) {
+					float newTau = oldTau * smoothedTauCorr;
+					if (!std::isnan(newTau)) {
+						config->wwTauCorrection[adjMapIdx][adjRpmIdx] = clampF(0.5f, newTau, 2.0f);
+					}
+				}
+			}
+		}
+	}
+}
