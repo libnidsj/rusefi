@@ -950,3 +950,109 @@ const char* WallFuelController::getStateName(WwLearningState state) const {
 		default: return "UNKNOWN";
 	}
 }
+
+void WallFuelController::onSlowCallback() {
+	// Empty implementation as requested
+}
+
+void WallFuelController::applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map) {
+	if (!engineConfiguration->wwEnableAdaptiveLearning) {
+		return;
+	}
+	
+	// Cross-coupling correction to reduce instability when both parameters are being corrected
+	// When beta and tau corrections are both significant, reduce their magnitude to prevent oscillations
+	float cross_coupling = 1.0f - (0.2f * fabsf(betaCorrection - tauCorrection));
+	cross_coupling = fmaxf(0.5f, fminf(1.0f, cross_coupling)); // Clamp between 0.5 and 1.0
+	
+	// Apply cross-coupling factor to both corrections
+	betaCorrection = 1.0f + (betaCorrection - 1.0f) * cross_coupling;
+	tauCorrection = 1.0f + (tauCorrection - 1.0f) * cross_coupling;
+	
+	// Use the same approach as LTFT - getBin() instead of findIndexMsg()
+	auto binMap = priv::getBin(map, config->wwCorrectionMapBins);
+	auto binRpm = priv::getBin(rpm, config->wwCorrectionRpmBins);
+	
+	int mapIdx = binMap.Idx;
+	int rpmIdx = binRpm.Idx;
+	
+	// Bounds check - getBin() already handles this, but double-check for safety
+	if (mapIdx < 0 || mapIdx >= WWAE_CORRECTION_SIZE - 1 || 
+		rpmIdx < 0 || rpmIdx >= WWAE_CORRECTION_SIZE - 1) {
+		return; // Invalid indices
+	}
+	
+	// Apply beta correction to INITIAL transient conditions (where transient started)
+	if (betaCorrection != 1.0f && !std::isnan(betaCorrection) && m_adaptiveData.initialTransientRpm > 0) {
+		auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, config->wwCorrectionMapBins);
+		auto initialBinRpm = priv::getBin(m_adaptiveData.initialTransientRpm, config->wwCorrectionRpmBins);
+		
+		int initialMapIdx = initialBinMap.Idx;
+		int initialRpmIdx = initialBinRpm.Idx;
+		
+		if (initialMapIdx >= 0 && initialMapIdx < WWAE_CORRECTION_SIZE - 1 && 
+			initialRpmIdx >= 0 && initialRpmIdx < WWAE_CORRECTION_SIZE - 1) {
+			
+			// Apply beta correction directly (no autoscale multiplication needed)
+			float currentBetaCorrection = config->wwBetaCorrection[initialMapIdx][initialRpmIdx];
+			
+			// Protect against NaN in calculations
+			if (!std::isnan(currentBetaCorrection)) {
+				float newBetaCorrection = currentBetaCorrection * betaCorrection;
+				
+				// Additional NaN check after multiplication
+				if (!std::isnan(newBetaCorrection)) {
+					// Clamp to reasonable bounds
+					newBetaCorrection = fmaxf(0.5f, fminf(2.0f, newBetaCorrection));
+					config->wwBetaCorrection[initialMapIdx][initialRpmIdx] = newBetaCorrection;
+					
+					// Apply smoothing to adjacent cells
+					smoothCorrectionTable(initialMapIdx, initialRpmIdx, betaCorrection, 1.0f);
+				}
+			}
+		}
+	}
+	
+	// Apply tau correction to FINAL transient conditions (where transient ended)
+	if (tauCorrection != 1.0f && !std::isnan(tauCorrection) && m_adaptiveData.finalTransientRpm > 0) {
+		/*
+		auto finalBinMap = priv::getBin(m_adaptiveData.finalTransientMap, config->wwCorrectionMapBins);
+		auto finalBinRpm = priv::getBin(m_adaptiveData.finalTransientRpm, config->wwCorrectionRpmBins);
+		
+		int finalMapIdx = finalBinMap.Idx;
+		int finalRpmIdx = finalBinRpm.Idx;
+		*/
+
+		auto initialBinMap = priv::getBin(m_adaptiveData.initialTransientMap, config->wwCorrectionMapBins);
+		auto initialBinRpm = priv::getBin(m_adaptiveData.initialTransientRpm, config->wwCorrectionRpmBins);
+		
+		int initialMapIdx = initialBinMap.Idx;
+		int initialRpmIdx = initialBinRpm.Idx;
+		
+		if (initialMapIdx >= 0 && initialMapIdx < WWAE_CORRECTION_SIZE - 1 && 
+			initialRpmIdx >= 0 && initialRpmIdx < WWAE_CORRECTION_SIZE - 1) {
+			
+			// Apply tau correction directly (no autoscale multiplication needed)
+			float currentTauCorrection = config->wwTauCorrection[initialMapIdx][initialRpmIdx];
+			
+			// Protect against NaN in calculations
+			if (!std::isnan(currentTauCorrection)) {
+				float newTauCorrection = currentTauCorrection * tauCorrection;
+				
+				// Additional NaN check after multiplication
+				if (!std::isnan(newTauCorrection)) {
+					// Clamp to reasonable bounds
+					newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
+					config->wwTauCorrection[initialMapIdx][initialRpmIdx] = newTauCorrection;
+					
+					// Apply smoothing to adjacent cells
+					smoothCorrectionTable(initialMapIdx, initialRpmIdx, 1.0f, tauCorrection);
+				}
+			}
+		}
+	}
+}
+
+void WallFuelController::performSettlingAnalysis() {
+	// Empty implementation as requested
+}
