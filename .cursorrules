@@ -100,6 +100,12 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 ## Cursor learned
 
+### Timer Include Path Fix
+- **Problem**: Used `#include "timer.h"` which caused "No such file or directory" error
+- **Solution**: Use `#include <rusefi/timer.h>` instead 
+- **Pattern**: All rusefi controllers use `<rusefi/timer.h>` include path
+- **Location**: Timer is in `firmware/libfirmware/util/include/rusefi/timer.h`
+- **Reference**: See `firmware/controllers/math/closed_loop_fuel.h` line 6
 
 # Scratchpad
 

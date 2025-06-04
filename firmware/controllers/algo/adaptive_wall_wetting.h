@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine_module.h"
-#include "timer.h"
+#include <rusefi/timer.h>
 
 /**
  * States of the adaptive wall wetting state machine

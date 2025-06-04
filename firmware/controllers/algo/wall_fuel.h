@@ -7,7 +7,7 @@
 
 #include "wall_fuel_state_generated.h"
 #include "engine_module.h"
-#include "timer.h"
+#include <rusefi/timer.h>
 #include "adaptive_wall_wetting.h"
 
 // Forward declarations for adaptive wall wetting
