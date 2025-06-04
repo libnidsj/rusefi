@@ -143,10 +143,6 @@ void AdaptiveWallWettingController::processAnalyzingTau() {
 }
 
 void AdaptiveWallWettingController::processApplyingCorrections() {
-    // Get current operating point
-    float map = Sensor::getOrZero(SensorType::Map);
-    float rpm = Sensor::getOrZero(SensorType::Rpm);
-    
     // Apply Beta correction
     if (fabsf(m_state.calculatedBetaCorrection - 1.0f) > 0.01f) {
         updateCorrectionTable(true, m_state.currentMapIndex, m_state.currentRpmIndex, 
@@ -296,11 +292,11 @@ void AdaptiveWallWettingController::calculateTableIndices(float map, float rpm) 
     
     // Find MAP index using getBin function
     auto mapBin = priv::getBin(map, config->wwCorrectionMapBins);
-    m_state.currentMapIndex = static_cast<uint8_t>(clampI(0, mapBin.Idx, 7)); // 8x8 table, so max index is 7
+    m_state.currentMapIndex = static_cast<uint8_t>(maxI(0, minI(mapBin.Idx, 7))); // 8x8 table, so max index is 7
     
     // Find RPM index using getBin function  
     auto rpmBin = priv::getBin(rpm, config->wwCorrectionRpmBins);
-    m_state.currentRpmIndex = static_cast<uint8_t>(clampI(0, rpmBin.Idx, 7)); // 8x8 table, so max index is 7
+    m_state.currentRpmIndex = static_cast<uint8_t>(maxI(0, minI(rpmBin.Idx, 7))); // 8x8 table, so max index is 7
 }
 
 void AdaptiveWallWettingController::updateCorrectionTable(bool isBeta, uint8_t mapIdx, uint8_t rpmIdx, float correction) {
@@ -357,7 +353,6 @@ void AdaptiveWallWettingController::analyzeTauCorrection() {
     
     // Look for settling time
     bool foundSettling = false;
-    float lastSettleCheckTime = 0;
     
     // Simple analysis: find when lambda error stays within threshold for a period
     int consecutiveSettledSamples = 0;
@@ -368,7 +363,7 @@ void AdaptiveWallWettingController::analyzeTauCorrection() {
     int initialSamples = 0;
     
     // Analyze buffer data
-    for (int i = 0; i < LAMBDA_BUFFER_SIZE; i++) {
+    for (size_t i = 0; i < LAMBDA_BUFFER_SIZE; i++) {
         float timestamp = m_timestampBuffer[i];
         float lambdaError = m_lambdaBuffer[i];
         

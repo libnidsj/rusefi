@@ -107,6 +107,14 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - **Location**: Timer is in `firmware/libfirmware/util/include/rusefi/timer.h`
 - **Reference**: See `firmware/controllers/math/closed_loop_fuel.h` line 6
 
+### Integer Clamping Functions Fix
+- **Problem**: Used `clampI()` which doesn't exist, causing "was not declared in this scope" error
+- **Solution**: Use `maxI(min_val, minI(value, max_val))` pattern for integer clamping instead
+- **Pattern**: Only `clampF()` exists for float values, no `clampI()` for integers
+- **Available**: `minI()`, `maxI()`, `minF()`, `maxF()`, `clampF()` functions are available
+- **Location**: Declared in `firmware/libfirmware/util/include/rusefi/math.h`
+- **Reference**: See `firmware/controllers/math/closed_loop_idle.cpp` for manual clamping pattern
+
 # Scratchpad
 
 ## Current Task: Adaptive Wall Wetting Implementation
