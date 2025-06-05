@@ -170,15 +170,24 @@ private:
 	CorrectionData m_correctionData;
 	LoadMonitoringData m_loadData;
 	
-	// Timing
-	Timer* m_timer;
-	float m_stateStartTime = 0;
+	// Callback-based timing (200Hz = 5ms per callback)
+	static constexpr float CALLBACK_FREQUENCY_HZ = 200.0f;
+	static constexpr float CALLBACK_PERIOD_SEC = 1.0f / CALLBACK_FREQUENCY_HZ; // 0.005s = 5ms
 	
-	// Configuration parameters
-	float m_lambdaDelayTime = 0.1f;        // 100ms delay for lambda sensor
-	float m_immediatePhaseTime = 0.2f;     // 200ms for immediate phase
-	float m_incompleteTimeout = 5.0f;      // 5s timeout for incomplete
-	float m_globalStateTimeout = 30.0f;    // 30s global timeout to prevent stuck states
+	uint32_t m_callbackCounter = 0;          // Total callbacks since start
+	uint32_t m_stateStartCallback = 0;       // Callback when current state started
+	
+	// Configuration parameters in callback counts (converted from time)
+	uint32_t m_lambdaDelayCallbacks = 20;        // 100ms delay = 20 callbacks
+	uint32_t m_immediatePhaseCallbacks = 40;     // 200ms phase = 40 callbacks  
+	uint32_t m_incompleteTimeoutCallbacks = 1000; // 5s timeout = 1000 callbacks
+	uint32_t m_globalTimeoutCallbacks = 6000;    // 30s timeout = 6000 callbacks
+	
+	// Debug and monitoring
+	uint32_t m_debugTransientsDetected = 0;
+	uint32_t m_debugCorrectionsApplied = 0;
+	uint32_t m_debugResetCount = 0;
+	float m_lastTransientMagnitude = 0;
 	
 	// State handlers
 	void handleIdleState();
@@ -205,13 +214,22 @@ private:
 	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
 	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
 	const char* getStateString() const;
+	const char* getStateString(WwAdaptiveState state) const;
+	uint32_t getElapsedCallbacks() const { return m_callbackCounter - m_stateStartCallback; }
+	float getElapsedSeconds() const { return getElapsedCallbacks() * CALLBACK_PERIOD_SEC; }
 	
 public:
-	void initialize(Timer* timer);
-	void ensureInitialized(Timer* timer);
-	void update();
+	void initialize();
+	void update(); // Now uses callback counter instead of timer
 	void onIgnitionHandler(bool ignitionOn);
 	WwAdaptiveState getCurrentState() const { return m_currentState; }
+	
+	// Debug access methods
+	uint32_t getDebugTransientsDetected() const { return m_debugTransientsDetected; }
+	uint32_t getDebugCorrectionsApplied() const { return m_debugCorrectionsApplied; }
+	uint32_t getDebugResetCount() const { return m_debugResetCount; }
+	float getLastTransientMagnitude() const { return m_lastTransientMagnitude; }
+	uint32_t getCallbackCounter() const { return m_callbackCounter; }
 };
 
 class WallFuelController : public IWallFuelController, public EngineModule {
@@ -243,12 +261,12 @@ private:
 	float m_alpha = 0;
 	float m_beta = 0;
 	
-	// Adaptive learning state machine
+	// Adaptive learning state machine (now timer-independent)
 	WwAdaptiveStateMachine m_stateMachine;
-	Timer m_learningTimer;
-	Timer m_ignitionOffTimer;
 	bool m_ignitionState = false;
 	bool m_pendingSave = false;
+	uint32_t m_ignitionOffCallbacks = 0; // Callback counter for ignition off delay
+	uint32_t m_slowCallbackCounter = 0;  // Counter for slow callback (saves after 1000 callbacks = 5s)
 	
 	// Integration with injection system
 	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) override;

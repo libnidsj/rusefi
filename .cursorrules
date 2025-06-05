@@ -292,4 +292,22 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - **CORREÇÃO**: Implementação minimalista com apenas atribuições diretas de flags e estados
 - **RESULTADO**: Mudança de ignição segura sem travamentos, operações complexas delegadas ao update() loop
 
-**STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA, OTIMIZADA E PROTEGIDA CONTRA TRAVAMENTOS E LOOPS** 🚀
+### MIGRAÇÃO PARA CALLBACK FREQUENCY COMPLETA ⏱️
+- [X] **Timer dependency removida** - Sistema agora usa callback counter (200Hz)
+- [X] **Timing baseado em callbacks** - 20 callbacks = 100ms, 40 callbacks = 200ms, etc.
+- [X] **Debugging extensivo adicionado** - Logs detalhados para todas as transições e detecções
+- [X] **Bounds checking corrigido** - Permitir índice máximo nas tabelas de correção
+- [X] **Detecção de transientes melhorada** - Validação de configuração e thresholds
+- [X] **Logging de problemas** - Identificação de bounds errors, transientes detectados, etc.
+
+### PROBLEMAS DE TABELAS IDENTIFICADOS E CORRIGIDOS 🔧
+- **PROBLEMA**: Bounds checking muito restritivo impedia atualizações (>= SIZE-1 em vez de >= SIZE)
+- **CORREÇÃO**: Corrigido bounds para permitir todos os índices válidos da tabela
+- **PROBLEMA**: Falta de debugging para identificar por que correções não eram aplicadas
+- **CORREÇÃO**: Logs extensivos em todas as fases: detecção, análise, aplicação
+- **PROBLEMA**: Timer dependency causava problemas de sincronização e precisão
+- **CORREÇÃO**: Sistema completamente baseado em callback frequency (200Hz determinístico)
+- **PROBLEMA**: Falta de verificação se wwEnableAdaptiveLearning estava habilitado
+- **CORREÇÃO**: Verificação adicionada em detectTransient() e outros pontos críticos
+
+**STATUS**: ✅ **SISTEMA CALLBACK-BASED IMPLEMENTADO COM DEBUGGING COMPLETO** 🚀

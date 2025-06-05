@@ -206,8 +206,12 @@ void WallFuelController::onFastCallback() {
 
 	// Adaptive learning state machine
 	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		// Ensure state machine is initialized (safe to call multiple times)
-		m_stateMachine.ensureInitialized(&m_learningTimer);
+		// Initialize state machine on first call (safe to call multiple times)
+		static bool initialized = false;
+		if (!initialized) {
+			m_stateMachine.initialize();
+			initialized = true;
+		}
 		m_stateMachine.update();
 	}
 }
@@ -221,22 +225,23 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 			m_stateMachine.onIgnitionHandler(true);
 			m_pendingSave = false;
 		}
-		// Note: Don't reset timers here as it can cause synchronization issues
 	} else {
 		// When ignition turns off, schedule save if we have updates
 		if (engineConfiguration->wwEnableAdaptiveLearning) {
 			m_stateMachine.onIgnitionHandler(false);
 			setNeedToWriteConfiguration();
 			m_pendingSave = true;
-			m_ignitionOffTimer.reset();
+			m_ignitionOffCallbacks = m_slowCallbackCounter; // Mark when ignition turned off
 		}
 	}
 }
 
 void WallFuelController::onSlowCallback() {
+	m_slowCallbackCounter++;
+	
 	if (m_pendingSave && !m_ignitionState) {
-		// Save after 5 seconds delay
-		if (m_ignitionOffTimer.hasElapsedSec(5.0f)) {
+		// Save after 5 seconds delay (1000 slow callbacks = 5s at 200Hz)
+		if ((m_slowCallbackCounter - m_ignitionOffCallbacks) >= 1000) {
 			setNeedToWriteConfiguration();
 			m_pendingSave = false;
 		}
@@ -261,10 +266,10 @@ void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderI
 
 // ================ STATE MACHINE IMPLEMENTATION ================
 
-void WwAdaptiveStateMachine::initialize(Timer* timer) {
-	m_timer = timer;
+void WwAdaptiveStateMachine::initialize() {
 	m_currentState = WwAdaptiveState::IDLE;
-	m_stateStartTime = 0;
+	m_callbackCounter = 0;
+	m_stateStartCallback = 0;
 	
 	// Initialize all data
 	m_transientData.reset();
@@ -272,25 +277,21 @@ void WwAdaptiveStateMachine::initialize(Timer* timer) {
 	m_learningData.resetAdaptationCycle();
 	m_correctionData.reset();
 	m_loadData.reset();
-}
-
-void WwAdaptiveStateMachine::ensureInitialized(Timer* timer) {
-	// Safe initialization that can be called multiple times
-	if (m_timer == nullptr || m_timer != timer) {
-		initialize(timer);
-	}
+	
+	// Reset debug counters
+	m_debugTransientsDetected = 0;
+	m_debugCorrectionsApplied = 0;
+	m_debugResetCount = 0;
+	m_lastTransientMagnitude = 0;
 }
 
 void WwAdaptiveStateMachine::update() {
-	// Safety check: ensure timer is initialized
-	if (m_timer == nullptr) {
-		return;
-	}
+	// Increment callback counter
+	m_callbackCounter++;
 	
 	// PERFORMANCE FIX: Global timeout to prevent stuck states
-	float currentTime = m_timer->getElapsedSeconds();
-	if (m_currentState != WwAdaptiveState::IDLE && 
-		(currentTime - m_stateStartTime) > m_globalStateTimeout) {
+	uint32_t elapsed = getElapsedCallbacks();
+	if (m_currentState != WwAdaptiveState::IDLE && elapsed > m_globalTimeoutCallbacks) {
 		// Force reset if any state runs too long
 		resetToIdle();
 		return;
@@ -298,6 +299,12 @@ void WwAdaptiveStateMachine::update() {
 	
 	// Update shared data first
 	updateSharedData();
+	
+	// DEBUG: Every 1000 callbacks (5 seconds), log state info if not IDLE
+	if ((m_callbackCounter % 1000) == 0 && m_currentState != WwAdaptiveState::IDLE) {
+		efiPrintf("WW State: %s, Elapsed: %.1fs, Transients: %d, Corrections: %d", 
+			getStateString(), getElapsedSeconds(), m_debugTransientsDetected, m_debugCorrectionsApplied);
+	}
 	
 	// Execute current state handler
 	switch (m_currentState) {
@@ -368,39 +375,28 @@ void WwAdaptiveStateMachine::handleTransientDetectedState() {
 }
 
 void WwAdaptiveStateMachine::handleDelayLambdaState() {
-	// Safety check for timer
-	if (m_timer == nullptr) {
-		resetToIdle();
-		return;
-	}
-	
-	float currentTime = m_timer->getElapsedSeconds();
-	float elapsed = currentTime - m_stateStartTime;
+	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new transient
 	if (m_loadData.transientMagnitude > 30.0f) {
+		efiPrintf("WW DelayLambda interrupted by new transient (%.1f)", m_loadData.transientMagnitude);
 		resetToIdle();
 		return;
 	}
 	
 	// Check delay timeout
-	if (elapsed >= m_lambdaDelayTime) {
+	if (elapsed >= m_lambdaDelayCallbacks) {
+		efiPrintf("WW DelayLambda complete (%d callbacks), starting immediate gathering", elapsed);
 		transitionTo(WwAdaptiveState::GATHERING_IMMEDIATE);
 	}
 }
 
 void WwAdaptiveStateMachine::handleGatheringImmediateState() {
-	// Safety check for timer
-	if (m_timer == nullptr) {
-		resetToIdle();
-		return;
-	}
-	
-	float currentTime = m_timer->getElapsedSeconds();
-	float elapsed = currentTime - m_stateStartTime;
+	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new transient
 	if (m_loadData.transientMagnitude > 30.0f) {
+		efiPrintf("WW ImmediateGathering interrupted by new transient (%.1f)", m_loadData.transientMagnitude);
 		resetToIdle();
 		return;
 	}
@@ -417,23 +413,18 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 	}
 	
 	// Check if immediate phase is complete
-	if (elapsed >= m_immediatePhaseTime) {
+	if (elapsed >= m_immediatePhaseCallbacks) {
+		efiPrintf("WW ImmediateGathering complete: %d samples collected", m_gatheringData.immediateBufferCount);
 		transitionTo(WwAdaptiveState::GATHERING_PROLONGED);
 	}
 }
 
 void WwAdaptiveStateMachine::handleGatheringProlongedState() {
-	// Safety check for timer
-	if (m_timer == nullptr) {
-		resetToIdle();
-		return;
-	}
-	
-	float currentTime = m_timer->getElapsedSeconds();
-	float elapsed = currentTime - m_stateStartTime;
+	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new strong transient
 	if (m_loadData.transientMagnitude > 50.0f) {
+		efiPrintf("WW ProlongedGathering interrupted by strong transient (%.1f)", m_loadData.transientMagnitude);
 		// Apply incomplete correction (beta only)
 		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
@@ -463,13 +454,14 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	}
 	
 	// Check if prolonged phase is complete or timeout
-	bool phaseComplete = (elapsed >= m_gatheringData.prolongedPhaseDuration) ||
-						 (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget);
-	bool timeout = elapsed >= m_incompleteTimeout;
+	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget);
+	bool timeout = elapsed >= m_incompleteTimeoutCallbacks;
 	
 	if (phaseComplete) {
+		efiPrintf("WW ProlongedGathering complete: %d samples collected", m_gatheringData.prolongedBufferCount);
 		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
 	} else if (timeout) {
+		efiPrintf("WW ProlongedGathering timeout after %d callbacks", elapsed);
 		// Apply incomplete correction (beta only)
 		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
@@ -518,6 +510,11 @@ void WwAdaptiveStateMachine::handleLearningAnalysisState() {
 }
 
 void WwAdaptiveStateMachine::handleApplyingCorrectionState() {
+	// DEBUG: Log what corrections are being applied
+	efiPrintf("WW APPLYING CORRECTIONS: beta=%.3f tau=%.3f at rpm=%.0f map=%.1f", 
+		m_correctionData.betaCorrection, m_correctionData.tauCorrection,
+		m_correctionData.targetRpm, m_correctionData.targetMap);
+	
 	// Apply corrections to tables
 	applyCorrectionToTable(
 		m_correctionData.betaCorrection,
@@ -528,6 +525,10 @@ void WwAdaptiveStateMachine::handleApplyingCorrectionState() {
 	
 	// Increment completed learning cycles
 	m_learningData.completedLearningCycles++;
+	m_debugCorrectionsApplied++;
+	
+	efiPrintf("WW Applied correction #%d (total cycles: %d)", 
+		m_debugCorrectionsApplied, m_learningData.completedLearningCycles);
 	
 	// Return to idle
 	resetToIdle();
@@ -542,8 +543,13 @@ void WwAdaptiveStateMachine::handleSavingState() {
 }
 
 void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
+	WwAdaptiveState oldState = m_currentState;
 	m_currentState = newState;
-	m_stateStartTime = (m_timer != nullptr) ? m_timer->getElapsedSeconds() : 0;
+	m_stateStartCallback = m_callbackCounter;
+	
+	// DEBUG: Log state transitions  
+	efiPrintf("WW Transition: %s -> %s (callback %d)", 
+		getStateString(oldState), getStateString(), m_callbackCounter);
 	
 	// State entry actions
 	switch (newState) {
@@ -554,12 +560,10 @@ void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 			break;
 			
 		case WwAdaptiveState::GATHERING_PROLONGED:
-			// Calculate dynamic prolonged phase duration
-			m_gatheringData.prolongedPhaseDuration = WW_TAU_MULTIPLIER * m_transientData.currentTau;
-			m_gatheringData.prolongedBufferTarget = fminf(
-				(int)(m_gatheringData.prolongedPhaseDuration * 200.0f),
-				WW_PROLONGED_BUFFER_SIZE_MAX
-			);
+			// Calculate dynamic prolonged phase duration in callbacks
+			float durationSeconds = WW_TAU_MULTIPLIER * m_transientData.currentTau;
+			uint32_t durationCallbacks = (uint32_t)(durationSeconds * CALLBACK_FREQUENCY_HZ);
+			m_gatheringData.prolongedBufferTarget = fminf(durationCallbacks, WW_PROLONGED_BUFFER_SIZE_MAX);
 			break;
 			
 		default:
@@ -568,6 +572,7 @@ void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 }
 
 void WwAdaptiveStateMachine::resetToIdle() {
+	m_debugResetCount++;
 	m_transientData.reset();
 	m_gatheringData.reset();
 	m_correctionData.reset();
@@ -575,15 +580,47 @@ void WwAdaptiveStateMachine::resetToIdle() {
 }
 
 bool WwAdaptiveStateMachine::detectTransient() {
+	// Check if adaptive learning is enabled
+	if (!engineConfiguration->wwEnableAdaptiveLearning) {
+		return false;
+	}
+	
 	// Check basic conditions
 	auto clt = Sensor::get(SensorType::Clt);
 	if (!clt.Valid || clt.Value < engineConfiguration->wwMinCoolantTemp) {
 		return false;
 	}
 	
-	// Check for transient threshold
-	const float transientThreshold = 30.0f;
-	return m_loadData.transientMagnitude > transientThreshold;
+	auto rpm = Sensor::getOrZero(SensorType::Rpm);
+	auto map = Sensor::getOrZero(SensorType::Map);
+	
+	// Additional validation
+	if (rpm < 100 || map < 10) {
+		return false;
+	}
+	
+	// Check for transient threshold - usar configuração ou padrão
+	float transientThreshold = engineConfiguration->wwMapThreshold; 
+	if (transientThreshold <= 0) {
+		transientThreshold = 30.0f; // fallback padrão
+	}
+	
+	m_lastTransientMagnitude = m_loadData.transientMagnitude;
+	bool hasTransient = m_loadData.transientMagnitude > transientThreshold;
+	
+	// DEBUG: Log transient detection details every 200 callbacks (1 second)
+	if ((m_callbackCounter % 200) == 0) {
+		efiPrintf("WW Detect: mag=%.1f thresh=%.1f rpm=%.0f map=%.1f clt=%.1f hasT=%d", 
+			m_loadData.transientMagnitude, transientThreshold, rpm, map, clt.Value, hasTransient);
+	}
+	
+	if (hasTransient) {
+		m_debugTransientsDetected++;
+		efiPrintf("WW TRANSIENT DETECTED! Magnitude=%.1f (thresh=%.1f)", 
+			m_loadData.transientMagnitude, transientThreshold);
+	}
+	
+	return hasTransient;
 }
 
 bool WwAdaptiveStateMachine::captureTransientConditions() {
@@ -597,7 +634,7 @@ bool WwAdaptiveStateMachine::captureTransientConditions() {
 	// Capture transient data
 	m_transientData.isPositive = m_loadData.loadDerivative > 0;
 	m_transientData.magnitude = m_loadData.transientMagnitude;
-	m_transientData.startTime = (m_timer != nullptr) ? m_timer->getElapsedSeconds() : 0;
+	m_transientData.startTime = m_callbackCounter * CALLBACK_PERIOD_SEC; // Convert to seconds for compatibility
 	m_transientData.initialRpm = rpm;
 	m_transientData.initialMap = map;
 	
@@ -668,6 +705,12 @@ float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
 	const float correctionRate = engineConfiguration->wwBetaLearningRate;
 	const float maxCorrection = 0.67f;
 	
+	// Validate learning rate
+	if (correctionRate <= 0 || correctionRate > 1.0f) {
+		efiPrintf("WW Invalid beta learning rate: %.3f", correctionRate);
+		return 1.0f;
+	}
+	
 	if (std::isnan(avgLambdaError) || fabsf(avgLambdaError) < 0.02f) {
 		return 1.0f;
 	}
@@ -694,6 +737,12 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	// Tau correction based on lambda trend during prolonged phase
 	const float correctionRate = engineConfiguration->wwTauLearningRate;
 	const float maxCorrection = 0.67f;
+	
+	// Validate learning rate
+	if (correctionRate <= 0 || correctionRate > 1.0f) {
+		efiPrintf("WW Invalid tau learning rate: %.3f", correctionRate);
+		return 1.0f;
+	}
 	
 	if (m_gatheringData.prolongedBufferCount < 10) {
 		return 1.0f;
@@ -776,9 +825,11 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 	int mapIdx = binMap.Idx;
 	int rpmIdx = binRpm.Idx;
 	
-	// Bounds check
-	if (mapIdx < 0 || mapIdx >= WWAE_CORRECTION_SIZE - 1 || 
-		rpmIdx < 0 || rpmIdx >= WWAE_CORRECTION_SIZE - 1) {
+	// Bounds check - FIX: Permitir índice máximo também
+	if (mapIdx < 0 || mapIdx >= WWAE_CORRECTION_SIZE || 
+		rpmIdx < 0 || rpmIdx >= WWAE_CORRECTION_SIZE) {
+		efiPrintf("WW applyCorrectionToTable BOUNDS ERROR: mapIdx=%d rpmIdx=%d (size=%d)", 
+			mapIdx, rpmIdx, WWAE_CORRECTION_SIZE);
 		return;
 	}
 	
@@ -888,7 +939,11 @@ void WwAdaptiveStateMachine::onIgnitionHandler(bool ignitionOn) {
 }
 
 const char* WwAdaptiveStateMachine::getStateString() const {
-	switch (m_currentState) {
+	return getStateString(m_currentState);
+}
+
+const char* WwAdaptiveStateMachine::getStateString(WwAdaptiveState state) const {
+	switch (state) {
 		case WwAdaptiveState::IDLE: return "IDLE";
 		case WwAdaptiveState::TRANSIENT_DETECTED: return "TRANSIENT_DETECTED";
 		case WwAdaptiveState::DELAY_LAMBDA: return "DELAY_LAMBDA";
