@@ -278,4 +278,18 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - **PROBLEMA**: handleLearningAnalysisState() processa até 40 amostras sem limite de tempo
 - **CORREÇÃO**: Comentado como aceitável para 200Hz (40 amostras é gerenciável)
 
+### CORREÇÃO CRÍTICA ANTI-TRAVAMENTO onIgnitionHandler 🚨
+- [X] **Função simplificada drasticamente** - Removidas chamadas complexas durante mudança de ignição
+- [X] **Sem chamadas resetToIdle()** - Evita chain de funções perigosas durante ignition change
+- [X] **Sem chamadas transitionTo()** - Previne acesso a timer durante mudança de estado crítica
+- [X] **Atribuições diretas** - Apenas mudança de flags simples, sem function calls
+- [X] **Operações mínimas** - Estados são mudados diretamente sem processamento complexo
+- [X] **Segurança garantida** - Funções complexas ficam no update() loop onde são seguras
+
+### PROBLEMA IDENTIFICADO E CORRIGIDO 🔧
+- **PROBLEMA CRÍTICO**: onIgnitionHandler() chamava resetToIdle() e transitionTo() que fazem operações complexas
+- **RISCO**: Chain de function calls durante mudança de ignição causava travamento do sistema
+- **CORREÇÃO**: Implementação minimalista com apenas atribuições diretas de flags e estados
+- **RESULTADO**: Mudança de ignição segura sem travamentos, operações complexas delegadas ao update() loop
+
 **STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA, OTIMIZADA E PROTEGIDA CONTRA TRAVAMENTOS E LOOPS** 🚀

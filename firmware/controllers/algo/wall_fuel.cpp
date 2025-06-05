@@ -867,14 +867,22 @@ void WwAdaptiveStateMachine::smoothCorrectionTable(int mapIdx, int rpmIdx, float
 }
 
 void WwAdaptiveStateMachine::onIgnitionHandler(bool ignitionOn) {
+	// CRITICAL FIX: Minimal implementation to avoid hangups during ignition changes
+	// Complex operations are handled in update() loop where they're safer
+	
 	if (ignitionOn) {
-		// Reset state machine on ignition
-		resetToIdle();
-		m_learningData.resetAdaptationCycle();
+		// Only set flags, don't call complex functions during ignition change
+		m_currentState = WwAdaptiveState::IDLE;
+		m_stateStartTime = 0;
+		// Reset counters directly without function calls
+		m_learningData.transientCounter = 0;
+		m_learningData.currentCycleCount = 0;
+		m_learningData.currentMode = LearningData::ADAPT_BETA_ONLY;
 	} else {
-		// Transition to saving state on ignition off
+		// Simply flag that ignition is off - update() will handle saving
+		// Don't do complex state transitions during ignition change
 		if (m_currentState != WwAdaptiveState::IDLE) {
-			transitionTo(WwAdaptiveState::SAVING);
+			m_currentState = WwAdaptiveState::SAVING;
 		}
 	}
 }
