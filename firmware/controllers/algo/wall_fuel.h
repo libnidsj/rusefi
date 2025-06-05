@@ -170,7 +170,7 @@ private:
 	// Configuration parameters in callback counts (converted from time)
 	uint32_t m_lambdaDelayCallbacks = 20;        // 100ms delay = 20 callbacks
 	uint32_t m_immediatePhaseCallbacks = 40;     // 200ms phase = 40 callbacks  
-	uint32_t m_incompleteTimeoutCallbacks = 1000; // 5s timeout = 1000 callbacks
+	uint32_t m_incompleteTimeoutCallbacks = 2000; // INCREASED: 10s timeout = 2000 callbacks
 	uint32_t m_globalTimeoutCallbacks = 6000;    // 30s timeout = 6000 callbacks
 	
 	// Debug and monitoring

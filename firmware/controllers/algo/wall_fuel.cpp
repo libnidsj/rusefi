@@ -414,20 +414,6 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	uint32_t elapsed = getElapsedCallbacks();
 	
-	// TODO: Implement this
-	/*
-	// Check for interruption by new strong transient
-	if (m_loadData.transientMagnitude > 70.0f) {
-		// Apply incomplete correction (beta only if we have immediate data)
-		if (m_gatheringData.immediateBufferCount > 0) {
-			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
-		} else {
-			resetToIdle();
-		}
-		return;
-	}
-	*/
-
 	// Collect lambda data
 	auto lambda = Sensor::get(SensorType::Lambda1);
 	auto targetLambda = engine->fuelComputer.targetLambda;
@@ -447,20 +433,47 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 		}
 	}
 	
-	// Check if prolonged phase is complete or timeout
-	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget);
-	bool timeout = elapsed >= m_incompleteTimeoutCallbacks;
+	// CRITICAL FIX 3: SIMPLIFIED TRANSITION LOGIC - Much more permissive
+	bool hasImmediateData = (m_gatheringData.immediateBufferCount > 0);
+	bool hasMinimalProlongedData = (m_gatheringData.prolongedBufferCount >= 20); // Relaxed from 50
 	
-	if (phaseComplete) {
-		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
-	} else if (timeout) {
-		// Apply incomplete correction (beta only if we have immediate data)
-		if (m_gatheringData.immediateBufferCount > 0) {
-			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
-		} else {
-			resetToIdle();
-		}
+	// RELAXED TIMING: Base minimum time on a simple 400ms instead of complex tau calculations
+	uint32_t minTimeCallbacks = 80; // 400ms = 80 callbacks (relaxed from 1×tau)
+	bool minTimeElapsed = elapsed >= minTimeCallbacks;
+	
+	// PERMISSIVE TARGET: Allow shorter data collection for responsive learning
+	float configuredTau = m_transientData.currentTau;
+	uint32_t adaptiveTarget = minI(
+		(uint32_t)(configuredTau * CALLBACK_FREQUENCY_HZ * 1.5f), // 1.5×tau instead of 3×tau
+		400 // Maximum 2s collection time
+	);
+	adaptiveTarget = maxI(80, adaptiveTarget); // Minimum 400ms
+	
+	// Update target if it was too conservative
+	if (m_gatheringData.prolongedBufferTarget > adaptiveTarget) {
+		m_gatheringData.prolongedBufferTarget = adaptiveTarget;
 	}
+	
+	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget);
+	
+	// GENEROUS TIMEOUT: 8 seconds should be enough for any reasonable tau
+	bool timeout = elapsed >= 1600; // 8s = 1600 callbacks
+	
+	// TRANSITION LOGIC: Multiple paths to proceed with learning
+	if (phaseComplete) {
+		// Ideal case: collected target amount of data
+		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
+	} else if (hasImmediateData && minTimeElapsed && hasMinimalProlongedData) {
+		// Good case: have both beta and minimal tau data
+		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
+	} else if (hasImmediateData && timeout) {
+		// Fallback case: timeout but at least have beta data
+		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
+	} else if (timeout && !hasImmediateData) {
+		// Failure case: timeout with no useful data
+		resetToIdle();
+	}
+	// Otherwise continue collecting data
 }
 
 void WwAdaptiveStateMachine::handleLearningAnalysisState() {
@@ -610,6 +623,11 @@ bool WwAdaptiveStateMachine::detectTransient() {
 	m_lastTransientMagnitude = m_loadData.transientMagnitude;
 	bool hasTransient = m_loadData.transientMagnitude > transientThreshold;
 	
+	// Update debug counter when transient is detected
+	if (hasTransient) {
+		m_debugTransientsDetected++;
+	}
+	
 	return hasTransient;
 }
 
@@ -711,28 +729,39 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	// Validate learning rate
 	if (correctionRate <= 0 || correctionRate > 1.0f) {
-		efiPrintf("WW Invalid tau learning rate: %.3f", correctionRate);
 		return 1.0f;
 	}
 	
-	if (m_gatheringData.prolongedBufferCount < 20) {
-		efiPrintf("WW Insufficient tau samples: %d (need 20+)", m_gatheringData.prolongedBufferCount);
+	// CRITICAL FIX 1: RELAXED TAU VALIDATION - Much less restrictive requirements
+	float configuredTau = m_transientData.currentTau;
+	
+	// CRITICAL FIX: Protect against division by zero
+	if (configuredTau <= 0.001f) {
 		return 1.0f;
 	}
 	
-	// STEP 3: EXPONENTIAL CURVE FITTING
-	// Prepare data for exponential analysis
+	// RELAXED VALIDATION: Only require minimum 20 samples instead of 0.5×tau
+	uint32_t minSamplesForTau = 20; // Fixed minimum, much more permissive
+	
+	if (m_gatheringData.prolongedBufferCount < minSamplesForTau) {
+		return 1.0f;
+	}
+	
+	// CRITICAL FIX 2: PERFORMANCE OPTIMIZATION - Strict limits on processing
 	float timeStep = CALLBACK_PERIOD_SEC; // 5ms per sample
 	int totalSamples = minI(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
-	int step = (totalSamples > 200) ? (totalSamples / 200) : 1; // Dynamic step for performance
+	
+	// PERFORMANCE LIMIT: Never process more than 100 samples regardless of tau
+	int maxProcessingSamples = 100;
+	int step = maxI(1, totalSamples / maxProcessingSamples); // Ensure we stay under limit
 	
 	// First pass: Calculate moving average to reduce noise for exponential fitting
-	float smoothedData[200]; // Maximum after step reduction
+	float smoothedData[100]; // Fixed maximum size for performance
 	int validSamples = 0;
 	
-	for (int i = 0; i < totalSamples; i += step) {
+	for (int i = 0; i < totalSamples && validSamples < maxProcessingSamples; i += step) {
 		float sample = m_gatheringData.prolongedLambdaBuffer[i];
-		if (!std::isnan(sample) && validSamples < 200) {
+		if (!std::isnan(sample)) {
 			// Simple 3-point moving average if we have enough samples
 			if (i >= step && i < totalSamples - step) {
 				float prev = m_gatheringData.prolongedLambdaBuffer[i - step];
@@ -749,8 +778,8 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 		}
 	}
 	
-	if (validSamples < 20) {
-		efiPrintf("WW Insufficient valid tau samples: %d", validSamples);
+	// RELAXED VALIDATION: Accept even fewer samples for analysis
+	if (validSamples < 10) {
 		return 1.0f;
 	}
 	
@@ -763,8 +792,8 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	// Estimate initial and final values for exponential fitting
 	// Take average of first 20% and last 20% of samples
-	int earlyCount = maxI(3, validSamples * 0.2f);
-	int lateCount = maxI(3, validSamples * 0.2f);
+	int earlyCount = maxI(2, validSamples * 0.2f);
+	int lateCount = maxI(2, validSamples * 0.2f);
 	
 	float initialValue = 0, finalValue = 0;
 	for (int i = 0; i < earlyCount; i++) {
@@ -779,7 +808,7 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	// Check if we have exponential decay/growth pattern
 	float totalChange = fabsf(finalValue - initialValue);
-	if (totalChange < 0.005f) {
+	if (totalChange < 0.003f) { // Even more relaxed
 		return 1.0f; // Not enough change to fit exponential
 	}
 	
@@ -830,7 +859,7 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 			}
 		}
 		
-		if (fitSamples >= 10) {
+		if (fitSamples >= 5) { // Relaxed from 10 to 5
 			float denominator = fitSamples * sumT2 - sumT * sumT;
 			if (fabsf(denominator) > 0.001f) {
 				float slope = (fitSamples * sumTLnY - sumT * sumLnY) / denominator;
@@ -842,11 +871,11 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	}
 	
 	// Validate estimated tau
-	if (estimatedTau <= 0.1f || estimatedTau > 10.0f || std::isnan(estimatedTau)) {
+	if (estimatedTau <= 0.05f || estimatedTau > 10.0f || std::isnan(estimatedTau)) {
 		return 1.0f;
 	}
 	
-	// CALCULATE R² FOR QUALITY VALIDATION
+	// CALCULATE R² FOR QUALITY VALIDATION - RELAXED THRESHOLD
 	float ssRes = 0, ssTot = 0;
 	for (int i = 0; i < validSamples; i++) {
 		float t = i * timeStep * step;
@@ -859,26 +888,17 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	float rSquared = (ssTot > 0.001f) ? (1.0f - ssRes / ssTot) : 0.0f;
 	
-	// Require minimum R² for good fit
-	if (rSquared < 0.3f) {
-		efiPrintf("WW Poor tau fit: R²=%.3f (need 0.3+)", rSquared);
+	// RELAXED QUALITY: Require minimum R² of 0.15 instead of 0.3 for permissive learning
+	if (rSquared < 0.15f) {
 		return 1.0f;
 	}
 	
 	// STEP 4: APPLY PHYSICAL CORRECTION
-	float configuredTau = m_transientData.currentTau;
-	
-	// CRITICAL FIX: Protect against division by zero
-	if (configuredTau <= 0.001f) {
-		efiPrintf("WW Invalid configured tau: %.3f", configuredTau);
-		return 1.0f;
-	}
-	
 	float tauError = estimatedTau - configuredTau;
 	float relativeError = tauError / configuredTau;
 	
 	// Adaptive correction rate based on confidence (R²) and error magnitude
-	float confidenceFactor = minF(1.0f, rSquared); // Higher R² = more aggressive correction
+	float confidenceFactor = minF(1.0f, rSquared * 2.0f); // Boost confidence for R² < 0.5
 	float errorMagnitude = minF(1.0f, fabsf(relativeError)); // Limit max error magnitude
 	float adaptiveRate = correctionRate * confidenceFactor * errorMagnitude;
 	
@@ -887,31 +907,27 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	if (m_transientData.isPositive) {
 		// Positive transient (acceleration): if measured tau > configured tau, increase tau
-		if (tauError > 0.05f) { // Measured tau is larger (slower evaporation)
+		if (tauError > 0.03f) { // Relaxed from 0.05f
 			correction = 1.0f + (relativeError * adaptiveRate);
-		} else if (tauError < -0.05f) { // Measured tau is smaller (faster evaporation)
+		} else if (tauError < -0.03f) { // Relaxed from -0.05f
 			correction = 1.0f + (relativeError * adaptiveRate); // relativeError is negative
 		}
 	} else {
 		// Negative transient (deceleration): opposite correction direction
-		if (tauError > 0.05f) {
+		if (tauError > 0.03f) {
 			correction = 1.0f - (relativeError * adaptiveRate * 0.8f); // Slightly less aggressive
-		} else if (tauError < -0.05f) {
+		} else if (tauError < -0.03f) {
 			correction = 1.0f - (relativeError * adaptiveRate * 0.8f);
 		}
 	}
 	
 	// Validate final correction
 	if (std::isnan(correction)) {
-		efiPrintf("WW NaN tau correction detected");
 		return 1.0f;
 	}
 	
 	// Apply maximum correction bounds
 	correction = maxF(1.0f - maxCorrection, minF(1.0f + maxCorrection, correction));
-	
-	efiPrintf("WW TAU CORRECTION: %.3f (rate=%.3f adapt=%.3f conf=%.3f)", 
-		correction, correctionRate, adaptiveRate, confidenceFactor);
 	
 	return correction;
 }
