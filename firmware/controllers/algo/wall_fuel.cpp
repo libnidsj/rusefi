@@ -300,12 +300,6 @@ void WwAdaptiveStateMachine::update() {
 	// Update shared data first
 	updateSharedData();
 	
-	// DEBUG: Every 1000 callbacks (5 seconds), log state info if not IDLE
-	if ((m_callbackCounter % 1000) == 0 && m_currentState != WwAdaptiveState::IDLE) {
-		efiPrintf("WW State: %s, Elapsed: %.1fs, Transients: %d, Corrections: %d", 
-			getStateString(), getElapsedSeconds(), m_debugTransientsDetected, m_debugCorrectionsApplied);
-	}
-	
 	// Execute current state handler
 	switch (m_currentState) {
 		case WwAdaptiveState::IDLE:
@@ -378,15 +372,13 @@ void WwAdaptiveStateMachine::handleDelayLambdaState() {
 	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new transient
-	if (m_loadData.transientMagnitude > 30.0f) {
-		efiPrintf("WW DelayLambda interrupted by new transient (%.1f)", m_loadData.transientMagnitude);
-		resetToIdle();
-		return;
-	}
+	// if (m_loadData.transientMagnitude > 30.0f) {
+	// 	resetToIdle();
+	// 	return;
+	// }
 	
 	// Check delay timeout
 	if (elapsed >= m_lambdaDelayCallbacks) {
-		efiPrintf("WW DelayLambda complete (%d callbacks), starting immediate gathering", elapsed);
 		transitionTo(WwAdaptiveState::GATHERING_IMMEDIATE);
 	}
 }
@@ -395,11 +387,10 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new transient
-	if (m_loadData.transientMagnitude > 30.0f) {
-		efiPrintf("WW ImmediateGathering interrupted by new transient (%.1f)", m_loadData.transientMagnitude);
-		resetToIdle();
-		return;
-	}
+	// if (m_loadData.transientMagnitude > 70.0f) {
+	// 	resetToIdle();
+	// 	return;
+	// }
 	
 	// Collect lambda data
 	auto lambda = Sensor::get(SensorType::Lambda1);
@@ -414,7 +405,6 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 	
 	// Check if immediate phase is complete
 	if (elapsed >= m_immediatePhaseCallbacks) {
-		efiPrintf("WW ImmediateGathering complete: %d samples collected", m_gatheringData.immediateBufferCount);
 		transitionTo(WwAdaptiveState::GATHERING_PROLONGED);
 	}
 }
@@ -423,8 +413,7 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	uint32_t elapsed = getElapsedCallbacks();
 	
 	// Check for interruption by new strong transient
-	if (m_loadData.transientMagnitude > 50.0f) {
-		efiPrintf("WW ProlongedGathering interrupted by strong transient (%.1f)", m_loadData.transientMagnitude);
+	if (m_loadData.transientMagnitude > 70.0f) {
 		// Apply incomplete correction (beta only)
 		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
@@ -458,10 +447,8 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	bool timeout = elapsed >= m_incompleteTimeoutCallbacks;
 	
 	if (phaseComplete) {
-		efiPrintf("WW ProlongedGathering complete: %d samples collected", m_gatheringData.prolongedBufferCount);
 		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
 	} else if (timeout) {
-		efiPrintf("WW ProlongedGathering timeout after %d callbacks", elapsed);
 		// Apply incomplete correction (beta only)
 		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
@@ -510,11 +497,7 @@ void WwAdaptiveStateMachine::handleLearningAnalysisState() {
 }
 
 void WwAdaptiveStateMachine::handleApplyingCorrectionState() {
-	// DEBUG: Log what corrections are being applied
-	efiPrintf("WW APPLYING CORRECTIONS: beta=%.3f tau=%.3f at rpm=%.0f map=%.1f", 
-		m_correctionData.betaCorrection, m_correctionData.tauCorrection,
-		m_correctionData.targetRpm, m_correctionData.targetMap);
-	
+
 	// Apply corrections to tables
 	applyCorrectionToTable(
 		m_correctionData.betaCorrection,
@@ -526,9 +509,6 @@ void WwAdaptiveStateMachine::handleApplyingCorrectionState() {
 	// Increment completed learning cycles
 	m_learningData.completedLearningCycles++;
 	m_debugCorrectionsApplied++;
-	
-	efiPrintf("WW Applied correction #%d (total cycles: %d)", 
-		m_debugCorrectionsApplied, m_learningData.completedLearningCycles);
 	
 	// Return to idle
 	resetToIdle();
@@ -546,10 +526,6 @@ void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 	WwAdaptiveState oldState = m_currentState;
 	m_currentState = newState;
 	m_stateStartCallback = m_callbackCounter;
-	
-	// DEBUG: Log state transitions  
-	efiPrintf("WW Transition: %s -> %s (callback %d)", 
-		getStateString(oldState), getStateString(), m_callbackCounter);
 	
 	// State entry actions
 	switch (newState) {
@@ -629,18 +605,6 @@ bool WwAdaptiveStateMachine::detectTransient() {
 	
 	m_lastTransientMagnitude = m_loadData.transientMagnitude;
 	bool hasTransient = m_loadData.transientMagnitude > transientThreshold;
-	
-	// DEBUG: Log transient detection details every 200 callbacks (1 second)
-	if ((m_callbackCounter % 200) == 0) {
-		efiPrintf("WW Detect: mag=%.1f thresh=%.1f rpm=%.0f map=%.1f clt=%.1f hasT=%d", 
-			m_loadData.transientMagnitude, transientThreshold, rpm, map, clt.Value, hasTransient);
-	}
-	
-	if (hasTransient) {
-		m_debugTransientsDetected++;
-		efiPrintf("WW TRANSIENT DETECTED! Magnitude=%.1f (thresh=%.1f)", 
-			m_loadData.transientMagnitude, transientThreshold);
-	}
 	
 	return hasTransient;
 }
@@ -729,7 +693,6 @@ float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
 	
 	// Validate learning rate
 	if (correctionRate <= 0 || correctionRate > 1.0f) {
-		efiPrintf("WW Invalid beta learning rate: %.3f", correctionRate);
 		return 1.0f;
 	}
 	
@@ -762,7 +725,6 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	
 	// Validate learning rate
 	if (correctionRate <= 0 || correctionRate > 1.0f) {
-		efiPrintf("WW Invalid tau learning rate: %.3f", correctionRate);
 		return 1.0f;
 	}
 	
@@ -850,8 +812,6 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 	// Bounds check - FIX: Permitir índice máximo também
 	if (mapIdx < 0 || mapIdx >= WWAE_CORRECTION_SIZE || 
 		rpmIdx < 0 || rpmIdx >= WWAE_CORRECTION_SIZE) {
-		efiPrintf("WW applyCorrectionToTable BOUNDS ERROR: mapIdx=%d rpmIdx=%d (size=%d)", 
-			mapIdx, rpmIdx, WWAE_CORRECTION_SIZE);
 		return;
 	}
 	
