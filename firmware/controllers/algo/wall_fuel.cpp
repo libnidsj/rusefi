@@ -416,8 +416,8 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	
 	// Check for interruption by new strong transient
 	if (m_loadData.transientMagnitude > 70.0f) {
-		// Apply incomplete correction (beta only)
-		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
+		// Apply incomplete correction (beta only if we have immediate data)
+		if (m_gatheringData.immediateBufferCount > 0) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
 		} else {
 			resetToIdle();
@@ -451,8 +451,8 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	if (phaseComplete) {
 		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
 	} else if (timeout) {
-		// Apply incomplete correction (beta only)
-		if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
+		// Apply incomplete correction (beta only if we have immediate data)
+		if (m_gatheringData.immediateBufferCount > 0) {
 			transitionTo(WwAdaptiveState::APPLYING_CORRECTION);
 		} else {
 			resetToIdle();
@@ -462,12 +462,12 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 
 void WwAdaptiveStateMachine::handleLearningAnalysisState() {
 	// Calculate average immediate lambda error for beta correction
-	if (m_gatheringData.immediateBufferCount > 0 && shouldAdaptBeta()) {
+	if (m_gatheringData.immediateBufferCount > 0) {
 		float sum = 0.0f;
 		int validSamples = 0;
 		
 		// PERFORMANCE FIX: WW_IMMEDIATE_BUFFER_SIZE is 40, which is acceptable for 200Hz
-		int maxSamples = fminf(m_gatheringData.immediateBufferCount, WW_IMMEDIATE_BUFFER_SIZE);
+		int maxSamples = minI(m_gatheringData.immediateBufferCount, WW_IMMEDIATE_BUFFER_SIZE);
 		for (int i = 0; i < maxSamples; i++) {
 			float sample = m_gatheringData.immediateLambdaBuffer[i];
 			if (!std::isnan(sample)) {
@@ -483,7 +483,7 @@ void WwAdaptiveStateMachine::handleLearningAnalysisState() {
 	}
 	
 	// Calculate tau correction if we have prolonged data
-	if (m_gatheringData.prolongedBufferCount > 10 && shouldAdaptTau()) {
+	if (m_gatheringData.prolongedBufferCount > 10) {
 		m_correctionData.tauCorrection = calculateTauCorrection();
 	}
 	
@@ -552,7 +552,7 @@ void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 			// Calculate dynamic prolonged phase duration in callbacks
 			float durationSeconds = WW_TAU_MULTIPLIER * m_transientData.currentTau;
 			uint32_t durationCallbacks = (uint32_t)(durationSeconds * CALLBACK_FREQUENCY_HZ);
-			m_gatheringData.prolongedBufferTarget = fminf(durationCallbacks, WW_PROLONGED_BUFFER_SIZE_MAX);
+			m_gatheringData.prolongedBufferTarget = minI(durationCallbacks, WW_PROLONGED_BUFFER_SIZE_MAX);
 			break;
 		}
 		
@@ -652,39 +652,21 @@ void WwAdaptiveStateMachine::collectLambdaData(float lambdaError) {
 }
 
 bool WwAdaptiveStateMachine::shouldAdaptBeta() const {
-	return m_learningData.currentMode == LearningData::ADAPT_BETA_ONLY ||
-		   m_learningData.currentMode == LearningData::ADAPT_BOTH;
+	// Always adapt beta when we have immediate data
+	return true;
 }
 
 bool WwAdaptiveStateMachine::shouldAdaptTau() const {
-	return m_learningData.currentMode == LearningData::ADAPT_TAU_ONLY ||
-		   m_learningData.currentMode == LearningData::ADAPT_BOTH;
+	// Always adapt tau when we have prolonged data
+	return true;
 }
 
 void WwAdaptiveStateMachine::updateAdaptationMode() {
-	// Increment transient counter
+	// Increment transient counter for statistics
 	m_learningData.transientCounter++;
 	
-	// Check if we need to switch adaptation modes
-	if (m_learningData.transientCounter >= m_learningData.adaptationCycleLength) {
-		m_learningData.transientCounter = 0;
-		m_learningData.currentCycleCount++;
-		
-		// Determine next adaptation mode based on cycle count
-		if (m_learningData.currentMode == LearningData::ADAPT_BETA_ONLY) {
-			if (m_learningData.currentCycleCount >= m_learningData.betaAdaptationCycles) {
-				// Switch to tau adaptation
-				m_learningData.currentMode = LearningData::ADAPT_TAU_ONLY;
-				m_learningData.currentCycleCount = 0;
-			}
-		} else if (m_learningData.currentMode == LearningData::ADAPT_TAU_ONLY) {
-			if (m_learningData.currentCycleCount >= m_learningData.tauAdaptationCycles) {
-				// Switch back to beta adaptation
-				m_learningData.currentMode = LearningData::ADAPT_BETA_ONLY;
-				m_learningData.currentCycleCount = 0;
-			}
-		}
-	}
+	// Since we always adapt both beta and tau, no mode switching needed
+	// Keep the counter for potential future use or debugging
 }
 
 float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
@@ -716,78 +698,220 @@ float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
 	}
 	
 	// Clamp correction to bounds
-	return fmaxf(1.0f - maxCorrection, fminf(1.0f + maxCorrection, correction));
+	return maxF(1.0f - maxCorrection, minF(1.0f + maxCorrection, correction));
 }
 
 float WwAdaptiveStateMachine::calculateTauCorrection() {
-	// Tau correction based on lambda trend during prolonged phase
+	// Tau correction based on exponential decay analysis during prolonged phase
 	const float correctionRate = engineConfiguration->wwTauLearningRate;
 	const float maxCorrection = 0.67f;
 	
 	// Validate learning rate
 	if (correctionRate <= 0 || correctionRate > 1.0f) {
+		efiPrintf("WW Invalid tau learning rate: %.3f", correctionRate);
 		return 1.0f;
 	}
 	
-	if (m_gatheringData.prolongedBufferCount < 10) {
+	if (m_gatheringData.prolongedBufferCount < 20) {
+		efiPrintf("WW Insufficient tau samples: %d (need 20+)", m_gatheringData.prolongedBufferCount);
 		return 1.0f;
 	}
 	
-	// Calculate linear trend (slope) of lambda error over time
-	float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+	// STEP 3: EXPONENTIAL CURVE FITTING
+	// Prepare data for exponential analysis
+	float timeStep = CALLBACK_PERIOD_SEC; // 5ms per sample
+	int totalSamples = minI(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
+	int step = (totalSamples > 200) ? (totalSamples / 200) : 1; // Dynamic step for performance
+	
+	// First pass: Calculate moving average to reduce noise for exponential fitting
+	float smoothedData[200]; // Maximum after step reduction
 	int validSamples = 0;
-	
-	// PERFORMANCE FIX: Process all samples but with step to reduce computational load
-	// At 200Hz (5ms period), we need to limit processing time while preserving data coverage
-	int totalSamples = fminf(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
-	int step = (totalSamples > 100) ? (totalSamples / 100) : 1; // Dynamic step based on sample count
 	
 	for (int i = 0; i < totalSamples; i += step) {
 		float sample = m_gatheringData.prolongedLambdaBuffer[i];
-		if (!std::isnan(sample)) {
-			float x = (float)i;
-			float y = sample;
-			
-			sumX += x;
-			sumY += y;
-			sumXY += x * y;
-			sumX2 += x * x;
+		if (!std::isnan(sample) && validSamples < 200) {
+			// Simple 3-point moving average if we have enough samples
+			if (i >= step && i < totalSamples - step) {
+				float prev = m_gatheringData.prolongedLambdaBuffer[i - step];
+				float next = m_gatheringData.prolongedLambdaBuffer[i + step];
+				if (!std::isnan(prev) && !std::isnan(next)) {
+					smoothedData[validSamples] = (prev + sample + next) / 3.0f;
+				} else {
+					smoothedData[validSamples] = sample;
+				}
+			} else {
+				smoothedData[validSamples] = sample;
+			}
 			validSamples++;
 		}
 	}
 	
-	if (validSamples < 10) {
+	if (validSamples < 20) {
+		efiPrintf("WW Insufficient valid tau samples: %d", validSamples);
 		return 1.0f;
 	}
 	
-	// Calculate slope
-	float denominator = validSamples * sumX2 - sumX * sumX;
-	if (fabsf(denominator) < 0.001f) {
+	// Calculate mean for offset estimation
+	float meanLambda = 0;
+	for (int i = 0; i < validSamples; i++) {
+		meanLambda += smoothedData[i];
+	}
+	meanLambda /= validSamples;
+	
+	// Estimate initial and final values for exponential fitting
+	// Take average of first 20% and last 20% of samples
+	int earlyCount = maxI(3, validSamples * 0.2f);
+	int lateCount = maxI(3, validSamples * 0.2f);
+	
+	float initialValue = 0, finalValue = 0;
+	for (int i = 0; i < earlyCount; i++) {
+		initialValue += smoothedData[i];
+	}
+	initialValue /= earlyCount;
+	
+	for (int i = validSamples - lateCount; i < validSamples; i++) {
+		finalValue += smoothedData[i];
+	}
+	finalValue /= lateCount;
+	
+	// Check if we have exponential decay/growth pattern
+	float totalChange = fabsf(finalValue - initialValue);
+	if (totalChange < 0.005f) {
+		return 1.0f; // Not enough change to fit exponential
+	}
+	
+	// EXPONENTIAL FITTING: y(t) = A * exp(-t/τ) + B
+	// Simplified approach: estimate τ from 63.2% decay point
+	float targetValue = finalValue + 0.632f * (initialValue - finalValue); // 63.2% point
+	float estimatedTau = 0;
+	
+	// Find time where signal crosses 63.2% point
+	bool foundCrossing = false;
+	for (int i = 1; i < validSamples; i++) {
+		float currentTime = i * timeStep * step;
+		
+		if ((initialValue > finalValue && smoothedData[i] <= targetValue && smoothedData[i-1] > targetValue) ||
+			(initialValue < finalValue && smoothedData[i] >= targetValue && smoothedData[i-1] < targetValue)) {
+			
+			// Linear interpolation for precise crossing time
+			float t1 = (i-1) * timeStep * step;
+			float t2 = i * timeStep * step;
+			float y1 = smoothedData[i-1];
+			float y2 = smoothedData[i];
+			
+			float crossingTime = t1 + (t2 - t1) * (targetValue - y1) / (y2 - y1);
+			estimatedTau = crossingTime;
+			foundCrossing = true;
+			break;
+		}
+	}
+	
+	// Alternative method: least squares fitting if crossing not found
+	if (!foundCrossing || estimatedTau <= 0 || estimatedTau > 10.0f) {
+		// Use linearized exponential fitting: ln(|y-B|) = ln(A) - t/τ
+		float sumT = 0, sumLnY = 0, sumT2 = 0, sumTLnY = 0;
+		int fitSamples = 0;
+		
+		for (int i = 0; i < validSamples; i++) {
+			float t = i * timeStep * step;
+			float y = smoothedData[i] - finalValue; // Remove offset
+			
+			if (fabsf(y) > 0.001f) { // Avoid log of small numbers
+				float lnY = logf(fabsf(y));
+				if (!std::isnan(lnY) && !std::isinf(lnY)) {
+					sumT += t;
+					sumLnY += lnY;
+					sumT2 += t * t;
+					sumTLnY += t * lnY;
+					fitSamples++;
+				}
+			}
+		}
+		
+		if (fitSamples >= 10) {
+			float denominator = fitSamples * sumT2 - sumT * sumT;
+			if (fabsf(denominator) > 0.001f) {
+				float slope = (fitSamples * sumTLnY - sumT * sumLnY) / denominator;
+				if (slope < -0.01f) { // Negative slope for decay
+					estimatedTau = -1.0f / slope;
+				}
+			}
+		}
+	}
+	
+	// Validate estimated tau
+	if (estimatedTau <= 0.1f || estimatedTau > 10.0f || std::isnan(estimatedTau)) {
 		return 1.0f;
 	}
 	
-	float slope = (validSamples * sumXY - sumX * sumY) / denominator;
+	// CALCULATE R² FOR QUALITY VALIDATION
+	float ssRes = 0, ssTot = 0;
+	for (int i = 0; i < validSamples; i++) {
+		float t = i * timeStep * step;
+		float predicted = finalValue + (initialValue - finalValue) * expf_taylor(-t / estimatedTau);
+		float actual = smoothedData[i];
+		
+		ssRes += (actual - predicted) * (actual - predicted);
+		ssTot += (actual - meanLambda) * (actual - meanLambda);
+	}
 	
-	if (std::isnan(slope) || fabsf(slope) < 0.001f) {
+	float rSquared = (ssTot > 0.001f) ? (1.0f - ssRes / ssTot) : 0.0f;
+	
+	// Require minimum R² for good fit
+	if (rSquared < 0.3f) {
+		efiPrintf("WW Poor tau fit: R²=%.3f (need 0.3+)", rSquared);
 		return 1.0f;
 	}
 	
+	// STEP 4: APPLY PHYSICAL CORRECTION
+	float configuredTau = m_transientData.currentTau;
+	
+	// CRITICAL FIX: Protect against division by zero
+	if (configuredTau <= 0.001f) {
+		efiPrintf("WW Invalid configured tau: %.3f", configuredTau);
+		return 1.0f;
+	}
+	
+	float tauError = estimatedTau - configuredTau;
+	float relativeError = tauError / configuredTau;
+	
+	// Adaptive correction rate based on confidence (R²) and error magnitude
+	float confidenceFactor = minF(1.0f, rSquared); // Higher R² = more aggressive correction
+	float errorMagnitude = minF(1.0f, fabsf(relativeError)); // Limit max error magnitude
+	float adaptiveRate = correctionRate * confidenceFactor * errorMagnitude;
+	
+	// Physical correction calculation
 	float correction = 1.0f;
 	
 	if (m_transientData.isPositive) {
-		// Positive transient (acceleration)
-		correction = 1.0f - (slope * correctionRate * 100.0f);
+		// Positive transient (acceleration): if measured tau > configured tau, increase tau
+		if (tauError > 0.05f) { // Measured tau is larger (slower evaporation)
+			correction = 1.0f + (relativeError * adaptiveRate);
+		} else if (tauError < -0.05f) { // Measured tau is smaller (faster evaporation)
+			correction = 1.0f + (relativeError * adaptiveRate); // relativeError is negative
+		}
 	} else {
-		// Negative transient (deceleration)
-		correction = 1.0f + (slope * correctionRate * 100.0f);
+		// Negative transient (deceleration): opposite correction direction
+		if (tauError > 0.05f) {
+			correction = 1.0f - (relativeError * adaptiveRate * 0.8f); // Slightly less aggressive
+		} else if (tauError < -0.05f) {
+			correction = 1.0f - (relativeError * adaptiveRate * 0.8f);
+		}
 	}
 	
+	// Validate final correction
 	if (std::isnan(correction)) {
+		efiPrintf("WW NaN tau correction detected");
 		return 1.0f;
 	}
 	
-	// Clamp correction to bounds
-	return fmaxf(1.0f - maxCorrection, fminf(1.0f + maxCorrection, correction));
+	// Apply maximum correction bounds
+	correction = maxF(1.0f - maxCorrection, minF(1.0f + maxCorrection, correction));
+	
+	efiPrintf("WW TAU CORRECTION: %.3f (rate=%.3f adapt=%.3f conf=%.3f)", 
+		correction, correctionRate, adaptiveRate, confidenceFactor);
+	
+	return correction;
 }
 
 void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map) {
@@ -797,7 +921,7 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 	
 	// Cross-coupling correction to reduce instability
 	float cross_coupling = 1.0f - (0.2f * fabsf(betaCorrection - tauCorrection));
-	cross_coupling = fmaxf(0.5f, fminf(1.0f, cross_coupling));
+	cross_coupling = maxF(0.5f, minF(1.0f, cross_coupling));
 	
 	// Apply cross-coupling factor
 	betaCorrection = 1.0f + (betaCorrection - 1.0f) * cross_coupling;
@@ -824,7 +948,7 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 			float newBetaCorrection = currentBetaCorrection * betaCorrection;
 			
 			if (!std::isnan(newBetaCorrection)) {
-				newBetaCorrection = fmaxf(0.5f, fminf(2.0f, newBetaCorrection));
+				newBetaCorrection = maxF(0.5f, minF(2.0f, newBetaCorrection));
 				config->wwBetaCorrection[mapIdx][rpmIdx] = newBetaCorrection;
 				
 				// Apply smoothing to adjacent cells
@@ -841,7 +965,7 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 			float newTauCorrection = currentTauCorrection * tauCorrection;
 			
 			if (!std::isnan(newTauCorrection)) {
-				newTauCorrection = fmaxf(0.5f, fminf(2.0f, newTauCorrection));
+				newTauCorrection = maxF(0.5f, minF(2.0f, newTauCorrection));
 				config->wwTauCorrection[mapIdx][rpmIdx] = newTauCorrection;
 				
 				// Apply smoothing to adjacent cells
@@ -911,7 +1035,7 @@ void WwAdaptiveStateMachine::onIgnitionHandler(bool ignitionOn) {
 		// Reset counters directly without function calls
 		m_learningData.transientCounter = 0;
 		m_learningData.currentCycleCount = 0;
-		m_learningData.currentMode = LearningData::ADAPT_BETA_ONLY;
+		// No specific mode needed since we always adapt both
 	} else {
 		// Simply flag that ignition is off - update() will handle saving
 		// Don't do complex state transitions during ignition change

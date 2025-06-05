@@ -103,17 +103,8 @@ struct GatheringData {
 };
 
 struct LearningData {
-	enum AdaptationMode {
-		ADAPT_BETA_ONLY,
-		ADAPT_TAU_ONLY,
-		ADAPT_BOTH
-	};
-	
-	AdaptationMode currentMode = ADAPT_BETA_ONLY;
+	// Simplified: always adapt both beta and tau when data is available
 	int transientCounter = 0;
-	int adaptationCycleLength = 2;
-	int betaAdaptationCycles = 3;
-	int tauAdaptationCycles = 3;
 	int currentCycleCount = 0;
 	
 	float avgImmediateLambdaError = 0;
@@ -121,7 +112,6 @@ struct LearningData {
 	int completedLearningCycles = 0;
 	
 	void resetAdaptationCycle() {
-		currentMode = ADAPT_BETA_ONLY;
 		transientCounter = 0;
 		currentCycleCount = 0;
 	}
