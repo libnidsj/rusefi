@@ -216,14 +216,16 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 	m_ignitionState = ignitionOn;
 	
 	if (ignitionOn) {
-		// Reset state machine when ignition turns on
-		m_stateMachine.onIgnitionStateChanged(true);
-		m_pendingSave = false;
+		if (engineConfiguration->wwEnableAdaptiveLearning) {
+			// Reset state machine when ignition turns on
+			m_stateMachine.onIgnitionHandler(true);
+			m_pendingSave = false;
+		}
 		// Note: Don't reset timers here as it can cause synchronization issues
 	} else {
 		// When ignition turns off, schedule save if we have updates
 		if (engineConfiguration->wwEnableAdaptiveLearning) {
-			m_stateMachine.onIgnitionStateChanged(false);
+			m_stateMachine.onIgnitionHandler(false);
 			setNeedToWriteConfiguration();
 			m_pendingSave = true;
 			m_ignitionOffTimer.reset();

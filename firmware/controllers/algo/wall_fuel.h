@@ -210,7 +210,7 @@ public:
 	void initialize(Timer* timer);
 	void ensureInitialized(Timer* timer);
 	void update();
-	void onIgnitionStateChanged(bool ignitionOn);
+	void onIgnitionHandler(bool ignitionOn);
 	WwAdaptiveState getCurrentState() const { return m_currentState; }
 };
 
