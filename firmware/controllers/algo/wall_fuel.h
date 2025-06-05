@@ -8,7 +8,6 @@
 #include "wall_fuel_state_generated.h"
 #include "engine_module.h"
 #include <rusefi/timer.h>
-#include "cyclic_buffer.h"
 
 /**
  * Wall wetting, also known as fuel film
@@ -33,129 +32,184 @@ struct IWallFuelController {
 	virtual void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) = 0;
 };
 
-// Circular buffer for load derivative calculation
+// Buffer sizes and constants
 #define WW_LOAD_BUFFER_SIZE 8
 #define WW_IMMEDIATE_BUFFER_SIZE 40  // Beta: primeiros 200ms (40 amostras a 200Hz)
 #define WW_PROLONGED_BUFFER_SIZE_MAX 1000 // Tau: máximo para tau=5s (1000 amostras a 200Hz)
 #define WW_TAU_MULTIPLIER 3.0f       // Coleta dados por 3×tau (captura ~95% do efeito)
 
-// Adaptive correction data structure
-struct WwAdaptiveData {
-	float loadBuffer[WW_LOAD_BUFFER_SIZE];
-	int bufferIndex = 0;
-	float lastLoad = 0;
-	float loadDerivative = 0;
-	
-	// Transient detection and timing
-	bool isPositiveTransient = false;
-	bool isNegativeTransient = false;
-	float transientMagnitude = 0;
-	float transientStartTime = 0;
-	bool waitingForResponse = false;
-	
-	// Separate buffers for beta (immediate) and tau (prolonged) responses
-	float immediateLambdaBuffer[WW_IMMEDIATE_BUFFER_SIZE];  // Beta: 0-200ms
-	float prolongedLambdaBuffer[WW_PROLONGED_BUFFER_SIZE_MAX];  // Tau: 200ms-3s
-	int immediateBufferIndex = 0;
-	int prolongedBufferIndex = 0;
-	int immediateBufferCount = 0;
-	int prolongedBufferCount = 0;
-	
-	// Response phase tracking
-	bool collectingImmediate = false;  // 0-200ms for beta
-	bool collectingProlonged = false;  // 200ms-3s for tau
-	float phaseStartTime = 0;
-	
-	// Dynamic prolonged phase duration based on tau
-	float currentTau = 1.0f;           // Current tau value for this transient
-	float prolongedPhaseDuration = 0;  // Duration in seconds (WW_TAU_MULTIPLIER × tau)
-	int prolongedBufferSizeTarget = 0; // Target buffer size for current tau
-	
-	// Average errors for correction calculation
-	float avgImmediateLambdaError = 0;  // For beta correction
-	float avgProlongedLambdaError = 0;  // For tau correction
-	
-	// Transient conditions for correction
-	float transientRpm = 0;
-	float transientMap = 0;
-	bool hasValidTransientData = false;
-	
-	// Separate conditions for beta (initial) and tau (final) corrections
-	float initialTransientRpm = 0;  // Beta: condições no início do transiente
-	float initialTransientMap = 0;
-	float finalTransientRpm = 0;    // Tau: condições no final do transiente  
-	float finalTransientMap = 0;
-	
-	// Transient completion tracking
-	bool transientCompleted = false;
-	bool incompleteTransientDetected = false;
-	float transientDuration = 0;
-	float minTransientDuration = 0.5f; // 500ms minimum for complete transient
-	float incompleteTimeout = 5.0f;    // 5s timeout for incomplete transients (increased from 3.0f)
-	
-	// Decoupled adaptation periods to avoid beta-tau coupling
-	enum AdaptationMode {
-		ADAPT_BETA_ONLY,    // Adapt only beta, keep tau fixed
-		ADAPT_TAU_ONLY,     // Adapt only tau, keep beta fixed
-		ADAPT_BOTH          // Adapt both (for comparison/testing)
-	};
-	
-	AdaptationMode currentAdaptationMode = ADAPT_BETA_ONLY;
-	int transientCounter = 0;
-	int adaptationCycleLength = 2;   // 2 transients per adaptation period (initialized)
-	int betaAdaptationCycles = 3;     // 3 cycles for beta adaptation (6 transients total)
-	int tauAdaptationCycles = 3;      // 3 cycles for tau adaptation (6 transients total)
-	int currentCycleCount = 0;
-	
-	// Statistics for debugging
-	int interruptedBetaPhases = 0;   // Count of beta phases interrupted by new transients
-	int interruptedTauPhases = 0;    // Count of tau phases interrupted by new transients
-	int completedLearningCycles = 0; // Count of successfully completed learning cycles
+// Wall Wetting Adaptive State Machine
+enum class WwAdaptiveState {
+	IDLE,                    // Monitoring for transients
+	TRANSIENT_DETECTED,      // Capturing transient conditions
+	DELAY_LAMBDA,            // Waiting for lambda sensor excitation
+	GATHERING_IMMEDIATE,     // Collecting immediate response (0-200ms, beta)
+	GATHERING_PROLONGED,     // Collecting prolonged response (200ms-3*tau, tau)
+	LEARNING_ANALYSIS,       // Analyzing data and calculating corrections
+	APPLYING_CORRECTION,     // Updating correction tables
+	SAVING                   // Persisting configuration
+};
+
+// State-specific data structures
+struct TransientData {
+	bool isPositive = false;
+	float magnitude = 0;
+	float startTime = 0;
+	float initialRpm = 0;
+	float initialMap = 0;
+	float currentTau = 1.0f;
 	
 	void reset() {
-		// Reset all learning state
-		isPositiveTransient = false;
-		isNegativeTransient = false;
-		collectingImmediate = false;
-		collectingProlonged = false;
-		transientCompleted = false;
-		incompleteTransientDetected = false;
-		
-		// Reset buffers
-		immediateBufferCount = 0;
-		prolongedBufferCount = 0;
-		immediateBufferIndex = 0;
-		prolongedBufferIndex = 0;
-		
-		// Reset timing
-		transientStartTime = 0;
-		phaseStartTime = 0;
-		transientDuration = 0;
-		
-		// Reset conditions
-		initialTransientRpm = 0;
-		initialTransientMap = 0;
-		finalTransientRpm = 0;
-		finalTransientMap = 0;
-		
-		// Reset errors
-		avgImmediateLambdaError = 0;
-		avgProlongedLambdaError = 0;
-		
-		// Note: Don't reset adaptation mode variables here
-		// They should persist across individual transient resets
-		// Only reset on ignition cycle or manual reset
-		
-		// Note: Don't reset statistics counters (interruptedBetaPhases, etc.)
-		// They should persist to provide debugging information across multiple cycles
+		isPositive = false;
+		magnitude = 0;
+		startTime = 0;
+		initialRpm = 0;
+		initialMap = 0;
+		currentTau = 1.0f;
 	}
+};
+
+struct GatheringData {
+	// Immediate phase (beta)
+	float immediateLambdaBuffer[WW_IMMEDIATE_BUFFER_SIZE];
+	int immediateBufferCount = 0;
+	int immediateBufferIndex = 0;
+	
+	// Prolonged phase (tau)
+	float prolongedLambdaBuffer[WW_PROLONGED_BUFFER_SIZE_MAX];
+	int prolongedBufferCount = 0;
+	int prolongedBufferIndex = 0;
+	int prolongedBufferTarget = 0;
+	
+	// Phase timing
+	float phaseStartTime = 0;
+	float prolongedPhaseDuration = 0;
+	
+	// Final conditions (used for debug)
+	float finalRpm = 0;
+	float finalMap = 0;
+	
+	void reset() {
+		immediateBufferCount = 0;
+		immediateBufferIndex = 0;
+		prolongedBufferCount = 0;
+		prolongedBufferIndex = 0;
+		prolongedBufferTarget = 0;
+		phaseStartTime = 0;
+		prolongedPhaseDuration = 0;
+		finalRpm = 0;
+		finalMap = 0;
+	}
+};
+
+struct LearningData {
+	enum AdaptationMode {
+		ADAPT_BETA_ONLY,
+		ADAPT_TAU_ONLY,
+		ADAPT_BOTH
+	};
+	
+	AdaptationMode currentMode = ADAPT_BETA_ONLY;
+	int transientCounter = 0;
+	int adaptationCycleLength = 2;
+	int betaAdaptationCycles = 3;
+	int tauAdaptationCycles = 3;
+	int currentCycleCount = 0;
+	
+	float avgImmediateLambdaError = 0;
+	
+	int completedLearningCycles = 0;
 	
 	void resetAdaptationCycle() {
-		// Reset adaptation cycle (called on ignition or manual reset)
-		currentAdaptationMode = ADAPT_BETA_ONLY;
+		currentMode = ADAPT_BETA_ONLY;
 		transientCounter = 0;
 		currentCycleCount = 0;
 	}
+};
+
+struct CorrectionData {
+	float betaCorrection = 1.0f;
+	float tauCorrection = 1.0f;
+	float targetRpm = 0;
+	float targetMap = 0;
+	
+	void reset() {
+		betaCorrection = 1.0f;
+		tauCorrection = 1.0f;
+		targetRpm = 0;
+		targetMap = 0;
+	}
+};
+
+// Shared data for load monitoring
+struct LoadMonitoringData {
+	float loadBuffer[WW_LOAD_BUFFER_SIZE];
+	int bufferIndex = 0;
+	float loadDerivative = 0;
+	float transientMagnitude = 0;
+	
+	void reset() {
+		bufferIndex = 0;
+		loadDerivative = 0;
+		transientMagnitude = 0;
+		for (int i = 0; i < WW_LOAD_BUFFER_SIZE; i++) {
+			loadBuffer[i] = 0;
+		}
+	}
+};
+
+// Main state machine class
+class WwAdaptiveStateMachine {
+private:
+	WwAdaptiveState m_currentState = WwAdaptiveState::IDLE;
+	
+	// State-specific data
+	TransientData m_transientData;
+	GatheringData m_gatheringData;
+	LearningData m_learningData;
+	CorrectionData m_correctionData;
+	LoadMonitoringData m_loadData;
+	
+	// Timing
+	Timer* m_timer;
+	float m_stateStartTime = 0;
+	
+	// Configuration parameters
+	float m_lambdaDelayTime = 0.1f;        // 100ms delay for lambda sensor
+	float m_immediatePhaseTime = 0.2f;     // 200ms for immediate phase
+	float m_incompleteTimeout = 5.0f;      // 5s timeout for incomplete
+	
+	// State handlers
+	void handleIdleState();
+	void handleTransientDetectedState();
+	void handleDelayLambdaState();
+	void handleGatheringImmediateState();
+	void handleGatheringProlongedState();
+	void handleLearningAnalysisState();
+	void handleApplyingCorrectionState();
+	void handleSavingState();
+	
+	// Helper methods
+	void transitionTo(WwAdaptiveState newState);
+	void resetToIdle();
+	void updateSharedData();
+	bool detectTransient();
+	bool captureTransientConditions();
+	void collectLambdaData(float lambdaError);
+	bool shouldAdaptBeta() const;
+	bool shouldAdaptTau() const;
+	void updateAdaptationMode();
+	float calculateBetaCorrection(float avgImmediateLambdaError);
+	float calculateTauCorrection();
+	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
+	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
+	const char* getStateString() const;
+	
+public:
+	void initialize(Timer* timer);
+	void update();
+	void onIgnitionStateChanged(bool ignitionOn);
+	WwAdaptiveState getCurrentState() const { return m_currentState; }
 };
 
 class WallFuelController : public IWallFuelController, public EngineModule {
@@ -187,32 +241,12 @@ private:
 	float m_alpha = 0;
 	float m_beta = 0;
 	
-	// Adaptive learning system
-	WwAdaptiveData m_adaptiveData;
+	// Adaptive learning state machine
+	WwAdaptiveStateMachine m_stateMachine;
 	Timer m_learningTimer;
 	Timer m_ignitionOffTimer;
 	bool m_ignitionState = false;
 	bool m_pendingSave = false;
-	
-	// Adaptive learning methods
-	void updateLoadDerivative(float currentLoad);
-	void detectTransients();
-	void updateLambdaResponse(float lambdaError, float currentTime);
-	void startImmediatePhase();
-	void startProlongedPhase();
-	void applyAdaptiveCorrections();
-	void applyIncompleteTransientCorrection();
-	void applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map);
-	void smoothCorrectionTable(int mapIdx, int rpmIdx, float betaCorrection, float tauCorrection);
-
-	// Separate correction calculations for beta and tau
-	float calculateBetaCorrection(float avgImmediateLambdaError);
-	float calculateTauCorrection();
-	
-	// Decoupled adaptation management
-	void updateAdaptationMode();
-	bool shouldAdaptBeta() const;
-	bool shouldAdaptTau() const;
 	
 	// Integration with injection system
 	void onActualFuelInjection(float injectedMass, int cylinderIndex = 0) override;
