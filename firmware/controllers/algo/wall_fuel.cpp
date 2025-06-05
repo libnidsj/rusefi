@@ -866,7 +866,7 @@ void WwAdaptiveStateMachine::smoothCorrectionTable(int mapIdx, int rpmIdx, float
 	}
 }
 
-void WwAdaptiveStateMachine::onIgnitionStateChanged(bool ignitionOn) {
+void WwAdaptiveStateMachine::onIgnitionHandler(bool ignitionOn) {
 	if (ignitionOn) {
 		// Reset state machine on ignition
 		resetToIdle();
