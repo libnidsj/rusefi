@@ -553,20 +553,42 @@ void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 	
 	// State entry actions
 	switch (newState) {
+		case WwAdaptiveState::IDLE:
+			// No special actions for IDLE
+			break;
+			
 		case WwAdaptiveState::TRANSIENT_DETECTED:
 			// Reset gathering data for new transient
 			m_gatheringData.reset();
 			m_correctionData.reset();
 			break;
 			
-		case WwAdaptiveState::GATHERING_PROLONGED:
+		case WwAdaptiveState::DELAY_LAMBDA:
+			// No special actions for DELAY_LAMBDA
+			break;
+			
+		case WwAdaptiveState::GATHERING_IMMEDIATE:
+			// No special actions for GATHERING_IMMEDIATE
+			break;
+			
+		case WwAdaptiveState::GATHERING_PROLONGED: {
 			// Calculate dynamic prolonged phase duration in callbacks
 			float durationSeconds = WW_TAU_MULTIPLIER * m_transientData.currentTau;
 			uint32_t durationCallbacks = (uint32_t)(durationSeconds * CALLBACK_FREQUENCY_HZ);
 			m_gatheringData.prolongedBufferTarget = fminf(durationCallbacks, WW_PROLONGED_BUFFER_SIZE_MAX);
 			break;
+		}
+		
+		case WwAdaptiveState::LEARNING_ANALYSIS:
+			// No special actions for LEARNING_ANALYSIS
+			break;
 			
-		default:
+		case WwAdaptiveState::APPLYING_CORRECTION:
+			// No special actions for APPLYING_CORRECTION
+			break;
+			
+		case WwAdaptiveState::SAVING:
+			// No special actions for SAVING
 			break;
 	}
 }
@@ -924,7 +946,7 @@ void WwAdaptiveStateMachine::onIgnitionHandler(bool ignitionOn) {
 	if (ignitionOn) {
 		// Only set flags, don't call complex functions during ignition change
 		m_currentState = WwAdaptiveState::IDLE;
-		m_stateStartTime = 0;
+		m_stateStartCallback = m_callbackCounter; // Reset state start callback instead of m_stateStartTime
 		// Reset counters directly without function calls
 		m_learningData.transientCounter = 0;
 		m_learningData.currentCycleCount = 0;
