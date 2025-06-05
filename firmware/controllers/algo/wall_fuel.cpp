@@ -414,6 +414,8 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	uint32_t elapsed = getElapsedCallbacks();
 	
+	// TODO: Implement this
+	/*
 	// Check for interruption by new strong transient
 	if (m_loadData.transientMagnitude > 70.0f) {
 		// Apply incomplete correction (beta only if we have immediate data)
@@ -424,7 +426,8 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 		}
 		return;
 	}
-	
+	*/
+
 	// Collect lambda data
 	auto lambda = Sensor::get(SensorType::Lambda1);
 	auto targetLambda = engine->fuelComputer.targetLambda;
