@@ -207,6 +207,7 @@ private:
 	
 public:
 	void initialize(Timer* timer);
+	void ensureInitialized(Timer* timer);
 	void update();
 	void onIgnitionStateChanged(bool ignitionOn);
 	WwAdaptiveState getCurrentState() const { return m_currentState; }

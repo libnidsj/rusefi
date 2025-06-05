@@ -206,12 +206,8 @@ void WallFuelController::onFastCallback() {
 
 	// Adaptive learning state machine
 	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		// Initialize state machine on first use
-		static bool initialized = false;
-		if (!initialized) {
-			m_stateMachine.initialize(&m_learningTimer);
-			initialized = true;
-		}
+		// Ensure state machine is initialized (safe to call multiple times)
+		m_stateMachine.ensureInitialized(&m_learningTimer);
 		m_stateMachine.update();
 	}
 }
@@ -220,11 +216,10 @@ void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
 	m_ignitionState = ignitionOn;
 	
 	if (ignitionOn) {
-		// Reset timers and state machine when ignition turns on
-		m_learningTimer.reset();
-		m_ignitionOffTimer.reset();
+		// Reset state machine when ignition turns on
 		m_stateMachine.onIgnitionStateChanged(true);
 		m_pendingSave = false;
+		// Note: Don't reset timers here as it can cause synchronization issues
 	} else {
 		// When ignition turns off, schedule save if we have updates
 		if (engineConfiguration->wwEnableAdaptiveLearning) {
@@ -277,7 +272,19 @@ void WwAdaptiveStateMachine::initialize(Timer* timer) {
 	m_loadData.reset();
 }
 
+void WwAdaptiveStateMachine::ensureInitialized(Timer* timer) {
+	// Safe initialization that can be called multiple times
+	if (m_timer == nullptr || m_timer != timer) {
+		initialize(timer);
+	}
+}
+
 void WwAdaptiveStateMachine::update() {
+	// Safety check: ensure timer is initialized
+	if (m_timer == nullptr) {
+		return;
+	}
+	
 	// Update shared data first
 	updateSharedData();
 	
@@ -350,6 +357,12 @@ void WwAdaptiveStateMachine::handleTransientDetectedState() {
 }
 
 void WwAdaptiveStateMachine::handleDelayLambdaState() {
+	// Safety check for timer
+	if (m_timer == nullptr) {
+		resetToIdle();
+		return;
+	}
+	
 	float currentTime = m_timer->getElapsedSeconds();
 	float elapsed = currentTime - m_stateStartTime;
 	
@@ -366,6 +379,12 @@ void WwAdaptiveStateMachine::handleDelayLambdaState() {
 }
 
 void WwAdaptiveStateMachine::handleGatheringImmediateState() {
+	// Safety check for timer
+	if (m_timer == nullptr) {
+		resetToIdle();
+		return;
+	}
+	
 	float currentTime = m_timer->getElapsedSeconds();
 	float elapsed = currentTime - m_stateStartTime;
 	
@@ -393,6 +412,12 @@ void WwAdaptiveStateMachine::handleGatheringImmediateState() {
 }
 
 void WwAdaptiveStateMachine::handleGatheringProlongedState() {
+	// Safety check for timer
+	if (m_timer == nullptr) {
+		resetToIdle();
+		return;
+	}
+	
 	float currentTime = m_timer->getElapsedSeconds();
 	float elapsed = currentTime - m_stateStartTime;
 	
@@ -506,7 +531,7 @@ void WwAdaptiveStateMachine::handleSavingState() {
 
 void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
 	m_currentState = newState;
-	m_stateStartTime = m_timer->getElapsedSeconds();
+	m_stateStartTime = (m_timer != nullptr) ? m_timer->getElapsedSeconds() : 0;
 	
 	// State entry actions
 	switch (newState) {
@@ -560,7 +585,7 @@ bool WwAdaptiveStateMachine::captureTransientConditions() {
 	// Capture transient data
 	m_transientData.isPositive = m_loadData.loadDerivative > 0;
 	m_transientData.magnitude = m_loadData.transientMagnitude;
-	m_transientData.startTime = m_timer->getElapsedSeconds();
+	m_transientData.startTime = (m_timer != nullptr) ? m_timer->getElapsedSeconds() : 0;
 	m_transientData.initialRpm = rpm;
 	m_transientData.initialMap = map;
 	

@@ -247,4 +247,20 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - ✅ **Compilação limpa** - Sem warnings de variáveis não utilizadas
 - ✅ **Pronto para compilação** - Código completo e funcional
 
-**STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA E OTIMIZADA PARA COMPILAÇÃO** 🚀
+### CORREÇÕES ANTI-TRAVAMENTO APLICADAS 🛡️
+- [X] **Inicialização static removida** - Substituída por `ensureInitialized()` seguro
+- [X] **Proteções de timer null** - Verificação `m_timer != nullptr` em todas as funções
+- [X] **Reset de timer removido** - Evitar problemas de sincronização no `onIgnitionStateChanged()`
+- [X] **Transições seguras** - Proteção contra acesso a timer null em `transitionTo()`
+- [X] **Early returns** - Métodos fazem return seguro se timer não estiver disponível
+- [X] **Método ensureInitialized** - Permite múltiplas inicializações sem problemas
+
+### PROBLEMAS IDENTIFICADOS E CORRIGIDOS 🔧
+- **PROBLEMA**: Variável `static bool initialized` causava travamento em múltiplas instâncias
+- **CORREÇÃO**: Substituído por método `ensureInitialized()` que verifica se timer mudou
+- **PROBLEMA**: Reset do `m_learningTimer` no `onIgnitionStateChanged()` causava problemas de sincronização
+- **CORREÇÃO**: Removido reset do timer, mantendo apenas reset da state machine
+- **PROBLEMA**: Acesso direto a `m_timer->getElapsedSeconds()` sem verificar se timer é válido
+- **CORREÇÃO**: Adicionadas verificações `if (m_timer == nullptr)` com early returns seguros
+
+**STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA, OTIMIZADA E PROTEGIDA CONTRA TRAVAMENTOS** 🚀
