@@ -249,6 +249,8 @@ void WallFuelController::onSlowCallback() {
 }
 
 void WallFuelController::onActualFuelInjection(float injectedMass, int cylinderIndex) {
+	(void)injectedMass;
+	(void)cylinderIndex;
 	if (!engineConfiguration->wwEnableAdaptiveLearning || !m_enable) {
 		return;
 	}
@@ -523,7 +525,6 @@ void WwAdaptiveStateMachine::handleSavingState() {
 }
 
 void WwAdaptiveStateMachine::transitionTo(WwAdaptiveState newState) {
-	WwAdaptiveState oldState = m_currentState;
 	m_currentState = newState;
 	m_stateStartCallback = m_callbackCounter;
 	
