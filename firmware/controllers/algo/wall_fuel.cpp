@@ -788,7 +788,6 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	// Find time where signal crosses 63.2% point
 	bool foundCrossing = false;
 	for (int i = 1; i < validSamples; i++) {
-		float currentTime = i * timeStep * step;
 		
 		if ((initialValue > finalValue && smoothedData[i] <= targetValue && smoothedData[i-1] > targetValue) ||
 			(initialValue < finalValue && smoothedData[i] >= targetValue && smoothedData[i-1] < targetValue)) {
