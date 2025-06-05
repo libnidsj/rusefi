@@ -178,6 +178,7 @@ private:
 	float m_lambdaDelayTime = 0.1f;        // 100ms delay for lambda sensor
 	float m_immediatePhaseTime = 0.2f;     // 200ms for immediate phase
 	float m_incompleteTimeout = 5.0f;      // 5s timeout for incomplete
+	float m_globalStateTimeout = 30.0f;    // 30s global timeout to prevent stuck states
 	
 	// State handlers
 	void handleIdleState();

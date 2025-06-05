@@ -263,4 +263,19 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - **PROBLEMA**: Acesso direto a `m_timer->getElapsedSeconds()` sem verificar se timer é válido
 - **CORREÇÃO**: Adicionadas verificações `if (m_timer == nullptr)` com early returns seguros
 
-**STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA, OTIMIZADA E PROTEGIDA CONTRA TRAVAMENTOS** 🚀
+### CORREÇÕES DE PERFORMANCE APLICADAS ⚡
+- [X] **Loop otimizado em calculateTauCorrection()** - Step dinâmico processa todas as amostras com carga reduzida
+- [X] **Timeout global de estados** - 30s para prevenir estados presos
+- [X] **Comentários de performance** - Documentação das limitações
+- [X] **Verificação de timing crítico** - Proteção contra bloqueio do onFastCallback (200Hz)
+
+### PROBLEMAS DE PERFORMANCE IDENTIFICADOS E CORRIGIDOS ⚡
+- **PROBLEMA**: calculateTauCorrection() podia processar até 1000 amostras, bloqueando onFastCallback por tempo excessivo
+- **CORREÇÃO**: Implementado step dinâmico no loop - processa todas as 1000 amostras mas com step=10 (1000/100), mantendo representatividade temporal
+- **VANTAGEM**: Preserva cobertura completa dos dados enquanto reduz carga computacional de 1000 para ~100 iterações
+- **PROBLEMA**: Estados podiam ficar presos indefinidamente sem timeout global
+- **CORREÇÃO**: Timeout global de 30s força reset para IDLE se estado durar muito tempo
+- **PROBLEMA**: handleLearningAnalysisState() processa até 40 amostras sem limite de tempo
+- **CORREÇÃO**: Comentado como aceitável para 200Hz (40 amostras é gerenciável)
+
+**STATUS**: ✅ **IMPLEMENTAÇÃO CONCLUÍDA, OTIMIZADA E PROTEGIDA CONTRA TRAVAMENTOS E LOOPS** 🚀

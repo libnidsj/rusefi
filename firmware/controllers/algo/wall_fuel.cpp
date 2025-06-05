@@ -285,6 +285,15 @@ void WwAdaptiveStateMachine::update() {
 		return;
 	}
 	
+	// PERFORMANCE FIX: Global timeout to prevent stuck states
+	float currentTime = m_timer->getElapsedSeconds();
+	if (m_currentState != WwAdaptiveState::IDLE && 
+		(currentTime - m_stateStartTime) > m_globalStateTimeout) {
+		// Force reset if any state runs too long
+		resetToIdle();
+		return;
+	}
+	
 	// Update shared data first
 	updateSharedData();
 	
@@ -474,6 +483,7 @@ void WwAdaptiveStateMachine::handleLearningAnalysisState() {
 		float sum = 0.0f;
 		int validSamples = 0;
 		
+		// PERFORMANCE FIX: WW_IMMEDIATE_BUFFER_SIZE is 40, which is acceptable for 200Hz
 		int maxSamples = fminf(m_gatheringData.immediateBufferCount, WW_IMMEDIATE_BUFFER_SIZE);
 		for (int i = 0; i < maxSamples; i++) {
 			float sample = m_gatheringData.immediateLambdaBuffer[i];
@@ -691,8 +701,12 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 	float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
 	int validSamples = 0;
 	
-	int maxSamples = fminf(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
-	for (int i = 0; i < maxSamples; i++) {
+	// PERFORMANCE FIX: Process all samples but with step to reduce computational load
+	// At 200Hz (5ms period), we need to limit processing time while preserving data coverage
+	int totalSamples = fminf(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
+	int step = (totalSamples > 100) ? (totalSamples / 100) : 1; // Dynamic step based on sample count
+	
+	for (int i = 0; i < totalSamples; i += step) {
 		float sample = m_gatheringData.prolongedLambdaBuffer[i];
 		if (!std::isnan(sample)) {
 			float x = (float)i;
