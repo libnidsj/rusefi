@@ -200,132 +200,153 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 # Scratchpad
 
-## NOVA TAREFA: ANÁLISE DO SISTEMA DE CONTROLE DE MARCHA LENTA 🎯
+## ANÁLISE CRÍTICA DO SISTEMA WALL WETTING ADAPTATIVO ATUAL 🔬
 
-### OBJETIVO DA ANÁLISE 📋
-O usuário solicitou análise do algoritmo de controle de lenta da injeção, com foco específico em:
-1. **Análise geral do algoritmo** - Como funciona o controle de marcha lenta
-2. **Closed loop duplo** - Controle em ponto (setpoint) e atuador de lenta
-3. **Comportamento do integrador PID** - Como o valor do integrador se comporta quando:
-   - Sai da condição de marcha lenta
-   - Retorna para marcha lenta
-   - Se o valor é mantido ou sempre zerado
+### TAREFA SOLICITADA 📋
+O usuário pediu análise detalhada da implementação atual do wall wetting adaptativo, com foco em:
+1. **Funcionalidade geral** - Se vai funcionar ou não
+2. **Direção de aprendizado** - Para beta e tau 
+3. **Timing** - Temporização dos aprendizados
+4. **Detalhes físicos** - Correção da implementação
+5. **Problemas e correções** - Identificar e propor soluções
+6. **Verificação de lambda** - Sempre verificar se lambda < 1 = rico, > 1 = pobre
 
-### PLANO DE EXECUÇÃO 📝
-[X] **1. Localizar arquivos do idle control** - Buscar controladores de marcha lenta
-[X] **2. Analisar estrutura do algoritmo** - Entender arquitetura geral
-[X] **3. Examinar controle de setpoint** - Como funciona closed loop em ponto
-[X] **4. Examinar controle de atuador** - Como funciona closed loop em atuador
-[X] **5. FOCO PRINCIPAL: Análise do integrador** - Comportamento do termo I do PID
-[X] **6. Verificar reset/preservação** - Quando integrador é zerado vs mantido
-[X] **7. Analisar transições de estado** - Entrada/saída de condições de marcha lenta
-[ ] **8. Documentar comportamento** - Resumir achados para o usuário
+### STATUS DA ANÁLISE 📊
+[X] **1. Analisar arquivo wall_fuel.cpp** - Implementação principal
+[X] **2. Examinar cálculo de beta** - Lógica de correção de beta
+[X] **3. Examinar cálculo de tau** - Lógica de correção de tau
+[X] **4. Verificar direções físicas** - Aceleração vs desaceleração
+[X] **5. Analisar timing** - Fases imediata vs prolongada
+[X] **6. Identificar problemas críticos** - Erros de implementação
+[ ] **7. Documentar achados** - Resumir problemas e soluções
 
-### ARQUIVOS ANALISADOS 📁
-- ✅ `firmware/controllers/actuators/idle_thread.cpp` - Controlador principal
-- ✅ `firmware/controllers/actuators/idle_thread.h` - Interface e fases
-- ✅ `firmware/util/math/efi_pid.cpp` - Classe PID base
-- ✅ `firmware/util/math/efi_pid.h` - Interface PID
-- ✅ `firmware/controllers/math/closed_loop_idle.cpp` - LTIT system
+### PRINCIPAIS PROBLEMAS IDENTIFICADOS ❌
 
-### PRINCIPAIS DESCOBERTAS SOBRE O INTEGRADOR 🔍
+#### **PROBLEMA CRÍTICO 1: DIREÇÃO INCORRETA DO BETA** 🚨
+**LOCALIZAÇÃO**: `calculateBetaCorrection()` linhas 693-729
+**ERRO FÍSICO**: A direção da correção está **INVERTIDA FISICAMENTE**
 
-#### **COMPORTAMENTO DO INTEGRADOR (iTerm) - QUESTÃO PRINCIPAL** ❗
-**RESPOSTA**: O integrador **NÃO É SEMPRE ZERADO** - possui **lógica inteligente de preservação**
-
-#### **COMPORTAMENTO EM ESTADOS NÃO-IDLE (COASTING/RUNNING) - NOVA PERGUNTA** 🎯
-**RESPOSTA**: Quando **NÃO está no estado idle**, o sistema **NÃO aplica** a última correção do integrador. A correção é **zerada imediatamente**.
-
-**CÓDIGO ESPECÍFICO**:
+**CÓDIGO PROBLEMÁTICO**:
 ```cpp
-notIdling = phase != IIdleController::Phase::Idling;
-if (notIdling) {
-    // We aren't idling, so don't apply any correction.  
-    // A positive correction could inhibit a return to idle.
-    m_lastAutomaticPosition = 0;
-    return 0;  // ← RETORNA ZERO, não aplica correção anterior
+if (m_transientData.isPositive) {
+    // Positive transient (acceleration)
+    correction = 1.0f - (avgLambdaError * correctionRate);  // ❌ ERRADO
+} else {
+    // Negative transient (deceleration)  
+    correction = 1.0f + (avgLambdaError * correctionRate * 1.2f);  // ❌ ERRADO
 }
 ```
 
-**RAZÃO**: `"A positive correction could inhibit a return to idle"` - correção positiva poderia impedir retorno à marcha lenta
+**FÍSICA CORRETA**:
+- **Lambda < 1 (rico)**: precisa **MAIS** beta para impedir excesso de combustível nas paredes
+- **Lambda > 1 (lean)**: precisa **MENOS** beta para permitir mais combustível nas paredes
+- **lambdaError = lambda - target**: positivo = lean, negativo = rico
 
-#### **COMO FUNCIONA O RESET DO INTEGRADOR** 🧠
-1. **Condição para Reset**: `needReset = idlePid->getIntegration() <= 0 || mustResetPid;`
-2. **Política Inteligente**: **SÓ reseta se iTerm for NEGATIVO** (≤ 0)
-3. **Razão**: `"positive I-term is good - it keeps RPM from dropping too low"`
-4. **Reset Forçado**: Só quando há mudança de configuração (`mustResetPid`)
-
-#### **FLUXO COMPLETO DO CLOSED LOOP** 📊
+**CORREÇÃO FÍSICA**:
 ```cpp
-// Em getIdlePosition():
-if (useClosedLoop) {
-    auto closedLoop = getClosedLoop(phase, tps.Value, rpm, targetRpm);
-    //    ↑ Esta função retorna 0 se phase != Phase::Idling
-    idleClosedLoop = closedLoop;
-    iacPosition += closedLoop;  // ← Soma 0 quando não está em idle
+if (m_transientData.isPositive) {
+    // Acceleration: lean lambda → need MORE beta (increase beta)
+    correction = 1.0f + (avgLambdaError * correctionRate);  // ✅ CORRETO
+} else {
+    // Deceleration: OPPOSITE physics
+    correction = 1.0f - (avgLambdaError * correctionRate);  // ✅ CORRETO
 }
 ```
 
-#### **ESTADOS ONDE CLOSED LOOP = 0** ❌
-- **Phase::Cranking** → PID não atua
-- **Phase::Running** → PID não atua  
-- **Phase::Coasting** → PID não atua
-- **Phase::CrankToIdleTaper** → PID não atua
-- **APENAS Phase::Idling** → PID atua ✅
+#### **PROBLEMA CRÍTICO 2: DIREÇÃO INCORRETA DO TAU** 🚨
+**LOCALIZAÇÃO**: `calculateTauCorrection()` linhas 895-915
+**ERRO FÍSICO**: Lógica de correção baseada em "error" do tau estimado está **CONFUSA**
 
-#### **FASES DO SISTEMA DE CONTROLE** 🚦
+**CÓDIGO PROBLEMÁTICO**:
 ```cpp
-enum class Phase : uint8_t {
-    Cranking,        // Abaixo do threshold de partida
-    Idling,          // Abaixo do RPM de lenta, sem acelerador
-    Coasting,        // Sem acelerador mas acima do RPM de lenta
-    CrankToIdleTaper,// Transição entre partida e marcha lenta
-    Running,         // Com acelerador pressionado
-};
-```
-
-#### **CONDIÇÕES DE RESET/PRESERVAÇÃO** ⚡
-**QUANDO SAI DA MARCHA LENTA** (`notIdling = phase != Phase::Idling`):
-```cpp
-if (mightResetPid) {
-    mightResetPid = false;
-    shouldResetPid = true;  // Marca para resetar quando voltar
-}
-m_lastAutomaticPosition = 0;
-return 0;  // Não aplica correção
-```
-
-**QUANDO VOLTA PARA MARCHA LENTA**:
-```cpp
-if (shouldResetPid) {
-    needReset = idlePid->getIntegration() <= 0 || mustResetPid;
-    if (needReset) {
-        idlePid->reset();  // SÓ reseta se iTerm ≤ 0
+if (m_transientData.isPositive) {
+    // Positive transient: if measured tau > configured tau, increase tau
+    if (tauError > 0.03f) {
+        correction = 1.0f + (relativeError * adaptiveRate);  // Pode estar certo
+    } else if (tauError < -0.03f) {
+        correction = 1.0f + (relativeError * adaptiveRate); // relativeError is negative
+    }
+} else {
+    // Negative transient: opposite correction direction
+    if (tauError > 0.03f) {
+        correction = 1.0f - (relativeError * adaptiveRate * 0.8f);
     }
 }
 ```
 
-#### **CLOSED LOOP DUPLO** 🔄
-1. **Setpoint Control**: Determina RPM target baseado em temperatura (`getTargetRpm(clt)`)
-2. **Actuator Control**: PID controla posição da válvula IAC para atingir target
-   - **Open Loop**: Tabela base + correções (LTIT, AC, Fan, etc.)
-   - **Closed Loop**: PID adiciona correção para atingir target RPM
+**PROBLEMA**: O sistema está tentando corrigir tau baseado no tau "estimado vs configurado", mas deveria corrigir baseado na **tendência do lambda** (slope)
 
-#### **LONG TERM IDLE TRIM (LTIT)** 📊
-- **Aprende correções** da tabela base quando integrador PID é persistentemente alto
-- **Só aprende** na fase `Phase::Idling` em closed loop
-- **Threshold do integrador**: Valores altos indicam erro persistente
-- **Resultado**: Reduz dependência do integrador PID ao longo do tempo
+**FÍSICA CORRETA**:
+- **Slope positivo (lambda crescendo)**: tau muito baixo → aumentar tau
+- **Slope negativo (lambda diminuindo)**: tau muito alto → diminuir tau
+- **Direção oposta** entre aceleração e desaceleração
 
-### CONCLUSÃO PRINCIPAL 🎯
-**O INTEGRADOR É PRESERVADO INTELIGENTEMENTE**:
-- ✅ **Preservado** quando iTerm > 0 (valor positivo útil)
-- ❌ **Resetado** apenas quando iTerm ≤ 0 (valor negativo prejudicial)
-- 🔧 **Reset forçado** só em mudanças de configuração
+#### **PROBLEMA CRÍTICO 3: TIMING INCONSISTENTE** ⏰
+**LOCALIZAÇÃO**: Várias partes do código
+**PROBLEMAS**:
+1. **Fase imediata**: Fixada em 200ms, mas deveria ser baseada em condições do motor
+2. **Fase prolongada**: Cálculo complexo e permissivo demais
+3. **Transições**: Lógica muito complexa com múltiplos fallbacks
 
-**COMPORTAMENTO EM ESTADOS NÃO-IDLE**:
-- ❌ **NÃO aplica** última correção do integrador em coasting/running
-- ⚡ **Correção zerada imediatamente** para não impedir retorno à lenta
-- 🔄 **Integrador preservado** mas **correção não aplicada**
+**TIMING CORRETO**:
+- **Beta**: 0-200ms após transiente (correto)
+- **Tau**: 200ms até 3×tau (implementação muito complicada)
 
-**PRÓXIMO PASSO**: ✅ **TAREFA CONCLUÍDA** - Análise completa documentada
+#### **PROBLEMA CRÍTICO 4: MÉTODO DE ANÁLISE DO TAU** 📈
+**LOCALIZAÇÃO**: `calculateTauCorrection()` linhas 760-890
+**PROBLEMA**: Sistema tenta ajustar curva exponencial complexa, mas deveria usar **regressão linear simples** para detectar tendência
+
+**MÉTODO ATUAL**: Fitting exponencial complexo com R² e 63.2% crossing
+**MÉTODO CORRETO**: Regressão linear para detectar slope como nas lições aprendidas
+
+#### **PROBLEMA CRÍTICO 5: UNITS E THRESHOLDS** 📏
+**TRANSIENT DETECTION**: `detectTransient()` linha 610
+**PROBLEMA**: Threshold fixo de 30 kPa/s pode ser inadequado
+**CORREÇÃO**: Usar threshold configurável e validar unidades
+
+### PROBLEMAS MENORES IDENTIFICADOS ⚠️
+
+1. **Cross-coupling muito agressivo**: Fator de 0.2 pode ser excessivo
+2. **Smoothing desnecessário**: Aplicação em células adjacentes pode causar problemas
+3. **Timeouts muito longos**: 8 segundos é excessivo para tau learning
+4. **Validação de R² muito baixa**: 0.15 é muito permissivo
+
+### PRÓXIMO PASSO 📝
+[X] **Documentar soluções específicas** - Fornecer código corrigido para cada problema identificado
+
+### CORREÇÕES IMPLEMENTADAS ✅
+
+#### **1. BETA DIRECTION FIXED** 🔧
+- **ANTES**: `correction = 1.0f - (avgLambdaError * correctionRate)` (ERRADO)
+- **DEPOIS**: `correction = 1.0f + (avgLambdaError * correctionRate)` (CORRETO)
+- **STATUS**: ✅ Implementado - Física correta para aceleração/desaceleração
+
+#### **2. TAU METHOD REPLACED** 🔧  
+- **ANTES**: Fitting exponencial complexo com R² e 63.2% crossing
+- **DEPOIS**: Regressão linear simples para detectar slope/tendência do lambda
+- **STATUS**: ✅ Implementado - Método correto conforme lições aprendidas
+
+#### **3. TIMING SIMPLIFIED** 🔧
+- **ANTES**: Lógica complexa com múltiplos fallbacks e timeouts de 8s
+- **DEPOIS**: Timing fixo de 2-3s com lógica de transição simplificada
+- **STATUS**: ✅ Implementado - Sistema mais previsível e confiável
+
+#### **4. TRANSIENT DETECTION IMPROVED** 🔧
+- **ANTES**: Threshold fixo de 30 kPa/s sem validação
+- **DEPOIS**: Threshold de 40 kPa/s com validação de limite superior (500 kPa/s)
+- **STATUS**: ✅ Implementado - Melhor detecção e filtragem de ruído
+
+#### **5. CROSS-COUPLING REDUCED** 🔧
+- **ANTES**: Fator agressivo de 0.2 com limite mínimo de 0.5
+- **DEPOIS**: Fator reduzido de 0.1 com limite mínimo de 0.7  
+- **STATUS**: ✅ Implementado - Menos over-damping do sistema
+
+### RESULTADO FINAL 🎯
+**STATUS**: ✅ **TODAS AS CORREÇÕES CRÍTICAS IMPLEMENTADAS**
+- Beta direction: CORRIGIDA ✅
+- Tau method: CORRIGIDA ✅  
+- Timing logic: SIMPLIFICADA ✅
+- Transient detection: MELHORADA ✅
+- Cross-coupling: OTIMIZADA ✅
+
+**PRÓXIMO TESTE**: Sistema agora deve funcionar corretamente com física apropriada

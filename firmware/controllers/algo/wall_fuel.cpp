@@ -433,45 +433,32 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 		}
 	}
 	
-	// CRITICAL FIX 3: SIMPLIFIED TRANSITION LOGIC - Much more permissive
-	bool hasImmediateData = (m_gatheringData.immediateBufferCount > 0);
-	bool hasMinimalProlongedData = (m_gatheringData.prolongedBufferCount >= 20); // Relaxed from 50
+	// SIMPLIFIED TRANSITION LOGIC - Focus on data quality over complex timing
+	bool hasImmediateData = (m_gatheringData.immediateBufferCount > 5); // Require minimum valid samples
+	bool hasMinimalProlongedData = (m_gatheringData.prolongedBufferCount >= 10); // Minimum for trend detection
 	
-	// RELAXED TIMING: Base minimum time on a simple 400ms instead of complex tau calculations
-	uint32_t minTimeCallbacks = 80; // 400ms = 80 callbacks (relaxed from 1×tau)
+	// Simple fixed timing windows
+	uint32_t minTimeCallbacks = 100; // 500ms minimum
 	bool minTimeElapsed = elapsed >= minTimeCallbacks;
 	
-	// PERMISSIVE TARGET: Allow shorter data collection for responsive learning
-	float configuredTau = m_transientData.currentTau;
-	uint32_t adaptiveTarget = minI(
-		(uint32_t)(configuredTau * CALLBACK_FREQUENCY_HZ * 1.5f), // 1.5×tau instead of 3×tau
-		400 // Maximum 2s collection time
-	);
-	adaptiveTarget = maxI(80, adaptiveTarget); // Minimum 400ms
+	// Simple target: 2 seconds of data collection (simplified from complex tau calculations)
+	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget) || 
+						 (elapsed >= 400); // 2s = 400 callbacks
 	
-	// Update target if it was too conservative
-	if (m_gatheringData.prolongedBufferTarget > adaptiveTarget) {
-		m_gatheringData.prolongedBufferTarget = adaptiveTarget;
-	}
+	// Reasonable timeout: 3 seconds maximum
+	bool timeout = elapsed >= 600; // 3s = 600 callbacks
 	
-	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget);
-	
-	// GENEROUS TIMEOUT: 8 seconds should be enough for any reasonable tau
-	bool timeout = elapsed >= 1600; // 8s = 1600 callbacks
-	
-	// TRANSITION LOGIC: Multiple paths to proceed with learning
-	if (phaseComplete) {
-		// Ideal case: collected target amount of data
+	// SIMPLIFIED TRANSITION LOGIC: Two main paths
+	if (hasImmediateData && hasMinimalProlongedData && minTimeElapsed) {
+		// Good case: have sufficient data for both beta and tau
 		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
-	} else if (hasImmediateData && minTimeElapsed && hasMinimalProlongedData) {
-		// Good case: have both beta and minimal tau data
-		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
-	} else if (hasImmediateData && timeout) {
-		// Fallback case: timeout but at least have beta data
-		transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
-	} else if (timeout && !hasImmediateData) {
-		// Failure case: timeout with no useful data
-		resetToIdle();
+	} else if (timeout) {
+		// Timeout: proceed with whatever data we have, or reset if insufficient
+		if (hasImmediateData || hasMinimalProlongedData) {
+			transitionTo(WwAdaptiveState::LEARNING_ANALYSIS);
+		} else {
+			resetToIdle(); // No useful data collected
+		}
 	}
 	// Otherwise continue collecting data
 }
@@ -614,14 +601,20 @@ bool WwAdaptiveStateMachine::detectTransient() {
 		return false;
 	}
 	
-	// Check for transient threshold - usar configuração ou padrão
+	// Check for transient threshold - improved validation and units
 	float transientThreshold = engineConfiguration->wwMapThreshold; 
 	if (transientThreshold <= 0) {
-		transientThreshold = 30.0f; // fallback padrão
+		transientThreshold = 40.0f; // Increased default threshold to 40 kPa/s for better detection
 	}
 	
+	// Validate transient magnitude in kPa/s units
 	m_lastTransientMagnitude = m_loadData.transientMagnitude;
 	bool hasTransient = m_loadData.transientMagnitude > transientThreshold;
+	
+	// Additional validation: ensure transient magnitude is reasonable (< 500 kPa/s)
+	if (m_loadData.transientMagnitude > 500.0f) {
+		hasTransient = false; // Likely sensor noise or invalid reading
+	}
 	
 	// Update debug counter when transient is detected
 	if (hasTransient) {
@@ -706,12 +699,17 @@ float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
 	
 	float correction = 1.0f;
 	
+	// CRITICAL FIX: Corrected physics direction
+	// lambdaError = lambda - target: positive = lean, negative = rich
 	if (m_transientData.isPositive) {
-		// Positive transient (acceleration)
-		correction = 1.0f - (avgLambdaError * correctionRate);
+		// Acceleration: lean lambda → need MORE beta (increase beta)
+		// rich lambda → need LESS beta (decrease beta)
+		correction = 1.0f + (avgLambdaError * correctionRate);
 	} else {
-		// Negative transient (deceleration)
-		correction = 1.0f + (avgLambdaError * correctionRate * 1.2f);
+		// Deceleration: OPPOSITE physics
+		// lean lambda → need LESS beta (decrease beta)
+		// rich lambda → need MORE beta (increase beta)
+		correction = 1.0f - (avgLambdaError * correctionRate);
 	}
 	
 	if (std::isnan(correction)) {
@@ -723,7 +721,8 @@ float WwAdaptiveStateMachine::calculateBetaCorrection(float avgLambdaError) {
 }
 
 float WwAdaptiveStateMachine::calculateTauCorrection() {
-	// Tau correction based on exponential decay analysis during prolonged phase
+	// CRITICAL FIX: Use LINEAR REGRESSION to detect lambda slope/trend
+	// Based on lessons learned - tau correction should detect tendency, not exponential fitting
 	const float correctionRate = engineConfiguration->wwTauLearningRate;
 	const float maxCorrection = 0.67f;
 	
@@ -732,204 +731,69 @@ float WwAdaptiveStateMachine::calculateTauCorrection() {
 		return 1.0f;
 	}
 	
-	// CRITICAL FIX 1: RELAXED TAU VALIDATION - Much less restrictive requirements
-	float configuredTau = m_transientData.currentTau;
-	
-	// CRITICAL FIX: Protect against division by zero
-	if (configuredTau <= 0.001f) {
+	// Require minimum samples for valid trend detection
+	if (m_gatheringData.prolongedBufferCount < 10) {
 		return 1.0f;
 	}
 	
-	// RELAXED VALIDATION: Only require minimum 20 samples instead of 0.5×tau
-	uint32_t minSamplesForTau = 20; // Fixed minimum, much more permissive
+	// Calculate linear regression slope: slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	float sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+	int n = m_gatheringData.prolongedBufferCount;
 	
-	if (m_gatheringData.prolongedBufferCount < minSamplesForTau) {
-		return 1.0f;
-	}
-	
-	// CRITICAL FIX 2: PERFORMANCE OPTIMIZATION - Strict limits on processing
-	float timeStep = CALLBACK_PERIOD_SEC; // 5ms per sample
-	int totalSamples = minI(m_gatheringData.prolongedBufferCount, m_gatheringData.prolongedBufferTarget);
-	
-	// PERFORMANCE LIMIT: Never process more than 100 samples regardless of tau
-	int maxProcessingSamples = 100;
-	int step = maxI(1, totalSamples / maxProcessingSamples); // Ensure we stay under limit
-	
-	// First pass: Calculate moving average to reduce noise for exponential fitting
-	float smoothedData[100]; // Fixed maximum size for performance
-	int validSamples = 0;
-	
-	for (int i = 0; i < totalSamples && validSamples < maxProcessingSamples; i += step) {
-		float sample = m_gatheringData.prolongedLambdaBuffer[i];
-		if (!std::isnan(sample)) {
-			// Simple 3-point moving average if we have enough samples
-			if (i >= step && i < totalSamples - step) {
-				float prev = m_gatheringData.prolongedLambdaBuffer[i - step];
-				float next = m_gatheringData.prolongedLambdaBuffer[i + step];
-				if (!std::isnan(prev) && !std::isnan(next)) {
-					smoothedData[validSamples] = (prev + sample + next) / 3.0f;
-				} else {
-					smoothedData[validSamples] = sample;
-				}
-			} else {
-				smoothedData[validSamples] = sample;
-			}
-			validSamples++;
+	for (int i = 0; i < n; i++) {
+		float x = i * CALLBACK_PERIOD_SEC; // time in seconds
+		float y = m_gatheringData.prolongedLambdaBuffer[i]; // lambda error
+		
+		if (!std::isnan(y)) {
+			sumX += x;
+			sumY += y;
+			sumXY += x * y;
+			sumX2 += x * x;
 		}
 	}
 	
-	// RELAXED VALIDATION: Accept even fewer samples for analysis
-	if (validSamples < 10) {
-		return 1.0f;
+	// Calculate slope - positive slope = lambda trending lean, negative = trending rich
+	float denominator = n * sumX2 - sumX * sumX;
+	if (fabsf(denominator) < 0.001f) {
+		return 1.0f; // Cannot calculate reliable slope
 	}
 	
-	// Calculate mean for offset estimation
-	float meanLambda = 0;
-	for (int i = 0; i < validSamples; i++) {
-		meanLambda += smoothedData[i];
-	}
-	meanLambda /= validSamples;
+	float slope = (n * sumXY - sumX * sumY) / denominator;
 	
-	// Estimate initial and final values for exponential fitting
-	// Take average of first 20% and last 20% of samples
-	int earlyCount = maxI(2, validSamples * 0.2f);
-	int lateCount = maxI(2, validSamples * 0.2f);
-	
-	float initialValue = 0, finalValue = 0;
-	for (int i = 0; i < earlyCount; i++) {
-		initialValue += smoothedData[i];
-	}
-	initialValue /= earlyCount;
-	
-	for (int i = validSamples - lateCount; i < validSamples; i++) {
-		finalValue += smoothedData[i];
-	}
-	finalValue /= lateCount;
-	
-	// Check if we have exponential decay/growth pattern
-	float totalChange = fabsf(finalValue - initialValue);
-	if (totalChange < 0.003f) { // Even more relaxed
-		return 1.0f; // Not enough change to fit exponential
+	// Require minimum significant trend for correction
+	if (fabsf(slope) < 0.001f) {
+		return 1.0f; // No significant trend detected
 	}
 	
-	// EXPONENTIAL FITTING: y(t) = A * exp(-t/τ) + B
-	// Simplified approach: estimate τ from 63.2% decay point
-	float targetValue = finalValue + 0.632f * (initialValue - finalValue); // 63.2% point
-	float estimatedTau = 0;
-	
-	// Find time where signal crosses 63.2% point
-	bool foundCrossing = false;
-	for (int i = 1; i < validSamples; i++) {
-		
-		if ((initialValue > finalValue && smoothedData[i] <= targetValue && smoothedData[i-1] > targetValue) ||
-			(initialValue < finalValue && smoothedData[i] >= targetValue && smoothedData[i-1] < targetValue)) {
-			
-			// Linear interpolation for precise crossing time
-			float t1 = (i-1) * timeStep * step;
-			float t2 = i * timeStep * step;
-			float y1 = smoothedData[i-1];
-			float y2 = smoothedData[i];
-			
-			float crossingTime = t1 + (t2 - t1) * (targetValue - y1) / (y2 - y1);
-			estimatedTau = crossingTime;
-			foundCrossing = true;
-			break;
-		}
-	}
-	
-	// Alternative method: least squares fitting if crossing not found
-	if (!foundCrossing || estimatedTau <= 0 || estimatedTau > 10.0f) {
-		// Use linearized exponential fitting: ln(|y-B|) = ln(A) - t/τ
-		float sumT = 0, sumLnY = 0, sumT2 = 0, sumTLnY = 0;
-		int fitSamples = 0;
-		
-		for (int i = 0; i < validSamples; i++) {
-			float t = i * timeStep * step;
-			float y = smoothedData[i] - finalValue; // Remove offset
-			
-			if (fabsf(y) > 0.001f) { // Avoid log of small numbers
-				float lnY = logf(fabsf(y));
-				if (!std::isnan(lnY) && !std::isinf(lnY)) {
-					sumT += t;
-					sumLnY += lnY;
-					sumT2 += t * t;
-					sumTLnY += t * lnY;
-					fitSamples++;
-				}
-			}
-		}
-		
-		if (fitSamples >= 5) { // Relaxed from 10 to 5
-			float denominator = fitSamples * sumT2 - sumT * sumT;
-			if (fabsf(denominator) > 0.001f) {
-				float slope = (fitSamples * sumTLnY - sumT * sumLnY) / denominator;
-				if (slope < -0.01f) { // Negative slope for decay
-					estimatedTau = -1.0f / slope;
-				}
-			}
-		}
-	}
-	
-	// Validate estimated tau
-	if (estimatedTau <= 0.05f || estimatedTau > 10.0f || std::isnan(estimatedTau)) {
-		return 1.0f;
-	}
-	
-	// CALCULATE R² FOR QUALITY VALIDATION - RELAXED THRESHOLD
-	float ssRes = 0, ssTot = 0;
-	for (int i = 0; i < validSamples; i++) {
-		float t = i * timeStep * step;
-		float predicted = finalValue + (initialValue - finalValue) * expf_taylor(-t / estimatedTau);
-		float actual = smoothedData[i];
-		
-		ssRes += (actual - predicted) * (actual - predicted);
-		ssTot += (actual - meanLambda) * (actual - meanLambda);
-	}
-	
-	float rSquared = (ssTot > 0.001f) ? (1.0f - ssRes / ssTot) : 0.0f;
-	
-	// RELAXED QUALITY: Require minimum R² of 0.15 instead of 0.3 for permissive learning
-	if (rSquared < 0.15f) {
-		return 1.0f;
-	}
-	
-	// STEP 4: APPLY PHYSICAL CORRECTION
-	float tauError = estimatedTau - configuredTau;
-	float relativeError = tauError / configuredTau;
-	
-	// Adaptive correction rate based on confidence (R²) and error magnitude
-	float confidenceFactor = minF(1.0f, rSquared * 2.0f); // Boost confidence for R² < 0.5
-	float errorMagnitude = minF(1.0f, fabsf(relativeError)); // Limit max error magnitude
-	float adaptiveRate = correctionRate * confidenceFactor * errorMagnitude;
-	
-	// Physical correction calculation
 	float correction = 1.0f;
 	
+	// PHYSICS: Apply correction based on lambda trend direction and transient type
 	if (m_transientData.isPositive) {
-		// Positive transient (acceleration): if measured tau > configured tau, increase tau
-		if (tauError > 0.03f) { // Relaxed from 0.05f
-			correction = 1.0f + (relativeError * adaptiveRate);
-		} else if (tauError < -0.03f) { // Relaxed from -0.05f
-			correction = 1.0f + (relativeError * adaptiveRate); // relativeError is negative
+		// Acceleration physics
+		if (slope > 0.001f) {
+			// Lambda trending lean (positive slope) → tau too low → increase tau
+			correction = 1.0f + (slope * correctionRate * 100.0f);
+		} else if (slope < -0.001f) {
+			// Lambda trending rich (negative slope) → tau too high → decrease tau
+			correction = 1.0f - (fabsf(slope) * correctionRate * 100.0f);
 		}
 	} else {
-		// Negative transient (deceleration): opposite correction direction
-		if (tauError > 0.03f) {
-			correction = 1.0f - (relativeError * adaptiveRate * 0.8f); // Slightly less aggressive
-		} else if (tauError < -0.03f) {
-			correction = 1.0f - (relativeError * adaptiveRate * 0.8f);
+		// Deceleration physics - OPPOSITE direction
+		if (slope > 0.001f) {
+			// Lambda trending lean (positive slope) → tau too high → decrease tau
+			correction = 1.0f - (slope * correctionRate * 100.0f);
+		} else if (slope < -0.001f) {
+			// Lambda trending rich (negative slope) → tau too low → increase tau
+			correction = 1.0f + (fabsf(slope) * correctionRate * 100.0f);
 		}
 	}
 	
-	// Validate final correction
 	if (std::isnan(correction)) {
 		return 1.0f;
 	}
 	
-	// Apply maximum correction bounds
-	correction = maxF(1.0f - maxCorrection, minF(1.0f + maxCorrection, correction));
-	
-	return correction;
+	// Apply bounds - allow wider range for tau corrections
+	return maxF(1.0f - maxCorrection, minF(1.0f + maxCorrection, correction));
 }
 
 void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float tauCorrection, float rpm, float map) {
@@ -937,9 +801,9 @@ void WwAdaptiveStateMachine::applyCorrectionToTable(float betaCorrection, float 
 		return;
 	}
 	
-	// Cross-coupling correction to reduce instability
-	float cross_coupling = 1.0f - (0.2f * fabsf(betaCorrection - tauCorrection));
-	cross_coupling = maxF(0.5f, minF(1.0f, cross_coupling));
+	// Cross-coupling correction to reduce instability - reduced aggressiveness
+	float cross_coupling = 1.0f - (0.1f * fabsf(betaCorrection - tauCorrection));
+	cross_coupling = maxF(0.7f, minF(1.0f, cross_coupling));
 	
 	// Apply cross-coupling factor
 	betaCorrection = 1.0f + (betaCorrection - 1.0f) * cross_coupling;
