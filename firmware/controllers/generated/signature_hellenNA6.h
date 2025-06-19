@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 4073500408
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.04.hellenNA6.4073500408"
+#define TS_SIGNATURE "rusEFI cursor/review-and-complete-neural-network-markdown-files-c65f.2025.06.20.hellenNA6.4073500408"
