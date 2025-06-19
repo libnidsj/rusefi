@@ -36,3 +36,9 @@ CONTROLLERS_ALGO_SRC_CPP = $(PROJECT_DIR)/controllers/algo/ignition/ignition_sta
 	$(PROJECT_DIR)/controllers/algo/defaults/default_cranking.cpp \
 	$(PROJECT_DIR)/controllers/algo/defaults/default_fuel.cpp \
 	$(PROJECT_DIR)/controllers/algo/defaults/default_ignition.cpp \
+	$(PROJECT_DIR)/controllers/algo/neural_fuel_network.cpp \
+	$(PROJECT_DIR)/controllers/algo/neural_fuel_controller.cpp \
+
+# add neural fuel system
+ALLCPPSRC += $(CONTROLLERS_ALGO_DIR)/neural_fuel_network.cpp
+ALLCPPSRC += $(CONTROLLERS_ALGO_DIR)/neural_fuel_controller.cpp

@@ -1,0 +1,59 @@
+# Neural Fuel Controller Live Data Structure
+# This file defines the telemetry structure for the neural fuel system
+# Based on pattern used in launch_control_state.txt
+
+struct_name neural_fuel_live_data_s
+
+# Neural Network Inputs (12 inputs total)
+float lambdaErrorT1;"Neural Input: Lambda error T1 (current)","", 1, 0, 0, 3, 2
+float lambdaErrorT2;"Neural Input: Lambda error T2 (-100ms)","", 1, 0, 0, 3, 2
+float lambdaErrorT3;"Neural Input: Lambda error T3 (-200ms)","", 1, 0, 0, 3, 2
+float lambdaErrorT4;"Neural Input: Lambda error T4 (-500ms)","", 1, 0, 0, 3, 2
+float lambdaErrorT5;"Neural Input: Lambda error T5 (-1000ms)","", 1, 0, 0, 3, 2
+float lambdaSlopeShort;"Neural Input: Lambda slope short term","rad/s", 1, 0, 0, 3, 2
+float lambdaSlopeLong;"Neural Input: Lambda slope long term","rad/s", 1, 0, 0, 3, 2
+float lambdaVariance;"Neural Input: Lambda variance","", 1, 0, 0, 3, 2
+float lambdaTrend;"Neural Input: Lambda trend","", 1, 0, 0, 3, 2
+float loadNormalized;"Neural Input: Load normalized","", 1, 0, 0, 3, 2
+float rpmNormalized;"Neural Input: RPM normalized","", 1, 0, 0, 3, 2
+float transientMagnitude;"Neural Input: Transient magnitude","", 1, 0, 0, 3, 2
+
+# Neural Network Outputs (4 outputs total)
+float betaPrediction;"Neural Output: Beta correction prediction","", 1, 0, 0, 3, 2
+float tauPrediction;"Neural Output: Tau correction prediction","", 1, 0, 0, 3, 2
+float confidenceScore;"Neural Output: Confidence score","", 1, 0, 0, 3, 2
+float adaptiveLearningRate;"Neural Output: Adaptive learning rate","", 1, 0, 0, 3, 2
+
+# LSTM Hidden States (first 4 for diagnostics)
+float hiddenState0;"LSTM Hidden State 0","", 1, 0, 0, 3, 2
+float hiddenState1;"LSTM Hidden State 1","", 1, 0, 0, 3, 2
+float hiddenState2;"LSTM Hidden State 2","", 1, 0, 0, 3, 2
+float hiddenState3;"LSTM Hidden State 3","", 1, 0, 0, 3, 2
+
+# Performance Statistics
+uint32_t totalInferences;"Total neural inferences","count", 1, 0, 0, 0, 0
+uint32_t successfulPredictions;"Successful predictions","count", 1, 0, 0, 0, 0
+float successRate;"Success rate","%", 100, 0, 0, 3, 1
+uint32_t consecutiveFailures;"Consecutive failures","count", 1, 0, 0, 0, 0
+
+# Integration Status
+float neuralWeightAWW;"Neural weight in AWW","%", 100, 0, 0, 3, 1
+float neuralWeightLTFT;"Neural weight in LTFT","%", 100, 0, 0, 3, 1
+float classicalBetaCorrection;"Classical beta correction","", 1, 0, 0, 3, 2
+float classicalTauCorrection;"Classical tau correction","", 1, 0, 0, 3, 2
+
+# System Status Flags
+bit isEnabled;"Neural system enabled"
+bit isActive;"Neural system active"
+bit fallbackMode;"In fallback mode"
+bit bufferReady;"Temporal buffer ready"
+bit awwIntegrated;"AWW integration active"
+bit ltftIntegrated;"LTFT integration active"
+bit emergencyMode;"Emergency mode active"
+
+# Timing Information
+float timeSinceIgnitionOn;"Time since ignition on","sec", 1, 0, 0, 3, 1
+float timeSinceLastUpdate;"Time since last neural update","sec", 1, 0, 0, 3, 3
+float timeSinceLastFailure;"Time since last failure","sec", 1, 0, 0, 3, 1
+
+end_struct
