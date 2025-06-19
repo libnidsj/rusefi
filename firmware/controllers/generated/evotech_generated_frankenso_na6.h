@@ -1884,7 +1884,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.04.frankenso_na6.25770438"
+#define TS_SIGNATURE "rusEFI cursor/implementar-sistema-de-rede-neural-completo-b79c.2025.06.20.frankenso_na6.25770438"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'

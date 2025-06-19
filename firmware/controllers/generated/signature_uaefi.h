@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 3973662101
-#define TS_SIGNATURE "rusEFI motrolink_release.2025.06.04.uaefi.3973662101"
+#define TS_SIGNATURE "rusEFI cursor/implementar-sistema-de-rede-neural-completo-b79c.2025.06.20.uaefi.3973662101"
