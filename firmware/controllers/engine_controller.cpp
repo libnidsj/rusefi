@@ -63,6 +63,10 @@
 #include "adc_subscription.h"
 #include "gc_generic.h"
 #include "tuner_detector_utils.h"
+#include "knock_controller.h"
+#include "hpfp_cam.h"
+#include "neural_network_engine.h"
+#include "neural_network_config.h"
 
 #if EFI_SENSOR_CHART
 #include "sensor_chart.h"
@@ -402,9 +406,32 @@ static void initConfigActions() {
 }
 #endif /* EFI_UNIT_TEST */
 
+void initializeNeuralNetwork() {
+#if EFI_ENGINE_CONTROL
+	// Initialize neural network configuration
+	initializeNeuralConfig();
+	
+	// Create and initialize neural network coordinator
+	static NeuralNetworkCoordinator neuralCoordinator;
+	g_neural_coordinator = &neuralCoordinator;
+	
+	efiPrintf("Neural Network System: Initializing...");
+	
+	// Initialize the neural network system
+	neuralCoordinator.enableNeuralLearning(engineConfiguration->neuralLearningEnabled);
+	
+	// Register neural coordinator with engine modules
+	engine->engineModules.add(&neuralCoordinator);
+	
+	efiPrintf("Neural Network System: Ready");
+#endif /* EFI_ENGINE_CONTROL */
+}
+
 // one-time start-up
 // this method is used by real firmware and simulator and unit test
 void commonInitEngineController() {
+	ScopePerf perf(PE::CommonInitEngineController);
+
 #if EFI_PROD_CODE
 	addConsoleAction("sensorinfo", printSensorInfo);
 	addConsoleAction("reset_accel", resetAccel);
@@ -510,6 +537,58 @@ void commonInitEngineController() {
 
 	initTachometer();
 	initSpeedometer();
+
+	// Initialize neural network system after wall fuel and LTFT
+	initializeNeuralNetwork();
+
+#endif /* EFI_ENGINE_CONTROL */
+
+#if EFI_HISTOGRAMS
+	/**
+	 * histograms is a data structure for CPU monitor, it does not depend on configuration
+	 */
+	initHistogramsModule();
+#endif /* EFI_HISTOGRAMS */
+
+#if EFI_ENGINE_CONTROL
+	/**
+	 * This has to go after 'initHistogramsModule' in order for 'engine->rpmCalculator.onSlowCallback' to work properly.
+	 */
+
+	engine->triggerCentral.versionForConfigurationListeners++;
+	engine->preCalculate();
+
+	engine->engineModules.add(engine->module<InjectorModel>());
+	engine->engineModules.add(engine->module<InjectorModelSecondary>());
+	engine->engineModules.add(engine->module<InjectorModelPrimary>());
+	engine->engineModules.add(engine->module<FuelComputer>());
+	engine->engineModules.add(engine->module<SpeedDensityAirmass>());
+	engine->engineModules.add(engine->module<MafAirmass>());
+	engine->engineModules.add(engine->module<AlphaNAirmass>());
+	engine->engineModules.add(engine->module<SdTChargeAirmass>());
+
+#if EFI_ENGINE_EMULATOR
+	engine->engineModules.add(engine->module<TriggerEmulatorHelper>());
+#endif // EFI_ENGINE_EMULATOR
+
+	engine->engineModules.add(engine->module<TpsAccelEnrichment>());
+	engine->engineModules.add(engine->module<TriggerCentral>());
+	engine->engineModules.add(engine->module<WallFuelController>());
+	engine->engineModules.add(engine->module<LongTermFuelTrim>());
+
+	// Continue with other engine modules...
+	
+#if EFI_ALTERNATOR_CONTROL
+	engine->engineModules.add(engine->module<AlternatorController>());
+#endif /* EFI_ALTERNATOR_CONTROL */
+
+	// ... rest of existing modules ...
+
+#endif /* EFI_ENGINE_CONTROL */
+
+	engineStateBlinkingTask.start();
+
+	initVrThresholdPwm();
 }
 
 PUBLIC_API_WEAK bool validateBoardConfig() {

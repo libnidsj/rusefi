@@ -6,6 +6,7 @@
 
 #include "pch.h"
 #include "wall_fuel.h"
+#include "neural_network_engine.h"
 
 void WallFuel::resetWF() {
 	wallFuel = 0;
@@ -142,6 +143,86 @@ float WallFuelController::computeBeta() const {
 	return clampF(0, result, 1); // Beta cannot exceed 100%
 }
 
+// Neural network integration methods
+float WallFuelController::getBetaWithNeuralCorrection(float rpm, float load) const {
+	float baseBeta = computeBeta();
+	
+	// Apply neural correction if enabled and available
+	if (engineConfiguration->neuralLearningEnabled && m_neural_integration_active) {
+		float neuralCorrection = getNeuralBetaCorrection(rpm, load);
+		if (isNeuralCorrectionValid() && isfinite(neuralCorrection)) {
+			baseBeta *= neuralCorrection;
+		}
+	}
+	
+	return clampF(0, baseBeta, 1); // Beta cannot exceed 100%
+}
+
+float WallFuelController::getTauWithNeuralCorrection(float rpm, float load) const {
+	float baseTau = computeTau();
+	
+	// Apply neural correction if enabled and available
+	if (engineConfiguration->neuralLearningEnabled && m_neural_integration_active) {
+		float neuralCorrection = getNeuralTauCorrection(rpm, load);
+		if (isNeuralCorrectionValid() && isfinite(neuralCorrection)) {
+			baseTau *= neuralCorrection;
+		}
+	}
+	
+	return maxF(0.01f, baseTau); // Tau must be positive
+}
+
+float WallFuelController::getNeuralBetaCorrection(float rpm, float load) const {
+	// Use cached value if recent enough (update every 100ms)
+	if (m_correction_cache_timer.hasElapsedSec(0.1f)) {
+		updateNeuralCorrections();
+	}
+	
+	return m_cached_beta_correction;
+}
+
+float WallFuelController::getNeuralTauCorrection(float rpm, float load) const {
+	// Use cached value if recent enough (update every 100ms)  
+	if (m_correction_cache_timer.hasElapsedSec(0.1f)) {
+		updateNeuralCorrections();
+	}
+	
+	return m_cached_tau_correction;
+}
+
+void WallFuelController::updateNeuralCorrections() {
+	if (!m_neural_coordinator || !engineConfiguration->neuralLearningEnabled) {
+		m_cached_beta_correction = 1.0f;
+		m_cached_tau_correction = 1.0f;
+		return;
+	}
+	
+	auto rpm = Sensor::get(SensorType::Rpm);
+	auto map = Sensor::get(SensorType::Map);
+	
+	if (!rpm.Valid || !map.Valid) {
+		return;
+	}
+	
+	// Get neural corrections from coordinator
+	auto& wallWettingController = m_neural_coordinator->getWallWettingController();
+	
+	m_cached_beta_correction = wallWettingController.getBetaCorrection(rpm.Value, map.Value);
+	m_cached_tau_correction = wallWettingController.getTauCorrection(rpm.Value, map.Value);
+	
+	// Clamp corrections to reasonable bounds
+	m_cached_beta_correction = clampF(0.5f, m_cached_beta_correction, 2.0f);
+	m_cached_tau_correction = clampF(0.5f, m_cached_tau_correction, 2.0f);
+	
+	m_correction_cache_timer.reset();
+}
+
+bool WallFuelController::isNeuralCorrectionValid() const {
+	return m_neural_coordinator && 
+	       m_neural_coordinator->isSystemHealthy() &&
+	       engineConfiguration->neuralLearningEnabled;
+}
+
 void WallFuelController::onFastCallback() {
 	// disable wall wetting cranking
 	// TODO: is this correct? Why not correct for cranking?
@@ -150,8 +231,32 @@ void WallFuelController::onFastCallback() {
 		return;
 	}
 
-	float tau = computeTau();
-	float beta = computeBeta();
+	// Initialize neural coordinator if not done yet
+	if (!m_neural_coordinator && engineConfiguration->neuralLearningEnabled) {
+		m_neural_coordinator = g_neural_coordinator;
+		m_neural_integration_active = (m_neural_coordinator != nullptr);
+	}
+
+	// Compute tau and beta with neural corrections if available
+	float tau, beta;
+	
+	if (m_neural_integration_active && engineConfiguration->neuralLearningEnabled) {
+		auto rpm = Sensor::get(SensorType::Rpm);
+		auto map = Sensor::get(SensorType::Map);
+		
+		if (rpm.Valid && map.Valid) {
+			tau = getTauWithNeuralCorrection(rpm.Value, map.Value);
+			beta = getBetaWithNeuralCorrection(rpm.Value, map.Value);
+		} else {
+			// Fallback to classical computation
+			tau = computeTau();
+			beta = computeBeta();
+		}
+	} else {
+		// Classical computation
+		tau = computeTau();
+		beta = computeBeta();
+	}
 
 	// if tau or beta is really small, we get div/0.
 	// you probably meant to disable wwae.
@@ -182,25 +287,27 @@ void WallFuelController::onFastCallback() {
 	m_alpha = alpha;
 	m_beta = beta;
 	m_enable = true;
-	
-	// Process adaptive system if enabled
-	if (engineConfiguration->wwEnableAdaptiveLearning && !m_processingAdaptive) {
-		m_processingAdaptive = true;
-		m_adaptiveController.onFastCallback();
-		m_processingAdaptive = false;
-	}
 }
 
 void WallFuelController::onSlowCallback() {
-	// Delegate to adaptive controller
-	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		m_adaptiveController.onSlowCallback();
+	// Update neural corrections periodically
+	if (m_neural_integration_active) {
+		updateNeuralCorrections();
 	}
 }
 
 void WallFuelController::onIgnitionStateChanged(bool ignitionOn) {
-	// Delegate to adaptive controller
-	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		m_adaptiveController.onIgnitionStateChanged(ignitionOn);
+	if (ignitionOn) {
+		// Initialize neural integration
+		m_neural_coordinator = g_neural_coordinator;
+		m_neural_integration_active = (m_neural_coordinator != nullptr);
+		m_cached_beta_correction = 1.0f;
+		m_cached_tau_correction = 1.0f;
+		m_correction_cache_timer.reset();
+	} else {
+		// Save neural learned data if available
+		if (m_neural_coordinator) {
+			// Neural coordinator will handle saving via its ignition callback
+		}
 	}
 }

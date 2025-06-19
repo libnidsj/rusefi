@@ -8,6 +8,7 @@
 #include "event_queue.h"
 #include "efitime.h"
 #include "ignition_controller.h"
+#include "neural_network_engine.h"
 
 #if EFI_ENGINE_CONTROL
 
@@ -44,6 +45,76 @@ bool LongTermFuelTrim::canLearn() {
 	return true;
 }
 
+// Neural network integration methods
+float LongTermFuelTrim::getNeuralPrediction(float load, float rpm) const {
+	// Use cached prediction if recent enough (update every 200ms)
+	if (m_prediction_cache_timer.hasElapsedSec(0.2f)) {
+		const_cast<LongTermFuelTrim*>(this)->updateNeuralPrediction();
+	}
+	
+	return m_cached_neural_prediction;
+}
+
+float LongTermFuelTrim::getLtftWithNeuralEnhancement(float load, float rpm) const {
+	float baseLtft = getLtft(load, rpm);
+	
+	// Apply neural enhancement if enabled and available
+	if (engineConfiguration->neuralLearningEnabled && m_neural_integration_active) {
+		float neuralPrediction = getNeuralPrediction(load, rpm);
+		if (isNeuralPredictionValid() && isfinite(neuralPrediction)) {
+			// Blend classical LTFT with neural prediction
+			float blendFactor = 0.3f; // 30% neural, 70% classical
+			baseLtft = baseLtft * (1.0f - blendFactor) + neuralPrediction * blendFactor;
+		}
+	}
+	
+	return clampF(0.5f, baseLtft, 2.0f); // Reasonable correction bounds
+}
+
+void LongTermFuelTrim::updateNeuralPrediction() {
+	if (!m_neural_coordinator || !engineConfiguration->neuralLearningEnabled) {
+		m_cached_neural_prediction = 1.0f;
+		return;
+	}
+	
+	auto rpm = Sensor::get(SensorType::Rpm);
+	auto load = getFuelingLoad();
+	
+	if (!rpm.Valid || !isfinite(load)) {
+		return;
+	}
+	
+	// Get neural LTFT prediction from coordinator
+	auto& neuralLtft = m_neural_coordinator->getLTFTController();
+	
+	m_cached_neural_prediction = neuralLtft.getNeuralLTFTCorrection(rpm.Value, load);
+	
+	// Clamp prediction to reasonable bounds
+	m_cached_neural_prediction = clampF(0.5f, m_cached_neural_prediction, 2.0f);
+	
+	m_prediction_cache_timer.reset();
+}
+
+bool LongTermFuelTrim::isNeuralPredictionValid() const {
+	return m_neural_coordinator && 
+	       m_neural_coordinator->isSystemHealthy() &&
+	       engineConfiguration->neuralLearningEnabled;
+}
+
+float LongTermFuelTrim::getLtftWithNeural(float load, float rpm) {
+	return getLtftWithNeuralEnhancement(load, rpm);
+}
+
+void LongTermFuelTrim::setNeuralCoordinator(NeuralNetworkCoordinator* coordinator) {
+	m_neural_coordinator = coordinator;
+	m_neural_integration_active = (coordinator != nullptr);
+	if (coordinator) {
+		m_neural_ltft = &coordinator->getLTFTController();
+	} else {
+		m_neural_ltft = nullptr;
+	}
+}
+
 void LongTermFuelTrim::updateLtft(float load, float rpm) {
 	if (!canLearn()) return;
 	
@@ -70,11 +141,22 @@ void LongTermFuelTrim::updateLtft(float load, float rpm) {
 	float lambdaError = lambda.Value - engine->fuelComputer.targetLambda;
 	if ((stftFiltered > 0.0f && lambdaError < 0.0f) || (stftFiltered < 0.0f && lambdaError > 0.0f)) return;
 	
+	// Neural enhancement: use neural prediction to improve learning rate
 	float correctionRate = interpolate3d(
 		config->ltftCorrectionRate,
 		config->veLoadBins, load,
 		config->veRpmBins, rpm
 	) * 0.01f;
+	
+	// Apply neural enhancement to correction rate if available
+	if (m_neural_integration_active && engineConfiguration->neuralLearningEnabled) {
+		float neuralPrediction = getNeuralPrediction(load, rpm);
+		if (isNeuralPredictionValid() && isfinite(neuralPrediction)) {
+			// Adjust correction rate based on neural confidence
+			float neuralConfidence = clampF(0.1f, fabsf(neuralPrediction - 1.0f), 1.0f);
+			correctionRate *= (1.0f + neuralConfidence * 0.2f); // Up to 20% faster learning
+		}
+	}
 	
 	float correction = correctionRate * 0.005f * (stftFiltered / (fabsf(stftFiltered))) * (1 - powf(10, -20 * (100.0f / config->ltftPermissivity) * fabsf(stftFiltered)));
 	
@@ -112,6 +194,11 @@ void LongTermFuelTrim::onIgnitionStateChanged(bool ignitionState) {
 		// Reset timers quando ignição liga
 		m_ignitionOnTimer.reset();
 		isLearnConditionsMet = false;
+		
+		// Initialize neural integration
+		if (engineConfiguration->neuralLearningEnabled && g_neural_coordinator) {
+			setNeuralCoordinator(g_neural_coordinator);
+		}
 	} else if (updatedLtft) {
 		// Reset timer para contagem do delay de salvamento
 		m_ignitionOffTimer.reset();
@@ -309,11 +396,15 @@ float LongTermFuelTrim::getLtft(float load, float rpm) {
 	}
 }
 
-LongTermFuelTrim::LongTermFuelTrim() {
+LongTermFuelTrim::LongTermFuelTrim() 
+	: m_neural_coordinator(nullptr)
+	, m_neural_ltft(nullptr)
+	, m_neural_integration_active(false) {
 	stftEma = 1.0f;
 	m_ignitionOnTimer.reset();
 	m_ignitionOffTimer.reset();
 	m_updateTimer.reset();
+	m_prediction_cache_timer.reset();
 	m_ignitionState = false;
 	isLearnConditionsMet = false;
 	ltftTableHelperInit = false;

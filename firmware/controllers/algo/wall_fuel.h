@@ -15,6 +15,9 @@ enum class AWWTransientState : uint8_t;
 struct adaptive_wall_wetting_state_s;
 class AdaptiveWallWettingController;
 
+// Forward declarations for neural network integration  
+class NeuralNetworkCoordinator;
+
 /**
  * Wall wetting, also known as fuel film
  * See https://github.com/rusefi/rusefi/issues/151 for the theory
@@ -56,6 +59,10 @@ public:
 	float getBeta() const override {
 		return m_beta;
 	}
+	
+	// Neural network integration interfaces
+	float getBetaWithNeuralCorrection(float rpm, float load) const;
+	float getTauWithNeuralCorrection(float rpm, float load) const;
 
 protected:
 	float computeTau() const;
@@ -71,4 +78,19 @@ private:
 	
 	// Flag to avoid recursion
 	bool m_processingAdaptive = false;
+	
+	// Neural network integration
+	NeuralNetworkCoordinator* m_neural_coordinator;
+	bool m_neural_integration_active;
+	
+	// Neural correction cache
+	mutable float m_cached_beta_correction = 1.0f;
+	mutable float m_cached_tau_correction = 1.0f;
+	mutable Timer m_correction_cache_timer;
+	
+	// Internal methods
+	float getNeuralBetaCorrection(float rpm, float load) const;
+	float getNeuralTauCorrection(float rpm, float load) const;
+	void updateNeuralCorrections();
+	bool isNeuralCorrectionValid() const;
 };

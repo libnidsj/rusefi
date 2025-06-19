@@ -5,6 +5,10 @@
 #include "engine_module.h"
 #include <rusefi/timer.h>
 
+// Forward declarations for neural network integration
+class NeuralNetworkCoordinator;
+class NeuralLongTermFuelTrim;
+
 struct stft_s;
 
 struct ClosedLoopFuelResult {
@@ -31,6 +35,15 @@ class LongTermFuelTrim : public EngineModule{
 	float stftEma = 1.0f;
 	bool m_ignitionState = false;
 	
+	// Neural network integration
+	NeuralNetworkCoordinator* m_neural_coordinator;
+	NeuralLongTermFuelTrim* m_neural_ltft;
+	bool m_neural_integration_active;
+	
+	// Neural prediction cache
+	mutable float m_cached_neural_prediction = 1.0f;
+	mutable Timer m_prediction_cache_timer;
+	
 	bool canLearn();
 	float filterStft(float stftRaw);
 	
@@ -39,10 +52,21 @@ class LongTermFuelTrim : public EngineModule{
 	Timer m_ignitionOnTimer;        // Tracks time since ignition on
 	Timer m_ignitionOffTimer;       // Tracks time since ignition off
 	bool isLearnConditionsMet = false;
+	
+	// Neural integration methods
+	float getNeuralPrediction(float load, float rpm) const;
+	float getLtftWithNeuralEnhancement(float load, float rpm) const;
+	void updateNeuralPrediction();
+	bool isNeuralPredictionValid() const;
+	
 public:
 	LongTermFuelTrim();
 	float getLtft(float load, float rpm);
 	void resetLtftTimer();
 	void updateLtft(float load, float rpm);
 	void onIgnitionStateChanged(bool ignitionState) override;
+	
+	// Neural network integration interface
+	float getLtftWithNeural(float load, float rpm);
+	void setNeuralCoordinator(NeuralNetworkCoordinator* coordinator);
 };
