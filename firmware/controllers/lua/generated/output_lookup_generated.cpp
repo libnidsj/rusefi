@@ -1758,6 +1758,91 @@ float getOutputValueByName(const char *name) {
 		case -530001975:
 			return engine->triggerCentral.vvtState[1][1].triggerStateIndex;
 #endif
+// neuralBetaCorrection
+#if EFI_ENGINE_CONTROL
+		case 324556096:
+			return engine->module<NeuralWallWettingController>()->neuralBetaCorrection;
+#endif
+// neuralTauCorrection
+#if EFI_ENGINE_CONTROL
+		case -2099790450:
+			return engine->module<NeuralWallWettingController>()->neuralTauCorrection;
+#endif
+// neuralInferenceCount
+#if EFI_ENGINE_CONTROL
+		case 1621336324:
+			return engine->module<NeuralWallWettingController>()->neuralInferenceCount;
+#endif
+// neuralTrainingCount
+#if EFI_ENGINE_CONTROL
+		case 2113148177:
+			return engine->module<NeuralWallWettingController>()->neuralTrainingCount;
+#endif
+// pendingTransientsCount
+#if EFI_ENGINE_CONTROL
+		case 1721295422:
+			return engine->module<NeuralWallWettingController>()->pendingTransientsCount;
+#endif
+// lastTransientScore
+#if EFI_ENGINE_CONTROL
+		case -260376883:
+			return engine->module<NeuralWallWettingController>()->lastTransientScore;
+#endif
+// averageNeuralScore
+#if EFI_ENGINE_CONTROL
+		case 102675075:
+			return engine->module<NeuralWallWettingController>()->averageNeuralScore;
+#endif
+// averageClassicScore
+#if EFI_ENGINE_CONTROL
+		case 170700606:
+			return engine->module<NeuralWallWettingController>()->averageClassicScore;
+#endif
+// learningPhase
+#if EFI_ENGINE_CONTROL
+		case -1907082426:
+			return engine->module<NeuralWallWettingController>()->learningPhase;
+#endif
+// currentLearningRate
+#if EFI_ENGINE_CONTROL
+		case -547095004:
+			return engine->module<NeuralWallWettingController>()->currentLearningRate;
+#endif
+// totalRewardsApplied
+#if EFI_ENGINE_CONTROL
+		case 1117289792:
+			return engine->module<NeuralWallWettingController>()->totalRewardsApplied;
+#endif
+// totalPenaltiesApplied
+#if EFI_ENGINE_CONTROL
+		case 1116925453:
+			return engine->module<NeuralWallWettingController>()->totalPenaltiesApplied;
+#endif
+// debugLastNeuralBeta
+#if EFI_ENGINE_CONTROL
+		case 264486883:
+			return engine->module<NeuralWallWettingController>()->debugLastNeuralBeta;
+#endif
+// debugLastNeuralTau
+#if EFI_ENGINE_CONTROL
+		case -1163320495:
+			return engine->module<NeuralWallWettingController>()->debugLastNeuralTau;
+#endif
+// debugLastClassicBeta
+#if EFI_ENGINE_CONTROL
+		case -1631851202:
+			return engine->module<NeuralWallWettingController>()->debugLastClassicBeta;
+#endif
+// debugLastClassicTau
+#if EFI_ENGINE_CONTROL
+		case 341021004:
+			return engine->module<NeuralWallWettingController>()->debugLastClassicTau;
+#endif
+// debugConvergenceCounter
+#if EFI_ENGINE_CONTROL
+		case 952450043:
+			return engine->module<NeuralWallWettingController>()->debugConvergenceCounter;
+#endif
 // idleState
 #if EFI_PROD_CODE && EFI_IDLE_CONTROL
 		case 1886060228:

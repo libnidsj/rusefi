@@ -114,7 +114,7 @@ float WallFuelController::computeTau() const {
 
 	// Apply neural network corrections if enabled
 	if (engineConfiguration->enableNeuralWallWetting) {
-		auto& neuralController = engine->module<NeuralWallWettingController>();
+		auto& neuralController = engine->module<NeuralWallWettingController>().unmock();
 		if (neuralController.isEnabled()) {
 			// Calculate inputs for neural network
 			float mapDerivative = 0.0f; // TODO: get from load monitoring
@@ -175,7 +175,7 @@ float WallFuelController::computeBeta() const {
 
 		// Apply neural network corrections if enabled
 		if (engineConfiguration->enableNeuralWallWetting) {
-			auto& neuralController = engine->module<NeuralWallWettingController>();
+			auto& neuralController = engine->module<NeuralWallWettingController>().unmock();
 			if (neuralController.isEnabled()) {
 				// Calculate inputs for neural network
 				float mapDerivative = 0.0f; // TODO: get from load monitoring

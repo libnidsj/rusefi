@@ -487,6 +487,24 @@ Maximum coolant temperature for learning
 ### wwMinMapForLearning
 Minimum MAP pressure for learning
 
+### enableNeuralWallWetting
+Enable neural network wall wetting controller
+
+### neuralLearningRate
+Neural network learning rate
+
+### neuralMinConfidence
+Minimum confidence threshold for neural corrections
+
+### neuralTransientThreshold
+Transient magnitude threshold for neural learning
+
+### neuralMaxTransients
+Maximum pending transients for neural learning
+
+### neuralSaveDelay
+Delay before saving neural weights after ignition off
+
 ### fordInjectorSmallPulseSlope
 
 
@@ -2100,4 +2118,25 @@ Delay após ignição OFF para salvamento do LTFT
 
 ### dynoCarFrontalAreaM2
 @@DYNO_CAR_FRONTAL_AREA_TOOLTIP@@
+
+### neuralWallWettingData.dataVersion
+Neural data version for compatibility
+
+### neuralWallWettingData.model0.trainingIterations
+Total training iterations
+
+### neuralWallWettingData.model0.lastLoss
+Last recorded loss
+
+### neuralWallWettingData.model0.lastSaveTimestamp
+Last save timestamp
+
+### neuralWallWettingData.totalInferences
+Total neural network inferences
+
+### neuralWallWettingData.totalTrainingCycles
+Total training cycles
+
+### neuralWallWettingData.systemErrors
+System error count
 

@@ -2333,8 +2333,8 @@ struct neural_wall_wetting_persistent_s
 	
 	struct neural_model_0_s
 		uint8_t[8] topology;Network topology [inputs, h1, h2, h3, h4, outputs];"", 1, 0, 0, 255, 0
-		int16_t[128] weights;Quantized weights (x1000);"", 1, 0, -32000, 32000, 0
-		int16_t[32] biases;Quantized biases (x1000);"", 1, 0, -32000, 32000, 0
+		int16_t[48] autoscale weights;Quantized neural network weights;"", 0.001, 0, -32, 32, 3
+		int16_t[10] autoscale biases;Quantized neural network biases;"", 0.001, 0, -32, 32, 3
 		uint32_t trainingIterations;Total training iterations;"", 1, 0, 0, 4294967295, 0
 		float lastLoss;Last recorded loss;"", 1, 0, 0, 100, 4
 		uint32_t lastSaveTimestamp;Last save timestamp;"", 1, 0, 0, 4294967295, 0

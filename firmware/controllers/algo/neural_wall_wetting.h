@@ -188,6 +188,9 @@ public:
     void saveWeightsToConfig();
     void loadWeightsFromConfig();
     
+    // IWallFuelController interface requirement
+    void onActualFuelInjection(float injectedMass, int cylinderIndex = 0);
+    
 private:
     // Core components
     SimpleNeuralNetwork neuralNetwork;
@@ -216,6 +219,10 @@ private:
     int performanceIndex;
     int performanceCount;
     
+    // Debug tracking for injection correlation
+    float debugLastInjectedMass;
+    int debugLastCylinderIndex;
+    
     // Configuration access helpers
     bool getConfigEnabled() const;
     float getConfigLearningRate() const;
@@ -231,11 +238,8 @@ private:
     // Classic system interface
     void getClassicCorrections(float rpm, float load, float& betaCorr, float& tauCorr) const;
     
-    // Persistence helpers
-    void quantizeWeights(const float* weights, const float* biases, 
-                        int16_t* quantizedWeights, int16_t* quantizedBiases) const;
-    void dequantizeWeights(const int16_t* quantizedWeights, const int16_t* quantizedBiases,
-                          float* weights, float* biases) const;
+    // Note: quantizeWeights/dequantizeWeights not needed with autoscale
+    // RusEFI autoscale fields provide automatic conversion via scaled_channel
     
     // Validation and limits
     bool validateInputs(float mapDerivative, float lambdaError, float rpm, float clt) const;
@@ -244,4 +248,7 @@ private:
     // Debug and diagnostics
     void updateDebugInfo();
     void logPerformanceMetrics() const;
-}; 
+};
+
+// Global instance access function
+NeuralWallWettingController& getNeuralWallWettingController(); 
