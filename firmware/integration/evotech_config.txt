@@ -836,6 +836,13 @@ spi_device_e digitalPotentiometerSpiDevice;Digital Potentiometer is used by stoc
 	float wwMaxCoolantTemp;Maximum coolant temperature for learning;"°C", 1, 0, 60, 130, 0
 	float wwMinMapForLearning;Minimum MAP pressure for learning;"kPa", 1, 0, 20, 80, 0
 
+	bit enableNeuralWallWetting;Enable neural network wall wetting controller
+	float neuralLearningRate;Neural network learning rate;"", 1, 0, 0.001, 0.1, 4
+	float neuralMinConfidence;Minimum confidence threshold for neural corrections;"", 1, 0, 0.1, 1.0, 2
+	float neuralTransientThreshold;Transient magnitude threshold for neural learning;"kPa/s", 1, 0, 5.0, 100.0, 1
+	uint8_t autoscale neuralMaxTransients;Maximum pending transients for neural learning;"count", 1, 0, 4, 32, 0
+	float neuralSaveDelay;Delay before saving neural weights after ignition off;"s", 1, 0, 1.0, 30.0, 1
+
 	Gpio[TRIGGER_SIMULATOR_PIN_COUNT iterate] triggerSimulatorPins;Each evoTech piece can provide synthetic trigger signal for external ECU. Sometimes these wires are routed back into trigger inputs of the same evoTech board.\nSee also directSelfStimulation which is different.
 
 	uint16_t autoscale fordInjectorSmallPulseSlope;;"g/s", 0.001, 0, 0, 65, 3
@@ -2318,6 +2325,28 @@ float   autoscale dynoCarFrontalAreaM2;@@DYNO_CAR_FRONTAL_AREA_TOOLTIP@@;@@DYNO_
 int8_t[TRAILING_SPARK_SIZE x TRAILING_SPARK_SIZE] autoscale trailingSparkTable;;"deg", 0.1, 0, 0, 20, 1
 uint8_t[TRAILING_SPARK_SIZE] autoscale trailingSparkRpmBins;;"rpm", 50, 0, 0, 12000, 0
 uint8_t[TRAILING_SPARK_SIZE] autoscale trailingSparkLoadBins;;"Load", 5, 0, 0,  @@MAP_UPPER_LIMIT@@, 0
+
+struct neural_wall_wetting_persistent_s
+	uint32_t dataVersion;Neural data version for compatibility;"", 1, 0, 0, 4294967295, 0
+	uint8_t[4] modelValid;Model validity flags (0=invalid, 1=valid);"", 1, 0, 0, 1, 0
+	uint32_t[4] modelChecksum;Model CRC checksums for validation;"", 1, 0, 0, 4294967295, 0
+	
+	struct neural_model_0_s
+		uint8_t[8] topology;Network topology [inputs, h1, h2, h3, h4, outputs];"", 1, 0, 0, 255, 0
+		int16_t[128] weights;Quantized weights (x1000);"", 1, 0, -32000, 32000, 0
+		int16_t[32] biases;Quantized biases (x1000);"", 1, 0, -32000, 32000, 0
+		uint32_t trainingIterations;Total training iterations;"", 1, 0, 0, 4294967295, 0
+		float lastLoss;Last recorded loss;"", 1, 0, 0, 100, 4
+		uint32_t lastSaveTimestamp;Last save timestamp;"", 1, 0, 0, 4294967295, 0
+	end_struct
+	neural_model_0_s model0;
+	
+	uint32_t totalInferences;Total neural network inferences;"", 1, 0, 0, 4294967295, 0
+	uint32_t totalTrainingCycles;Total training cycles;"", 1, 0, 0, 4294967295, 0
+	uint32_t systemErrors;System error count;"", 1, 0, 0, 4294967295, 0
+end_struct
+
+neural_wall_wetting_persistent_s neuralWallWettingData;Neural wall wetting persistent data
 
 @@BOARD_CONFIG_FROM_FILE@@
 
