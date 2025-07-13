@@ -6,7 +6,6 @@
 
 #include "pch.h"
 #include "wall_fuel.h"
-#include "neural_wall_wetting.h"
 #include "flash_main.h"
 #include "table_helper.h"
 
@@ -102,36 +101,15 @@ float WallFuelController::computeTau() const {
 			config->wwCorrectionRpmBins, rpm
 		);
 
-			// Apply adaptive correction table if directional corrections are enabled
-	if (engineConfiguration->wwEnableAdaptiveLearning) {
-		float tauCorr = interpolate3d(
-			config->wwTauCorrection,
-			config->wwCorrectionMapBins, map,
-			config->wwCorrectionRpmBins, rpm
-		);
-		tau *= tauCorr;
-	}
-
-	// Apply neural network corrections if enabled
-	if (engineConfiguration->enableNeuralWallWetting) {
-		auto& neuralController = engine->module<NeuralWallWettingController>();
-		if (neuralController.isEnabled()) {
-			// Calculate inputs for neural network
-			float mapDerivative = 0.0f; // TODO: get from load monitoring
-			auto lambdaSensor = Sensor::get(SensorType::Lambda1);
-			float lambdaError = 0.0f;
-			if (lambdaSensor.Valid) {
-				float targetLambda = engine->fuelComputer.targetLambda;
-				lambdaError = lambdaSensor.Value - targetLambda;
-			}
-
-			float betaCorrection, tauCorrection;
-			neuralController.getNeuralCorrections(mapDerivative, lambdaError, rpm, clt, betaCorrection, tauCorrection);
-			
-			// Apply neural tau correction
-			tau *= tauCorrection;
+		// Apply adaptive correction table if directional corrections are enabled
+		if (engineConfiguration->wwEnableAdaptiveLearning) {
+			float tauCorr = interpolate3d(
+				config->wwTauCorrection,
+				config->wwCorrectionMapBins, map,
+				config->wwCorrectionRpmBins, rpm
+			);
+			tau *= tauCorr;
 		}
-	}
 	}
 
 	return tau;
@@ -171,27 +149,6 @@ float WallFuelController::computeBeta() const {
 				config->wwCorrectionRpmBins, rpm
 			);
 			beta *= betaCorr;
-		}
-
-		// Apply neural network corrections if enabled
-		if (engineConfiguration->enableNeuralWallWetting) {
-			auto& neuralController = engine->module<NeuralWallWettingController>();
-			if (neuralController.isEnabled()) {
-				// Calculate inputs for neural network
-				float mapDerivative = 0.0f; // TODO: get from load monitoring
-				auto lambdaSensor = Sensor::get(SensorType::Lambda1);
-				float lambdaError = 0.0f;
-				if (lambdaSensor.Valid) {
-					float targetLambda = engine->fuelComputer.targetLambda;
-					lambdaError = lambdaSensor.Value - targetLambda;
-				}
-
-				float betaCorrection, tauCorrection;
-				neuralController.getNeuralCorrections(mapDerivative, lambdaError, rpm, clt, betaCorrection, tauCorrection);
-				
-				// Apply neural beta correction
-				beta *= betaCorrection;
-			}
 		}
 	}
 

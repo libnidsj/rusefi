@@ -185,14 +185,6 @@ Usages:
     java: WallFuelState.java
     folder: controllers/algo
 
-  - name: neural_wall_wetting_state
-    cppFileName: neural_wall_wetting
-    java: NeuralWallWettingState.java
-    folder: controllers/algo
-    constexpr: "engine->module<NeuralWallWettingController>()"
-    isPtr: true
-    conditional_compilation: "EFI_ENGINE_CONTROL"
-
   - name: idle_state
     cppFileName: idle_thread
     java: IdleState.java
