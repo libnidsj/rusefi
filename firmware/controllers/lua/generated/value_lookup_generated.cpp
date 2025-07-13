@@ -2048,18 +2048,12 @@ float getConfigValueByName(const char *name) {
 // ltftMinCorrection
 		case -1987127141:
 			return config->ltftMinCorrection;
-// ltftEmaAlpha
-		case -1211433352:
-			return config->ltftEmaAlpha;
+// ltftAgressiveMode
+		case -1108656563:
+			return config->ltftAgressiveMode;
 // ltftStftRejectThreshold
 		case 1940059402:
 			return config->ltftStftRejectThreshold;
-// ltftIgnitionOnDelay
-		case 1063583180:
-			return config->ltftIgnitionOnDelay;
-// ltftIgnitionOffSaveDelay
-		case -1053058503:
-			return config->ltftIgnitionOffSaveDelay;
 // wwBufferSize
 		case -1566672952:
 			return config->wwBufferSize;
@@ -5519,24 +5513,14 @@ bool setConfigValueByName(const char *name, float value) {
 		config->ltftMinCorrection = (int)value;
 		return 1;
 	}
-		case -1211433352:
+		case -1108656563:
 	{
-		config->ltftEmaAlpha = (int)value;
+		config->ltftAgressiveMode = (int)value;
 		return 1;
 	}
 		case 1940059402:
 	{
 		config->ltftStftRejectThreshold = (int)value;
-		return 1;
-	}
-		case 1063583180:
-	{
-		config->ltftIgnitionOnDelay = (int)value;
-		return 1;
-	}
-		case -1053058503:
-	{
-		config->ltftIgnitionOffSaveDelay = (int)value;
 		return 1;
 	}
 		case -1566672952:

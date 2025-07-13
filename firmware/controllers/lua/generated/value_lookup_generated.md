@@ -2041,17 +2041,11 @@ How much long term fuel trim should act to reduce short term fuel trim, 100 shou
 ### ltftMinCorrection
 
 
-### ltftEmaAlpha
-Constante de tempo do filtro EMA para STFT usado no LTFT
+### ltftAgressiveMode
+
 
 ### ltftStftRejectThreshold
 Limiar de rejeição para STFT (em %)
-
-### ltftIgnitionOnDelay
-Delay pós-ignição ON para aprendizado/aplicação do LTFT
-
-### ltftIgnitionOffSaveDelay
-Delay após ignição OFF para salvamento do LTFT
 
 ### wwBufferSize
 200
