@@ -27,22 +27,16 @@ class LongTermFuelTrim : public EngineModule{
 	bool ltftTableHelperInit = false;
 	float ltftResult = 1;
 	bool updatedLtft = false;
-	// Variáveis para filtro EMA
-	float stftEma = 1.0f;
-	bool m_ignitionState = false;
 	
-	bool canLearn();
-	float filterStft(float stftRaw);
+	// Variáveis para modo simples
+	uint32_t lastLtftUpdateTime = 0;
 	
-	// Timer-based implementation
-	Timer m_updateTimer;            // Controls update frequency
-	Timer m_ignitionOnTimer;        // Tracks time since ignition on
-	Timer m_ignitionOffTimer;       // Tracks time since ignition off
-	bool isLearnConditionsMet = false;
+	// Timer para modo agressivo
+	Timer m_aggressiveModeTimer;
+	
 public:
 	LongTermFuelTrim();
 	float getLtft(float load, float rpm);
 	void resetLtftTimer();
 	void updateLtft(float load, float rpm);
-	void onIgnitionStateChanged(bool ignitionState) override;
 };
