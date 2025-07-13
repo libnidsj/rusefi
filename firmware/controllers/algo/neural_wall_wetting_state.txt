@@ -1,29 +1,29 @@
 struct_no_prefix neural_wall_wetting_state_s
 
 ! Neural Network State
-float neuralBetaCorrection;Neural beta correction applied
-float neuralTauCorrection;Neural tau correction applied
-uint32_t neuralInferenceCount;Neural network inference count
-uint32_t neuralTrainingCount;Neural network training steps
+float neuralBetaCorrection;Neural network beta correction factor applied
+float neuralTauCorrection;Neural network tau correction factor applied
+uint32_t neuralInferenceCount;Total number of neural network inferences performed
+uint32_t neuralTrainingCount;Total number of neural network training steps completed
 
 ! Delayed Reward System State  
-uint32_t pendingTransientsCount;Pending transients count
-float lastTransientScore;Last transient performance score
-float averageNeuralScore;Average neural performance
-float averageClassicScore;Average classic performance
+uint32_t pendingTransientsCount;Number of transients waiting for evaluation
+float lastTransientScore;Performance score of the last completed transient
+float averageNeuralScore;Moving average of neural network performance scores
+float averageClassicScore;Moving average of classic system performance scores
 
 ! Learning State
-uint8_t learningPhase;Learning phase (0-3)
-float currentLearningRate;Current learning rate
-uint32_t totalRewardsApplied;Total rewards applied
-uint32_t totalPenaltiesApplied;Total penalties applied
+uint8_t learningPhase;Current learning phase: 0=Idle, 1=Recording, 2=Evaluating, 3=Training
+float currentLearningRate;Current neural network learning rate
+uint32_t totalRewardsApplied;Total number of rewards applied to the network
+uint32_t totalPenaltiesApplied;Total number of penalties applied to the network
 
 ! Debug Information
-float debugLastNeuralBeta;Last neural beta used
-float debugLastNeuralTau;Last neural tau used  
-float debugLastClassicBeta;Last classic beta used
-float debugLastClassicTau;Last classic tau used
-uint32_t debugConvergenceCounter;Convergence counter
+float debugLastNeuralBeta;Last neural beta value used
+float debugLastNeuralTau;Last neural tau value used  
+float debugLastClassicBeta;Last classic beta value for comparison
+float debugLastClassicTau;Last classic tau value for comparison
+uint32_t debugConvergenceCounter;Counter tracking convergence progress
 
 ! end of neural_wall_wetting_state
 end_struct 

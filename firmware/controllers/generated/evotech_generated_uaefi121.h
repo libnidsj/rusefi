@@ -388,7 +388,7 @@
 #define ego_sensor_e_ES_PLX 4
 #define EGT_CHANNEL_COUNT 8
 #define END_OF_CALIBRATION_PADDING 51
-#define engine_configuration_s_size 4132
+#define engine_configuration_s_size 4108
 #define engine_load_mode_e_auto_enum 0="LM_SPEED_DENSITY",2="LM_ALPHA_N",3="LM_LUA",100="LM_MOCK",1="LM_REAL_MAF"
 #define engine_load_mode_e_enum "Speed Density", "MAF Air Charge", "Alpha-N", "Lua"
 #define engine_load_mode_e_LM_ALPHA_N 2
@@ -1262,8 +1262,6 @@
 #define MsIoBoxVss_HALL34 2
 #define MsIoBoxVss_OFF 0
 #define MsIoBoxVss_VR12 1
-#define neural_model_0_s_size 136
-#define neural_wall_wetting_persistent_s_size 172
 #define nitrous_arming_method_e_auto_enum 0="DIGITAL_SWITCH_INPUT",1="LUA_GAUGE"
 #define nitrous_arming_method_e_DIGITAL_SWITCH_INPUT 0
 #define nitrous_arming_method_e_enum "Digital Switch Input", "Lua Gauge"
@@ -1301,7 +1299,7 @@
 #define pedalSensor_NAME "Accelerator pedal"
 #define pedalToTpsTbl_NAME "ETB pedal target"
 #define PERCENT_TRIM_BYTE_PACKING_DIV 0.02
-#define persistent_config_s_size 25068
+#define persistent_config_s_size 24872
 #define pid_s_size 20
 #define pin_input_mode_e_auto_enum 0="PI_DEFAULT",4="PI_INVERTED_DEFAULT",6="PI_INVERTED_PULLDOWN",5="PI_INVERTED_PULLUP",2="PI_PULLDOWN",1="PI_PULLUP"
 #define pin_input_mode_e_enum "DEFAULT", "PULLUP", "PULLDOWN", "INVALID", "INVERTED DEFAULT", "INVERTED PULLUP", "INVERTED PULLDOWN"
@@ -1386,7 +1384,7 @@
 #define SentInput_NONE 0
 #define show_tcu_gauges false
 #define show_vvt_output_pin true
-#define SIGNATURE_HASH 3248191296
+#define SIGNATURE_HASH 2157419620
 #define SIMULATOR_TUNE_BIN_FILE_NAME "generated/simulator_tune_image.bin"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_PREFIX "generated/simulator_tune_image"
 #define SIMULATOR_TUNE_BIN_FILE_NAME_SUFFIX ".bin"
@@ -1450,7 +1448,7 @@
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_BUTTON 0
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_DOWN_SWITCH 2
 #define torqueReductionActivationMode_e_TORQUE_REDUCTION_CLUTCH_UP_SWITCH 3
-#define TOTAL_CONFIG_SIZE 25068
+#define TOTAL_CONFIG_SIZE 24872
 #define TPS_2_BYTE_PACKING_MULT 100
 #define TPS_PPS_TOO_HIGH_THRESHOLD 110
 #define TPS_PPS_TOO_LOW_THRESHOLD -10
@@ -1882,7 +1880,7 @@
 #define ts_show_wastegate_sensor true
 #define ts_show_wbo_canbus_index true
 #define ts_show_wbo_canbus_set_index true
-#define TS_SIGNATURE "rusEFI motrolink_dev.2025.06.21.uaefi121.3248191296"
+#define TS_SIGNATURE "rusEFI motrolink_dev.2025.06.10.uaefi121.2157419620"
 #define TS_SIMULATE_CAN '>'
 #define TS_SIMULATE_CAN_char >
 #define TS_SINGLE_WRITE_COMMAND 'W'

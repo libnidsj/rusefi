@@ -933,57 +933,6 @@ static const LogField fields[] = {
 #if EFI_SHAFT_POSITION_INPUT && FULL_SD_LOGS
 	{engine->triggerCentral.vvtState[1][1].triggerStateIndex, "vvt2etriggerStateIndex", "", 0},
 #endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->neuralBetaCorrection, "Neural beta correction applied", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->neuralTauCorrection, "Neural tau correction applied", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->neuralInferenceCount, "Neural network inference count", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->neuralTrainingCount, "Neural network training steps", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->pendingTransientsCount, "Pending transients count", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->lastTransientScore, "Last transient performance score", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->averageNeuralScore, "Average neural performance", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->averageClassicScore, "Average classic performance", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->learningPhase, "Learning phase (0-3)", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->currentLearningRate, "Current learning rate", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->totalRewardsApplied, "Total rewards applied", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->totalPenaltiesApplied, "Total penalties applied", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->debugLastNeuralBeta, "Last neural beta used", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->debugLastNeuralTau, "Last neural tau used", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->debugLastClassicBeta, "Last classic beta used", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->debugLastClassicTau, "Last classic tau used", "", 0},
-#endif
-#if EFI_ENGINE_CONTROL
-	{engine->module<NeuralWallWettingController>()->debugConvergenceCounter, "Convergence counter", "", 0},
-#endif
 #if EFI_PROD_CODE && EFI_IDLE_CONTROL
 	{engine->module<IdleController>().unmock().baseIdlePosition, "idle: base value", "", 0},
 #endif

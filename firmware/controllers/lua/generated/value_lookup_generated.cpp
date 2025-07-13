@@ -494,24 +494,6 @@ float getConfigValueByName(const char *name) {
 // wwMinMapForLearning
 		case 913889548:
 			return engineConfiguration->wwMinMapForLearning;
-// enableNeuralWallWetting
-		case -1786043387:
-			return engineConfiguration->enableNeuralWallWetting;
-// neuralLearningRate
-		case -1604498264:
-			return engineConfiguration->neuralLearningRate;
-// neuralMinConfidence
-		case -169027138:
-			return engineConfiguration->neuralMinConfidence;
-// neuralTransientThreshold
-		case 1696817969:
-			return engineConfiguration->neuralTransientThreshold;
-// neuralMaxTransients
-		case -968744163:
-			return engineConfiguration->neuralMaxTransients;
-// neuralSaveDelay
-		case -1197068598:
-			return engineConfiguration->neuralSaveDelay;
 // fordInjectorSmallPulseSlope
 		case -1465119085:
 			return engineConfiguration->fordInjectorSmallPulseSlope;
@@ -2126,27 +2108,6 @@ float getConfigValueByName(const char *name) {
 // dynoCarFrontalAreaM2
 		case -1661556925:
 			return config->dynoCarFrontalAreaM2;
-// neuralWallWettingData.dataVersion
-		case -1502128570:
-			return config->neuralWallWettingData.dataVersion;
-// neuralWallWettingData.model0.trainingIterations
-		case -718583565:
-			return config->neuralWallWettingData.model0.trainingIterations;
-// neuralWallWettingData.model0.lastLoss
-		case 462053994:
-			return config->neuralWallWettingData.model0.lastLoss;
-// neuralWallWettingData.model0.lastSaveTimestamp
-		case -1368406964:
-			return config->neuralWallWettingData.model0.lastSaveTimestamp;
-// neuralWallWettingData.totalInferences
-		case 1897027404:
-			return config->neuralWallWettingData.totalInferences;
-// neuralWallWettingData.totalTrainingCycles
-		case -1319070199:
-			return config->neuralWallWettingData.totalTrainingCycles;
-// neuralWallWettingData.systemErrors
-		case 244970120:
-			return config->neuralWallWettingData.systemErrors;
 	}
 	return EFI_ERROR_CODE;
 }
@@ -2966,36 +2927,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case 913889548:
 	{
 		engineConfiguration->wwMinMapForLearning = value;
-		return 1;
-	}
-		case -1786043387:
-	{
-		engineConfiguration->enableNeuralWallWetting = (int)value;
-		return 1;
-	}
-		case -1604498264:
-	{
-		engineConfiguration->neuralLearningRate = value;
-		return 1;
-	}
-		case -169027138:
-	{
-		engineConfiguration->neuralMinConfidence = value;
-		return 1;
-	}
-		case 1696817969:
-	{
-		engineConfiguration->neuralTransientThreshold = value;
-		return 1;
-	}
-		case -968744163:
-	{
-		engineConfiguration->neuralMaxTransients = (int)value;
-		return 1;
-	}
-		case -1197068598:
-	{
-		engineConfiguration->neuralSaveDelay = value;
 		return 1;
 	}
 		case -1465119085:
@@ -5686,41 +5617,6 @@ bool setConfigValueByName(const char *name, float value) {
 		case -1661556925:
 	{
 		config->dynoCarFrontalAreaM2 = value;
-		return 1;
-	}
-		case -1502128570:
-	{
-		config->neuralWallWettingData.dataVersion = (int)value;
-		return 1;
-	}
-		case -718583565:
-	{
-		config->neuralWallWettingData.model0.trainingIterations = (int)value;
-		return 1;
-	}
-		case 462053994:
-	{
-		config->neuralWallWettingData.model0.lastLoss = value;
-		return 1;
-	}
-		case -1368406964:
-	{
-		config->neuralWallWettingData.model0.lastSaveTimestamp = (int)value;
-		return 1;
-	}
-		case 1897027404:
-	{
-		config->neuralWallWettingData.totalInferences = (int)value;
-		return 1;
-	}
-		case -1319070199:
-	{
-		config->neuralWallWettingData.totalTrainingCycles = (int)value;
-		return 1;
-	}
-		case 244970120:
-	{
-		config->neuralWallWettingData.systemErrors = (int)value;
 		return 1;
 	}
 	}
