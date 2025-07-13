@@ -3,4 +3,4 @@
 //
 
 #define SIGNATURE_HASH 855876180
-#define TS_SIGNATURE "rusEFI motrolink_dev.2025.06.10.alphax-4chan.855876180"
+#define TS_SIGNATURE "rusEFI motrolink_dev.2025.06.17.alphax-4chan.855876180"
