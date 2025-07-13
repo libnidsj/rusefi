@@ -67,6 +67,9 @@ void LongTermFuelTrim::updateLtft(float load, float rpm) {
 							}
 						}
 						
+						// Resetar STFT após copiar para LTFT
+						engine->engineState.stftCorrection[0] = 1.0f;
+						
 						updatedLtft = true;
 						m_aggressiveModeTimer.reset(); // Reset timer após aplicar correção
 						return;
