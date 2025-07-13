@@ -441,6 +441,10 @@ void WwAdaptiveStateMachine::handleGatheringProlongedState() {
 	uint32_t minTimeCallbacks = 100; // 500ms minimum
 	bool minTimeElapsed = elapsed >= minTimeCallbacks;
 	
+	// Simple target: 2 seconds of data collection (simplified from complex tau calculations)
+	bool phaseComplete = (m_gatheringData.prolongedBufferCount >= m_gatheringData.prolongedBufferTarget) || 
+						 (elapsed >= 400); // 2s = 400 callbacks
+	
 	// Reasonable timeout: 3 seconds maximum
 	bool timeout = elapsed >= 600; // 3s = 600 callbacks
 	
@@ -600,7 +604,7 @@ bool WwAdaptiveStateMachine::detectTransient() {
 	// Check for transient threshold - improved validation and units
 	float transientThreshold = engineConfiguration->wwMapThreshold; 
 	if (transientThreshold <= 0) {
-		transientThreshold = 30.0f; // Increased default threshold to 40 kPa/s for better detection
+		transientThreshold = 40.0f; // Increased default threshold to 40 kPa/s for better detection
 	}
 	
 	// Validate transient magnitude in kPa/s units
@@ -608,7 +612,7 @@ bool WwAdaptiveStateMachine::detectTransient() {
 	bool hasTransient = m_loadData.transientMagnitude > transientThreshold;
 	
 	// Additional validation: ensure transient magnitude is reasonable (< 500 kPa/s)
-	if (m_loadData.transientMagnitude > 2000.0f) {
+	if (m_loadData.transientMagnitude > 500.0f) {
 		hasTransient = false; // Likely sensor noise or invalid reading
 	}
 	
