@@ -217,9 +217,7 @@ float IdleController::getClosedLoop(IIdleController::Phase phase, float tpsPos, 
 	auto idlePid = getIdlePid();
 
 	if (shouldResetPid) {
-		// TODO: Verificar se o reset do integrador é necessário
-		// needReset = idlePid->getIntegration() <= 0 || mustResetPid;
-		needReset = mustResetPid;
+		needReset = idlePid->getIntegration() <= 0 || mustResetPid;
 		// we reset only if I-term is negative, because the positive I-term is good - it keeps RPM from dropping too low
 		if (needReset) {
 			idlePid->reset();
@@ -246,13 +244,7 @@ float IdleController::getClosedLoop(IIdleController::Phase phase, float tpsPos, 
 
 		idleState = TPS_THRESHOLD;
 
-		// Apply last correction for Running and Coasting phases to improve transitions
-		if (phase == IIdleController::Phase::Running || phase == IIdleController::Phase::Coasting) {
-			// Keep last automatic position for smoother transitions
-			return m_lastAutomaticPosition;
-		}
-
-		// For Cranking and CrankToIdleTaper, don't apply any correction
+		// We aren't idling, so don't apply any correction.  A positive correction could inhibit a return to idle.
 		m_lastAutomaticPosition = 0;
 		return 0;
 	}
